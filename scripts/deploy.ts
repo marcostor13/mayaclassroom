@@ -257,7 +257,9 @@ async function desplegar(objetivos: ('api' | 'web')[]): Promise<void> {
   const c = coolify();
   for (const objetivo of objetivos) {
     const uuid = exigir(objetivo === 'api' ? 'COOLIFY_API_UUID' : 'COOLIFY_WEB_UUID');
-    const r = await c.get<{ deployments?: { deployment_uuid: string }[] }>(
+    // Coolify 4.3 exige POST aquí; con GET responde 405 «This endpoint has
+    // changed to a POST request».
+    const r = await c.post<{ deployments?: { deployment_uuid: string }[] }>(
       `/api/v1/deploy?uuid=${uuid}&force=false`,
     );
     const id = r.deployments?.[0]?.deployment_uuid ?? '(sin identificador)';
