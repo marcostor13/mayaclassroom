@@ -1,0 +1,221 @@
+@use '../../../styles/tokens' as *;
+
+/* ── Saludo ── */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-5);
+  padding: var(--maya-space-6);
+  margin-bottom: var(--maya-space-6);
+  border-radius: var(--maya-radius-xl);
+  color: #fff;
+  background:
+    radial-gradient(110% 140% at 90% 10%, rgba(255, 215, 160, 0.42) 0%, transparent 58%),
+    linear-gradient(135deg, var(--maya-primary) 0%, var(--maya-primary-active) 55%, var(--maya-primary-deep) 100%);
+  box-shadow: var(--maya-shadow-primary);
+
+  @include from($maya-bp-md) {
+    padding: var(--maya-space-8) var(--maya-space-10);
+  }
+
+  &__eyebrow {
+    font-size: var(--maya-text-sm);
+    opacity: 0.85;
+    margin-bottom: 2px;
+  }
+
+  &__title {
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    margin-bottom: var(--maya-space-2);
+    color: #fff;
+  }
+
+  &__lead {
+    font-size: var(--maya-text-sm);
+    max-width: 52ch;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: var(--maya-leading-snug);
+
+    strong { color: #fff; }
+  }
+
+  &__art {
+    display: none;
+    flex-shrink: 0;
+    width: 84px;
+    height: 84px;
+    border-radius: var(--maya-radius-lg);
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    display: grid;
+    place-items: center;
+
+    @include until($maya-bp-sm) { display: none; }
+  }
+}
+
+/* ── Indicadores ── */
+
+.stat {
+  padding: var(--maya-space-4);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  box-shadow: var(--maya-shadow-xs);
+
+  &__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--maya-radius-sm);
+    display: grid;
+    place-items: center;
+    margin-bottom: var(--maya-space-3);
+
+    &--primary { background: var(--maya-primary-soft); color: var(--maya-primary-deep); }
+    &--success { background: var(--maya-success-soft); color: var(--maya-success); }
+    &--warning { background: var(--maya-warning-soft); color: #a4732a; }
+    &--info { background: var(--maya-info-soft); color: var(--maya-info); }
+  }
+
+  &__value {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-2xl);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  &__label {
+    font-size: var(--maya-text-xs);
+    color: var(--maya-text-muted);
+  }
+}
+
+/* ── Distribución ── */
+
+.layout {
+  display: grid;
+  gap: var(--maya-space-6);
+  margin-top: var(--maya-space-6);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-xl) {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+/* ── Tarjeta de curso ── */
+
+.course-card {
+  display: flex;
+  flex-direction: column;
+
+  &__cover {
+    position: relative;
+    height: 112px;
+    display: flex;
+    align-items: flex-end;
+    padding: var(--maya-space-3);
+  }
+
+  &__tag {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--maya-primary-deep);
+  }
+
+  &__title {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-md);
+    font-weight: 700;
+    line-height: var(--maya-leading-snug);
+    min-height: 2.6em;
+  }
+}
+
+/* ── Entregas ── */
+
+.deadline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-4) var(--maya-space-5);
+  border-bottom: 1px solid var(--maya-border);
+
+  &:last-child { border-bottom: none; }
+
+  &__marker {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--maya-warning);
+    flex-shrink: 0;
+  }
+
+  &__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+  &__name {
+    font-weight: 600;
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text);
+
+    &:hover { color: var(--maya-primary); }
+  }
+}
+
+/* ── Línea de tiempo ── */
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+
+  &__item {
+    display: flex;
+    gap: var(--maya-space-3);
+    align-items: flex-start;
+  }
+
+  &__date {
+    flex-shrink: 0;
+    width: 46px;
+    padding: var(--maya-space-2) 0;
+    border-radius: var(--maya-radius-sm);
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary-deep);
+    text-align: center;
+  }
+
+  &__day {
+    font-size: var(--maya-text-xs);
+    font-weight: 700;
+    text-transform: capitalize;
+  }
+}
+
+/* ── Accesos rápidos ── */
+
+.quick {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-2) var(--maya-space-3);
+  border-radius: var(--maya-radius-sm);
+  font-size: var(--maya-text-sm);
+  color: var(--maya-text);
+  transition: background var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface-3); text-decoration: none; color: var(--maya-primary-deep); }
+}

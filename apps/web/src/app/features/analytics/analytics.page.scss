@@ -1,0 +1,60 @@
+@use '../../../styles/tokens' as *;
+
+.metric {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-2xl);
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.analytics-layout {
+  display: grid;
+  gap: var(--maya-space-5);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-lg) {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 180px;
+  padding-top: var(--maya-space-2);
+
+  &__col {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  &__bar {
+    width: 100%;
+    min-height: 3px;
+    border-radius: var(--maya-radius-xs) var(--maya-radius-xs) 0 0;
+    background: linear-gradient(180deg, var(--maya-pastel), var(--maya-primary));
+    transition: height var(--maya-duration-slow) var(--maya-ease-out);
+  }
+}
+
+.risk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+}
+
+.risk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--maya-space-3);
+  border-bottom: 1px solid var(--maya-border);
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+}

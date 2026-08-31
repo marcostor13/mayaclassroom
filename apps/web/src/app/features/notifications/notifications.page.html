@@ -1,0 +1,118 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Notificaciones</h1>
+    <p class="maya-page-header__subtitle">Avisos de sus cursos y actividades</p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="toggleUnread()">
+      <maya-icon name="filter" [size]="15" />
+      {{ onlyUnread() ? 'Ver todas' : 'Solo sin leer' }}
+    </button>
+    <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="markAll()">
+      <maya-icon name="check" [size]="15" /> Marcar todo como leído
+    </button>
+  </div>
+</header>
+
+<div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'inbox'"
+    [attr.aria-selected]="tab() === 'inbox'"
+    (click)="tab.set('inbox')"
+  >
+    Bandeja
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'preferences'"
+    [attr.aria-selected]="tab() === 'preferences'"
+    (click)="loadPreferences()"
+  >
+    Preferencias
+  </button>
+</div>
+
+@if (tab() === 'inbox') {
+  @if (loading()) {
+    <div class="maya-skeleton" style="height: 280px"></div>
+  } @else if (items().length) {
+    <section class="maya-card">
+      @for (item of items(); track item.id) {
+        <article
+          class="notification"
+          [class.is-unread]="isUnread(item)"
+          (click)="markRead(item)"
+        >
+          <span class="notification__icon">
+            <maya-icon [name]="item.icon ?? 'bell'" [size]="18" />
+          </span>
+          <div style="flex: 1; min-width: 0">
+            <p class="maya-bold maya-small">{{ item.subject }}</p>
+            <p class="maya-tiny maya-muted">{{ item.body }}</p>
+            <p class="maya-tiny maya-subtle">{{ item.createdAt | relativeTime }}</p>
+          </div>
+          @if (item.contextUrl) {
+            <a [routerLink]="item.contextUrl" class="maya-btn maya-btn--ghost maya-btn--sm">
+              Ver <maya-icon name="chevron-right" [size]="14" />
+            </a>
+          }
+        </article>
+      }
+    </section>
+  } @else {
+    <maya-empty-state
+      icon="bell"
+      title="Sin notificaciones"
+      description="Le avisaremos cuando haya novedades en sus cursos."
+    />
+  }
+} @else {
+  <section class="maya-card">
+    <div class="maya-table-wrap" style="border: none">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Evento</th>
+            <th scope="col" style="text-align: center">En la web</th>
+            <th scope="col" style="text-align: center">Por correo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (preference of preferences(); track preference.component + preference.eventName) {
+            <tr>
+              <td>
+                <p class="maya-bold maya-small">{{ preference.label }}</p>
+                <p class="maya-tiny maya-subtle">{{ preference.component }}</p>
+              </td>
+              <td style="text-align: center">
+                <label class="maya-switch" style="justify-content: center">
+                  <input
+                    type="checkbox"
+                    [checked]="preference.channels.web"
+                    (change)="toggleChannel(preference, 'web', $any($event.target).checked)"
+                    [attr.aria-label]="'Notificación web para ' + preference.label"
+                  />
+                </label>
+              </td>
+              <td style="text-align: center">
+                <label class="maya-switch" style="justify-content: center">
+                  <input
+                    type="checkbox"
+                    [checked]="preference.channels.email"
+                    (change)="toggleChannel(preference, 'email', $any($event.target).checked)"
+                    [attr.aria-label]="'Notificación por correo para ' + preference.label"
+                  />
+                </label>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

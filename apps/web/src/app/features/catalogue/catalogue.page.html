@@ -1,0 +1,90 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Catálogo de cursos</h1>
+    <p class="maya-page-header__subtitle">Descubra la oferta formativa de su organización</p>
+  </div>
+</header>
+
+<div class="maya-grid" style="grid-template-columns: 1fr; gap: var(--maya-space-4)">
+  <div class="maya-row" style="flex-wrap: wrap; gap: var(--maya-space-3)">
+    <input
+      type="search"
+      class="maya-input"
+      style="max-width: 340px"
+      placeholder="Buscar por nombre o código…"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+      (keyup.enter)="load()"
+      aria-label="Buscar cursos"
+    />
+    <select
+      class="maya-select"
+      style="max-width: 280px"
+      [ngModel]="categoryId()"
+      (ngModelChange)="categoryId.set($event); load()"
+      aria-label="Filtrar por categoría"
+    >
+      <option value="">Todas las categorías</option>
+      @for (item of flatten(categories()); track item.node.id) {
+        <option [value]="item.node.id">
+          {{ '— '.repeat(item.depth) }}{{ item.node.name }}
+        </option>
+      }
+    </select>
+    <button type="button" class="maya-btn maya-btn--primary" (click)="load()">
+      <maya-icon name="search" [size]="16" /> Buscar
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="maya-cards">
+      @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+        <div class="maya-skeleton" style="height: 220px"></div>
+      }
+    </div>
+  } @else if (items().length) {
+    <div class="maya-cards">
+      @for (course of items(); track course.id) {
+        <article class="maya-card maya-card--interactive">
+          <div class="maya-card__body maya-stack">
+            <span class="maya-badge maya-badge--primary" style="align-self: flex-start">
+              {{ course.shortName }}
+            </span>
+            <h2 style="font-size: var(--maya-text-md); font-weight: 700">{{ course.fullName }}</h2>
+            @if (course.summary) {
+              <div
+                class="maya-small maya-muted maya-clamp-3"
+                [innerHTML]="course.summary | safeHtml"
+              ></div>
+            }
+            @if (course.categoryName) {
+              <span class="maya-tiny maya-subtle">{{ course.categoryName }}</span>
+            }
+          </div>
+          <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2)">
+            <a
+              [routerLink]="['/courses', course.id]"
+              class="maya-btn maya-btn--secondary maya-btn--sm"
+              style="flex: 1"
+            >
+              Ver detalles
+            </a>
+            <button
+              type="button"
+              class="maya-btn maya-btn--primary maya-btn--sm"
+              (click)="selfEnrol(course, $event)"
+            >
+              Matricularme
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="search"
+      title="Sin resultados"
+      description="Pruebe a cambiar los términos de búsqueda o la categoría."
+    />
+  }
+</div>

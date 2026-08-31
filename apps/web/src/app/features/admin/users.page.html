@@ -1,0 +1,164 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Usuarios</h1>
+    <p class="maya-page-header__subtitle">{{ total() }} cuentas en la empresa</p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--primary" (click)="creating.set(!creating())">
+      <maya-icon name="plus" [size]="16" /> Nuevo usuario
+    </button>
+  </div>
+</header>
+
+@if (creating()) {
+  <form [formGroup]="form" (ngSubmit)="create()" class="maya-card" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Crear usuario</h2>
+    </div>
+    <div class="maya-card__body maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+      <div class="maya-field">
+        <label class="maya-label" for="u-first">Nombre</label>
+        <input id="u-first" class="maya-input" formControlName="firstName" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="u-last">Apellidos</label>
+        <input id="u-last" class="maya-input" formControlName="lastName" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="u-email">Correo</label>
+        <input id="u-email" type="email" class="maya-input" formControlName="email" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="u-user">Usuario</label>
+        <input id="u-user" class="maya-input" formControlName="username" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="u-pass">Contraseña temporal</label>
+        <input id="u-pass" type="password" class="maya-input" formControlName="password" />
+        <span class="maya-hint">Si se deja vacía se enviará una invitación por correo.</span>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="u-role">Rol inicial</label>
+        <select id="u-role" class="maya-select" formControlName="initialRole">
+          @for (role of roles(); track role.id) {
+            <option [value]="role.shortName">{{ role.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); justify-content: flex-end">
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="creating.set(false)">
+        Cancelar
+      </button>
+      <button type="submit" class="maya-btn maya-btn--primary">Crear usuario</button>
+    </div>
+  </form>
+}
+
+<div class="maya-row" style="flex-wrap: wrap; margin-bottom: var(--maya-space-4)">
+  <input
+    type="search"
+    class="maya-input"
+    style="max-width: 320px"
+    placeholder="Buscar por nombre, correo o usuario…"
+    [ngModel]="search()"
+    (ngModelChange)="search.set($event)"
+    (keyup.enter)="load()"
+    aria-label="Buscar usuarios"
+  />
+  <select
+    class="maya-select"
+    style="max-width: 200px"
+    [ngModel]="status()"
+    (ngModelChange)="status.set($event); load()"
+    aria-label="Filtrar por estado"
+  >
+    <option value="">Todos los estados</option>
+    <option value="active">Activos</option>
+    <option value="pending">Pendientes</option>
+    <option value="suspended">Suspendidos</option>
+  </select>
+  <button type="button" class="maya-btn maya-btn--secondary" (click)="load()">
+    <maya-icon name="search" [size]="16" /> Buscar
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 340px"></div>
+} @else if (users().length) {
+  <div class="maya-table-wrap">
+    <table class="maya-table">
+      <thead>
+        <tr>
+          <th scope="col">Usuario</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Último acceso</th>
+          <th scope="col">Alta</th>
+          <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td>
+              <div class="maya-row">
+                <maya-avatar size="sm" [name]="user.fullName" [src]="user.avatarUrl ?? null" />
+                <div>
+                  <p class="maya-bold maya-small">{{ user.fullName }}</p>
+                  <p class="maya-tiny maya-subtle">{{ user.email }}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span
+                class="maya-badge"
+                [class.maya-badge--success]="user.status === 'active'"
+                [class.maya-badge--warning]="user.status === 'pending'"
+                [class.maya-badge--danger]="user.status === 'suspended'"
+              >
+                {{ statusLabel(user.status) }}
+              </span>
+            </td>
+            <td class="maya-small">{{ user.lastAccessAt | mayaDate: 'short' }}</td>
+            <td class="maya-small">{{ user.createdAt | mayaDate: 'short' }}</td>
+            <td>
+              <div class="maya-row">
+                @if (user.status === 'active') {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--sm"
+                    (click)="setStatus(user, UserStatus.Suspended)"
+                  >
+                    Suspender
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--sm"
+                    (click)="setStatus(user, UserStatus.Active)"
+                  >
+                    Activar
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  (click)="remove(user)"
+                  [attr.aria-label]="'Eliminar a ' + user.fullName"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <maya-empty-state
+    icon="users"
+    title="Sin usuarios"
+    description="Cree la primera cuenta de su organización."
+  />
+}

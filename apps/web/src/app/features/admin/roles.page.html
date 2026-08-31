@@ -1,0 +1,122 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Roles y permisos</h1>
+    <p class="maya-page-header__subtitle">
+      Modelo de capacidades por contexto, igual que en Moodle
+    </p>
+  </div>
+</header>
+
+<div class="roles-layout">
+  <!-- Lista de roles -->
+  <aside class="maya-card">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Roles</h2>
+    </div>
+    <div class="maya-card__body maya-stack" style="gap: 2px">
+      @for (role of roles(); track role.id) {
+        <button
+          type="button"
+          class="role-item"
+          [class.is-active]="selectedRole()?.id === role.id"
+          (click)="select(role)"
+        >
+          <maya-icon name="shield" [size]="17" />
+          <span style="flex: 1; text-align: left">
+            <strong class="maya-small">{{ role.name }}</strong>
+            <span class="maya-tiny maya-subtle" style="display: block">{{ role.shortName }}</span>
+          </span>
+          @if (role.isSystem) {
+            <span class="maya-badge maya-tiny">Sistema</span>
+          }
+        </button>
+      }
+    </div>
+  </aside>
+
+  <!-- Matriz de capacidades -->
+  <section class="maya-card">
+    <div class="maya-card__header">
+      <div>
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+          {{ selectedRole()?.name ?? 'Seleccione un rol' }}
+        </h2>
+        <p class="maya-tiny maya-muted">{{ grantedCount() }} capacidades concedidas</p>
+      </div>
+      <input
+        type="search"
+        class="maya-input"
+        style="max-width: 240px"
+        placeholder="Filtrar capacidades…"
+        [ngModel]="filter()"
+        (ngModelChange)="filter.set($event)"
+        aria-label="Filtrar capacidades"
+      />
+    </div>
+
+    <div class="maya-card__body" style="max-height: 62vh; overflow-y: auto">
+      @if (loading()) {
+        <div class="maya-skeleton" style="height: 400px"></div>
+      } @else {
+        @for (component of components(); track component) {
+          @if (visibleCatalog()[component]?.length) {
+            <section style="margin-bottom: var(--maya-space-6)">
+              <h3 class="component-title">{{ componentLabel(component) }}</h3>
+              <div class="capability-list">
+                @for (capability of visibleCatalog()[component]; track capability.name) {
+                  <div class="capability">
+                    <div style="flex: 1; min-width: 0">
+                      <p class="maya-small maya-bold">{{ capability.title }}</p>
+                      <code class="maya-tiny maya-subtle">{{ capability.name }}</code>
+                      <span class="maya-badge maya-tiny" style="margin-left: 6px">
+                        {{ capability.contextLevel }}
+                      </span>
+                    </div>
+                    <div class="permission-group" role="radiogroup" [attr.aria-label]="capability.title">
+                      <button
+                        type="button"
+                        class="permission"
+                        [class.is-allow]="valueOf(capability.name) === PermissionValue.Allow"
+                        (click)="setPermission(capability.name, PermissionValue.Allow)"
+                        title="Permitir"
+                      >
+                        <maya-icon name="check" [size]="14" />
+                      </button>
+                      <button
+                        type="button"
+                        class="permission"
+                        [class.is-notset]="valueOf(capability.name) === PermissionValue.NotSet"
+                        (click)="setPermission(capability.name, PermissionValue.NotSet)"
+                        title="No establecido"
+                      >
+                        <maya-icon name="minus" [size]="14" />
+                      </button>
+                      <button
+                        type="button"
+                        class="permission"
+                        [class.is-prevent]="valueOf(capability.name) === PermissionValue.Prevent"
+                        (click)="setPermission(capability.name, PermissionValue.Prevent)"
+                        title="Impedir"
+                      >
+                        <maya-icon name="x" [size]="14" />
+                      </button>
+                      <button
+                        type="button"
+                        class="permission"
+                        [class.is-prohibit]="valueOf(capability.name) === PermissionValue.Prohibit"
+                        (click)="setPermission(capability.name, PermissionValue.Prohibit)"
+                        title="Prohibir (no se puede sobrescribir)"
+                      >
+                        <maya-icon name="lock" [size]="14" />
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+        }
+      }
+    </div>
+  </section>
+</div>

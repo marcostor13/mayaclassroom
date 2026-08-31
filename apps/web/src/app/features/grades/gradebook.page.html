@@ -1,0 +1,86 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    <li><a [routerLink]="['/courses', courseId]">Curso</a></li>
+    <li>Libro de calificaciones</li>
+  </ol>
+</nav>
+
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Libro de calificaciones</h1>
+    <p class="maya-page-header__subtitle">
+      {{ report()?.rows?.length ?? 0 }} participantes · {{ report()?.items?.length ?? 0 }} ítems
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="exportCsv()">
+      <maya-icon name="download" [size]="15" /> Exportar CSV
+    </button>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 360px"></div>
+} @else if (report(); as data) {
+  @if (data.rows.length) {
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col" style="position: sticky; left: 0; z-index: 2">Participante</th>
+            @for (item of data.items; track item.id) {
+              <th scope="col" style="min-width: 120px">
+                {{ item.name }}
+                <span class="maya-tiny maya-subtle" style="display: block; font-weight: 400">
+                  máx. {{ item.grademax }}
+                </span>
+              </th>
+            }
+            <th scope="col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of data.rows; track row.user.id) {
+            <tr>
+              <td style="position: sticky; left: 0; background: var(--maya-surface); z-index: 1">
+                <div class="maya-row">
+                  <maya-avatar size="sm" [name]="row.user.fullName" [src]="row.user.avatarUrl" />
+                  <div>
+                    <p class="maya-bold maya-small maya-truncate">{{ row.user.fullName }}</p>
+                    <p class="maya-tiny maya-subtle maya-truncate">{{ row.user.email }}</p>
+                  </div>
+                </div>
+              </td>
+              @for (item of data.items; track item.id) {
+                <td>
+                  <input
+                    type="number"
+                    class="maya-input"
+                    style="padding: 0.35rem 0.5rem; width: 88px"
+                    [value]="row.grades[item.id]?.grade ?? ''"
+                    [max]="item.grademax"
+                    min="0"
+                    [attr.aria-label]="item.name + ' de ' + row.user.fullName"
+                    (change)="save(item.id, row.user.id, $any($event.target).value)"
+                  />
+                </td>
+              }
+              <td>
+                <span class="maya-badge maya-badge--primary">
+                  {{ row.courseTotal.percentage ?? 0 }} %
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="users"
+      title="Sin participantes"
+      description="Matricule alumnado para empezar a calificar."
+    />
+  }
+}

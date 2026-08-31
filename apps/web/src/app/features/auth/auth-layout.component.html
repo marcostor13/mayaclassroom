@@ -1,0 +1,68 @@
+<div class="auth">
+  <!-- Panel de marca -->
+  <aside class="auth__brand" aria-hidden="true">
+    <div class="auth__brand-inner">
+      <div class="auth__logo">
+        <svg viewBox="0 0 64 64" width="38" height="38">
+          <path
+            d="M16 45V19l10 13 6-8 6 8 10-13v26"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Maya Classroom</span>
+      </div>
+
+      <h2 class="auth__claim">
+        Aprende, enseña<br />
+        y crece.
+      </h2>
+      <p class="auth__lead">
+        La plataforma de aulas virtuales que se adapta a cada empresa, a cada curso y a cada
+        persona.
+      </p>
+
+      <ul class="auth__features">
+        @for (item of highlights; track item.title) {
+          <li>
+            <span class="auth__feature-icon"><maya-icon [name]="item.icon" [size]="18" /></span>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.text }}</p>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="auth__glow auth__glow--1"></div>
+    <div class="auth__glow auth__glow--2"></div>
+  </aside>
+
+  <!-- Formulario -->
+  <main class="auth__panel">
+    <button
+      type="button"
+      class="auth__theme maya-btn maya-btn--ghost maya-btn--icon"
+      (click)="theme.toggle()"
+      [attr.aria-label]="theme.resolved() === 'dark' ? 'Tema claro' : 'Tema oscuro'"
+    >
+      <maya-icon [name]="theme.resolved() === 'dark' ? 'sun' : 'moon'" [size]="20" />
+    </button>
+
+    <div class="auth__form-wrap">
+      <router-outlet />
+    </div>
+
+    <footer class="auth__footer">
+      <span class="maya-tiny maya-subtle">
+        © {{ 2026 }} Maya Classroom · Plataforma de aulas virtuales
+      </span>
+    </footer>
+  </main>
+</div>
+
+<maya-toasts />

@@ -1,0 +1,125 @@
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import {
+  AnalyticsCourseOverview,
+  BadgeDto,
+  CapabilityDefinition,
+  CohortDto,
+  IssuedBadgeDto,
+  Paginated,
+  TenantDto,
+  UserDto,
+} from '../models';
+import { ApiService } from './api.service';
+
+export interface RoleSummary {
+  id: string;
+  shortName: string;
+  name: string;
+  description: string;
+  assignableAt: string[];
+  isSystem: boolean;
+}
+
+@Injectable({ providedIn: 'root' })
+export class AdminService {
+  private readonly api = inject(ApiService);
+
+  /* -------------------------------- Usuarios ----------------------------- */
+
+  users(query: Record<string, string | number | undefined> = {}): Observable<Paginated<UserDto>> {
+    return this.api.get<Paginated<UserDto>>('/users', query);
+  }
+
+  user(id: string): Observable<UserDto> {
+    return this.api.get<UserDto>(`/users/${id}`);
+  }
+
+  createUser(payload: Record<string, unknown>): Observable<UserDto> {
+    return this.api.post<UserDto>('/users', payload);
+  }
+
+  updateUser(id: string, payload: Record<string, unknown>): Observable<UserDto> {
+    return this.api.patch<UserDto>(`/users/${id}`, payload);
+  }
+
+  setUserStatus(id: string, status: string): Observable<UserDto> {
+    return this.api.patch<UserDto>(`/users/${id}/status`, { status });
+  }
+
+  deleteUser(id: string) {
+    return this.api.delete<{ deleted: boolean }>(`/users/${id}`);
+  }
+
+  /* --------------------------------- Roles ------------------------------- */
+
+  roles(): Observable<RoleSummary[]> {
+    return this.api.get<RoleSummary[]>('/rbac/roles');
+  }
+
+  capabilityCatalog(): Observable<{
+    total: number;
+    byComponent: Record<string, CapabilityDefinition[]>;
+    items: CapabilityDefinition[];
+  }> {
+    return this.api.get('/rbac/capabilities');
+  }
+
+  roleCapabilities(roleId: string): Observable<Record<string, number>> {
+    return this.api.get<Record<string, number>>(`/rbac/roles/${roleId}/capabilities`);
+  }
+
+  setRoleCapability(roleId: string, capability: string, permission: number) {
+    return this.api.patch(`/rbac/roles/${roleId}/capabilities`, { capability, permission });
+  }
+
+  createRole(payload: { shortName: string; name: string; assignableAt: string[] }) {
+    return this.api.post<RoleSummary>('/rbac/roles', payload);
+  }
+
+  /* -------------------------------- Empresa ------------------------------ */
+
+  myTenant(): Observable<TenantDto> {
+    return this.api.get<TenantDto>('/tenants/me');
+  }
+
+  updateMyTenant(payload: Record<string, unknown>): Observable<TenantDto> {
+    return this.api.patch<TenantDto>('/tenants/me', payload);
+  }
+
+  tenants(query: Record<string, string | number> = {}): Observable<Paginated<TenantDto>> {
+    return this.api.get<Paginated<TenantDto>>('/tenants', query);
+  }
+
+  createTenant(payload: Record<string, unknown>): Observable<TenantDto> {
+    return this.api.post<TenantDto>('/tenants', payload);
+  }
+
+  /* ------------------------- Cohortes e insignias ------------------------ */
+
+  cohorts(query: Record<string, string | number> = {}): Observable<Paginated<CohortDto>> {
+    return this.api.get<Paginated<CohortDto>>('/cohorts', query);
+  }
+
+  createCohort(payload: { name: string; description?: string }) {
+    return this.api.post<CohortDto>('/cohorts', payload);
+  }
+
+  badges(courseId?: string): Observable<BadgeDto[]> {
+    return this.api.get<BadgeDto[]>('/badges', { courseId });
+  }
+
+  myBadges(): Observable<IssuedBadgeDto[]> {
+    return this.api.get<IssuedBadgeDto[]>('/badges/me');
+  }
+
+  /* ------------------------------ Analíticas ----------------------------- */
+
+  courseAnalytics(courseId: string): Observable<AnalyticsCourseOverview> {
+    return this.api.get<AnalyticsCourseOverview>(`/analytics/courses/${courseId}`);
+  }
+
+  logs(query: Record<string, string | number | undefined> = {}) {
+    return this.api.get<Paginated<Record<string, unknown>>>('/logs', query);
+  }
+}

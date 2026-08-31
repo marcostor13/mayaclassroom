@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Maya Classroom · entorno local completo
+#  En producción sustituya el servicio `mongo` por su clúster de MongoDB Atlas
+#  y elimine la variable local de MONGODB_URI.
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  mongo:
+    image: mongo:8
+    container_name: maya-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - maya-mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: maya-api
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo:27017/maya_classroom
+      MONGODB_DB: maya_classroom
+      WEB_URL: http://localhost:8080
+      CORS_ORIGINS: http://localhost:8080
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-cambie-esta-clave-de-acceso-de-32-caracteres}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambie-esta-clave-de-refresco-de-32-caracteres}
+      STORAGE_LOCAL_PATH: /data/storage
+    volumes:
+      - maya-storage:/data/storage
+    ports:
+      - '3000:3000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: maya-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '8080:80'
+
+volumes:
+  maya-mongo-data:
+  maya-storage:

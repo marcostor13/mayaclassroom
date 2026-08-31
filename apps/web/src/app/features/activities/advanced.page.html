@@ -1,0 +1,101 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 280px"></div>
+} @else if (activity(); as item) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', module()?.courseId]">Curso</a></li>
+      <li>{{ item.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="activity-header">
+    <span class="activity-header__icon">
+      <maya-icon [name]="config()?.icon ?? 'layers'" [size]="24" />
+    </span>
+    <div>
+      <h1 class="activity-header__title">{{ item.name }}</h1>
+      <div class="activity-header__meta">
+        <span>{{ entries().length }} aportaciones</span>
+        @if (item.gradeMax) {
+          <span><maya-icon name="star" [size]="15" /> {{ item.gradeMax }} puntos</span>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (item.intro) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-4)">
+      <div class="maya-card__body maya-rich" [innerHTML]="item.intro | safeHtml"></div>
+    </section>
+  }
+
+  <div class="maya-spread" style="margin-bottom: var(--maya-space-4)">
+    <h2 style="font-size: var(--maya-text-lg)">{{ config()?.entryLabel }}</h2>
+    <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="composing.set(!composing())">
+      <maya-icon name="plus" [size]="15" /> {{ config()?.addLabel }}
+    </button>
+  </div>
+
+  @if (composing()) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-4)">
+      <div class="maya-card__body maya-stack">
+        <div class="maya-field">
+          <label class="maya-label" for="adv-title">Título</label>
+          <input
+            id="adv-title"
+            class="maya-input"
+            [ngModel]="title()"
+            (ngModelChange)="title.set($event)"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="adv-content">Contenido</label>
+          <textarea
+            id="adv-content"
+            class="maya-textarea"
+            rows="6"
+            [ngModel]="content()"
+            (ngModelChange)="content.set($event)"
+          ></textarea>
+        </div>
+      </div>
+      <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); justify-content: flex-end">
+        <button type="button" class="maya-btn maya-btn--ghost" (click)="composing.set(false)">
+          Cancelar
+        </button>
+        <button type="button" class="maya-btn maya-btn--primary" (click)="create()">Guardar</button>
+      </div>
+    </section>
+  }
+
+  <div class="maya-stack" style="gap: var(--maya-space-3)">
+    @for (entry of entries(); track entry.id) {
+      <article class="maya-card">
+        <div class="maya-card__body">
+          @if (entry.title) {
+            <h3 style="font-size: var(--maya-text-md); margin-bottom: var(--maya-space-2)">
+              {{ entry.title }}
+            </h3>
+          }
+          @if (entry.content) {
+            <div class="maya-rich maya-small" [innerHTML]="entry.content | safeHtml"></div>
+          }
+          <p class="maya-tiny maya-subtle" style="margin-top: var(--maya-space-3)">
+            @if (entry.author) { {{ entry.author.fullName }} · }
+            {{ entry.createdAt | relativeTime }}
+            @if (entry.grade !== null) {
+              · <span class="maya-badge maya-badge--success">{{ entry.grade }} puntos</span>
+            }
+          </p>
+        </div>
+      </article>
+    } @empty {
+      <div class="maya-card">
+        <div class="maya-card__body">
+          <p class="maya-small maya-muted">Todavía no hay aportaciones en esta actividad.</p>
+        </div>
+      </div>
+    }
+  </div>
+}

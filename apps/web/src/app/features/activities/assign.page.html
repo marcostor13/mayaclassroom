@@ -1,0 +1,244 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (assign(); as task) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li>
+        <a [routerLink]="['/courses', module()?.courseId]">Curso</a>
+      </li>
+      <li>{{ task.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="activity-header">
+    <span class="activity-header__icon"><maya-icon name="clipboard-check" [size]="24" /></span>
+    <div>
+      <h1 class="activity-header__title">{{ task.name }}</h1>
+      <div class="activity-header__meta">
+        @if (task.dueDate) {
+          <span [class.is-overdue]="overdue()">
+            <maya-icon name="clock" [size]="15" />
+            Entrega {{ task.dueDate | relativeTime }} · {{ task.dueDate | mayaDate: 'datetime' }}
+          </span>
+        }
+        <span><maya-icon name="star" [size]="15" /> {{ task.maxGrade }} puntos</span>
+      </div>
+    </div>
+  </header>
+
+  @if (task.intro) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-card__body maya-rich" [innerHTML]="task.intro | safeHtml"></div>
+    </section>
+  }
+
+  <div class="activity-layout">
+    <!-- Entrega del alumnado -->
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">Mi entrega</h2>
+        <span
+          class="maya-badge"
+          [class.maya-badge--success]="isSubmitted()"
+          [class.maya-badge--warning]="!isSubmitted()"
+        >
+          {{ statusLabel(submission()?.status) }}
+        </span>
+      </div>
+
+      <div class="maya-card__body maya-stack">
+        @if (submission()?.grade !== null && submission()?.grade !== undefined) {
+          <div class="grade-box">
+            <span class="grade-box__value">{{ submission()!.grade }}</span>
+            <span class="grade-box__max">/ {{ task.maxGrade }}</span>
+            @if (submission()!.feedbackText) {
+              <p class="maya-small" style="margin-top: var(--maya-space-3)">
+                {{ submission()!.feedbackText }}
+              </p>
+            }
+          </div>
+        }
+
+        @if (task.submissionTypes.includes('online')) {
+          <div class="maya-field">
+            <label class="maya-label" for="assign-text">Texto en línea</label>
+            <textarea
+              id="assign-text"
+              class="maya-textarea"
+              rows="8"
+              placeholder="Escriba aquí su respuesta…"
+              [ngModel]="text()"
+              (ngModelChange)="text.set($event)"
+              [disabled]="submission()?.status === 'graded'"
+            ></textarea>
+          </div>
+        }
+
+        @if (task.requireSubmissionStatement) {
+          <label class="maya-checkbox">
+            <input
+              type="checkbox"
+              [ngModel]="acceptStatement()"
+              (ngModelChange)="acceptStatement.set($event)"
+            />
+            <span class="maya-small">
+              {{
+                task.submissionStatement ??
+                  'Declaro que esta entrega es un trabajo propio y original.'
+              }}
+            </span>
+          </label>
+        }
+
+        @if (submission()?.late) {
+          <div class="maya-alert maya-alert--warning">
+            <maya-icon name="alert" [size]="18" />
+            <span>Esta entrega se realizó fuera de plazo.</span>
+          </div>
+        }
+      </div>
+
+      <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-3); justify-content: flex-end">
+        <button
+          type="button"
+          class="maya-btn maya-btn--secondary"
+          (click)="submit(true)"
+          [disabled]="saving()"
+        >
+          Guardar borrador
+        </button>
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary"
+          (click)="submit(false)"
+          [disabled]="saving()"
+        >
+          <maya-icon name="send" [size]="16" /> Enviar entrega
+        </button>
+      </div>
+    </section>
+
+    <!-- Panel lateral -->
+    <aside class="maya-stack">
+      <section class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Detalles</h2>
+        </div>
+        <div class="maya-card__body maya-stack" style="gap: var(--maya-space-3)">
+          <div class="detail">
+            <span class="detail__label">Apertura</span>
+            <span class="detail__value">{{ task.allowSubmissionsFrom | mayaDate: 'datetime' }}</span>
+          </div>
+          <div class="detail">
+            <span class="detail__label">Fecha límite</span>
+            <span class="detail__value">{{ task.dueDate | mayaDate: 'datetime' }}</span>
+          </div>
+          <div class="detail">
+            <span class="detail__label">Intentos permitidos</span>
+            <span class="detail__value">{{ task.maxAttempts }}</span>
+          </div>
+          <div class="detail">
+            <span class="detail__label">Tipos de entrega</span>
+            <span class="detail__value">{{ task.submissionTypes.join(', ') }}</span>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- Vista del profesorado -->
+  @if (teacherView()) {
+    <section class="maya-card" style="margin-top: var(--maya-space-6)">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">Entregas recibidas</h2>
+        @if (summary(); as data) {
+          <div class="maya-row maya-tiny maya-muted">
+            <span>{{ data.submitted }}/{{ data.participants }} entregadas</span>
+            <span>·</span>
+            <span>{{ data.needsGrading }} por calificar</span>
+          </div>
+        }
+      </div>
+
+      <div class="maya-table-wrap" style="border: none; border-radius: 0">
+        <table class="maya-table">
+          <thead>
+            <tr>
+              <th scope="col">Alumno/a</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Entregada</th>
+              <th scope="col">Calificación</th>
+              <th scope="col">Retroalimentación</th>
+              <th scope="col"><span class="maya-sr-only">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of submissions(); track item.id) {
+              <tr>
+                <td>
+                  <div class="maya-row">
+                    <maya-avatar
+                      size="sm"
+                      [name]="item.user?.fullName ?? ''"
+                      [src]="item.user?.avatarUrl ?? null"
+                    />
+                    <span class="maya-bold">{{ item.user?.fullName }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span
+                    class="maya-badge"
+                    [class.maya-badge--success]="item.status === 'graded'"
+                    [class.maya-badge--info]="item.status === 'submitted'"
+                  >
+                    {{ statusLabel(item.status) }}
+                  </span>
+                </td>
+                <td class="maya-small">{{ item.submittedAt | mayaDate: 'datetime' }}</td>
+                <td style="width: 110px">
+                  <input
+                    #gradeInput
+                    type="number"
+                    class="maya-input"
+                    style="padding: 0.4rem 0.6rem"
+                    [value]="item.grade ?? ''"
+                    [max]="task.maxGrade"
+                    min="0"
+                    [attr.aria-label]="'Calificación de ' + item.user?.fullName"
+                  />
+                </td>
+                <td>
+                  <input
+                    #feedbackInput
+                    type="text"
+                    class="maya-input"
+                    style="padding: 0.4rem 0.6rem"
+                    [value]="item.feedbackText ?? ''"
+                    placeholder="Comentario"
+                    [attr.aria-label]="'Retroalimentación para ' + item.user?.fullName"
+                  />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--soft maya-btn--sm"
+                    (click)="grade(item, gradeInput.value, feedbackInput.value)"
+                  >
+                    Guardar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="maya-small maya-muted" style="text-align: center; padding: var(--maya-space-8)">
+                  Todavía no hay entregas.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+}

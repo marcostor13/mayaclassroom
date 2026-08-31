@@ -1,0 +1,74 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    <li><a [routerLink]="['/courses', courseId]">Curso</a></li>
+    <li>Mis calificaciones</li>
+  </ol>
+</nav>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (report(); as data) {
+  <header class="maya-page-header">
+    <div>
+      <h1 class="maya-page-header__title">Mis calificaciones</h1>
+      <p class="maya-page-header__subtitle">{{ data.courseName }}</p>
+    </div>
+  </header>
+
+  <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-card__body" style="text-align: center">
+      <p class="maya-small maya-muted">Total del curso</p>
+      <p
+        style="font-family: var(--maya-font-heading); font-size: var(--maya-text-4xl); font-weight: 800; color: var(--maya-primary)"
+      >
+        {{ data.courseTotal.percentage ?? 0 }} %
+      </p>
+      @if (data.courseTotal.letter) {
+        <span class="maya-badge maya-badge--primary">{{ data.courseTotal.letter }}</span>
+      }
+      <div style="max-width: 420px; margin: var(--maya-space-4) auto 0">
+        <maya-progress [value]="data.courseTotal.percentage ?? 0" size="thick" />
+      </div>
+    </div>
+  </section>
+
+  @if (data.items.length) {
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Actividad</th>
+            <th scope="col">Rango</th>
+            <th scope="col">Calificación</th>
+            <th scope="col">Porcentaje</th>
+            <th scope="col">Retroalimentación</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of data.items; track item.id) {
+            <tr>
+              <td class="maya-bold">{{ item.name }}</td>
+              <td class="maya-small maya-muted">{{ item.rangeLabel }}</td>
+              <td>
+                @if (item.grade !== null) {
+                  <span class="maya-badge maya-badge--success">{{ item.grade }}</span>
+                } @else {
+                  <span class="maya-badge">Sin calificar</span>
+                }
+              </td>
+              <td class="maya-small">{{ item.percentage !== null ? item.percentage + ' %' : '—' }}</td>
+              <td class="maya-small maya-muted">{{ item.feedback ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="chart"
+      title="Sin calificaciones"
+      description="Todavía no hay actividades calificadas en este curso."
+    />
+  }
+}

@@ -1,0 +1,161 @@
+@use '../../../styles/tokens' as *;
+
+:host {
+  display: block;
+}
+
+.auth {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-lg) {
+    grid-template-columns: 1.05fr 1fr;
+  }
+
+  /* ── Panel de marca ── */
+  &__brand {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    padding: var(--maya-space-12);
+    color: #fff;
+    background:
+      radial-gradient(120% 90% at 12% 8%, #f4a8a0 0%, transparent 55%),
+      linear-gradient(150deg, #e4574d 0%, #c2413a 46%, #8e2a22 100%);
+
+    @include from($maya-bp-lg) {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  &__brand-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 460px;
+  }
+
+  &__glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.42;
+
+    &--1 {
+      width: 340px;
+      height: 340px;
+      background: #ffd7a0;
+      top: -80px;
+      right: -60px;
+    }
+
+    &--2 {
+      width: 420px;
+      height: 420px;
+      background: #ff9a8f;
+      bottom: -140px;
+      left: -100px;
+    }
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-3);
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-lg);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--maya-space-10);
+  }
+
+  &__claim {
+    font-size: clamp(2.2rem, 3.4vw, 3.1rem);
+    line-height: 1.08;
+    margin-bottom: var(--maya-space-4);
+    color: #fff;
+  }
+
+  &__lead {
+    font-size: var(--maya-text-md);
+    line-height: var(--maya-leading-normal);
+    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: var(--maya-space-10);
+    max-width: 42ch;
+  }
+
+  &__features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--maya-space-5);
+
+    li {
+      display: flex;
+      gap: var(--maya-space-4);
+      align-items: flex-start;
+    }
+
+    strong {
+      display: block;
+      font-family: var(--maya-font-heading);
+      font-size: var(--maya-text-base);
+      margin-bottom: 2px;
+    }
+
+    p {
+      font-size: var(--maya-text-sm);
+      color: rgba(255, 255, 255, 0.78);
+      line-height: var(--maya-leading-snug);
+    }
+  }
+
+  &__feature-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--maya-radius-md);
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* ── Panel del formulario ── */
+  &__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--maya-space-6) var(--maya-space-4);
+    background: var(--maya-bg);
+
+    @include from($maya-bp-md) {
+      padding: var(--maya-space-10);
+    }
+  }
+
+  &__theme {
+    position: absolute;
+    top: var(--maya-space-4);
+    right: var(--maya-space-4);
+  }
+
+  &__form-wrap {
+    width: 100%;
+    max-width: 420px;
+    margin-inline: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  &__footer {
+    margin-top: var(--maya-space-8);
+    text-align: center;
+  }
+}

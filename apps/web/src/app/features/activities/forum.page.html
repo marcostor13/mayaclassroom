@@ -1,0 +1,166 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 280px"></div>
+} @else if (forum(); as board) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', module()?.courseId]">Curso</a></li>
+      <li>{{ board.name }}</li>
+    </ol>
+  </nav>
+
+  @if (openDiscussion(); as discussion) {
+    <!-- ══ Vista de un debate ══ -->
+    <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="back()">
+      <maya-icon name="arrow-left" [size]="16" /> Volver a los debates
+    </button>
+
+    <h1 style="font-size: var(--maya-text-xl); margin: var(--maya-space-4) 0">
+      {{ discussion.name }}
+    </h1>
+
+    <div class="maya-stack" style="gap: var(--maya-space-3)">
+      @for (item of flatten(posts()); track item.post.id) {
+        <article
+          class="post"
+          [class.post--reply]="item.depth > 0"
+          [style.margin-left.px]="item.depth * 20"
+        >
+          <header class="post__header">
+            <maya-avatar
+              size="sm"
+              [name]="item.post.author?.fullName ?? ''"
+              [src]="item.post.author?.avatarUrl ?? null"
+            />
+            <div>
+              <p class="post__author">{{ item.post.author?.fullName }}</p>
+              <p class="maya-tiny maya-subtle">{{ item.post.createdAt | relativeTime }}</p>
+            </div>
+          </header>
+          <div class="maya-rich maya-small" [innerHTML]="item.post.message | safeHtml"></div>
+        </article>
+      }
+    </div>
+
+    <section class="maya-card" style="margin-top: var(--maya-space-5)">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Responder</h2>
+      </div>
+      <div class="maya-card__body">
+        <textarea
+          class="maya-textarea"
+          rows="5"
+          placeholder="Escriba su respuesta…"
+          [ngModel]="replyText()"
+          (ngModelChange)="replyText.set($event)"
+          aria-label="Texto de la respuesta"
+        ></textarea>
+      </div>
+      <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary"
+          (click)="reply()"
+          [disabled]="!replyText().trim()"
+        >
+          <maya-icon name="send" [size]="16" /> Publicar respuesta
+        </button>
+      </div>
+    </section>
+  } @else {
+    <!-- ══ Lista de debates ══ -->
+    <header class="activity-header">
+      <span class="activity-header__icon"><maya-icon name="message-square" [size]="24" /></span>
+      <div>
+        <h1 class="activity-header__title">{{ board.name }}</h1>
+        <div class="activity-header__meta">
+          <span>
+            <maya-icon name="layers" [size]="15" /> {{ board.discussionCount }} debates
+          </span>
+          <span>{{ board.type }}</span>
+        </div>
+      </div>
+    </header>
+
+    @if (board.intro) {
+      <section class="maya-card" style="margin-bottom: var(--maya-space-4)">
+        <div class="maya-card__body maya-rich" [innerHTML]="board.intro | safeHtml"></div>
+      </section>
+    }
+
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-4)">
+      <button type="button" class="maya-btn maya-btn--primary" (click)="composing.set(!composing())">
+        <maya-icon name="plus" [size]="16" /> Nuevo debate
+      </button>
+      <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="subscribe()">
+        <maya-icon name="bell" [size]="15" /> Suscribirme
+      </button>
+    </div>
+
+    @if (composing()) {
+      <section class="maya-card" style="margin-bottom: var(--maya-space-4)">
+        <div class="maya-card__body maya-stack">
+          <div class="maya-field">
+            <label class="maya-label" for="d-title">Asunto</label>
+            <input
+              id="d-title"
+              class="maya-input"
+              [ngModel]="newTitle()"
+              (ngModelChange)="newTitle.set($event)"
+            />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="d-message">Mensaje</label>
+            <textarea
+              id="d-message"
+              class="maya-textarea"
+              rows="6"
+              [ngModel]="newMessage()"
+              (ngModelChange)="newMessage.set($event)"
+            ></textarea>
+          </div>
+        </div>
+        <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); justify-content: flex-end">
+          <button type="button" class="maya-btn maya-btn--ghost" (click)="composing.set(false)">
+            Cancelar
+          </button>
+          <button type="button" class="maya-btn maya-btn--primary" (click)="createDiscussion()">
+            Publicar
+          </button>
+        </div>
+      </section>
+    }
+
+    <section class="maya-card">
+      @for (discussion of discussions(); track discussion.id) {
+        <div class="discussion">
+          <maya-avatar
+            size="sm"
+            [name]="discussion.author?.fullName ?? ''"
+            [src]="discussion.author?.avatarUrl ?? null"
+          />
+          <div style="flex: 1; min-width: 0">
+            <button type="button" class="discussion__title" (click)="open(discussion)">
+              {{ discussion.name }}
+            </button>
+            <p class="maya-tiny maya-muted">
+              {{ discussion.author?.fullName }} · {{ discussion.createdAt | relativeTime }}
+            </p>
+          </div>
+          <div class="maya-row maya-tiny maya-muted">
+            @if (discussion.pinned) {
+              <span class="maya-badge maya-badge--accent">Fijado</span>
+            }
+            <span>{{ discussion.replyCount }} respuestas</span>
+          </div>
+        </div>
+      } @empty {
+        <div class="maya-card__body">
+          <p class="maya-small maya-muted">
+            Todavía no hay debates. Sea la primera persona en abrir uno.
+          </p>
+        </div>
+      }
+    </section>
+  }
+}

@@ -1,0 +1,127 @@
+<header class="maya-stack" style="gap: var(--maya-space-2); margin-bottom: var(--maya-space-8)">
+  <h1 style="font-size: var(--maya-text-2xl)">Bienvenido de nuevo</h1>
+  <p class="maya-muted maya-small">
+    Acceda a su aula virtual
+    @if (tenant()) {
+      de <strong>{{ tenant()!.name }}</strong>
+    }
+  </p>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="maya-stack" style="gap: var(--maya-space-5)">
+  <div class="maya-field">
+    <label class="maya-label" for="tenant">
+      Empresa <span class="maya-required">*</span>
+    </label>
+    <input
+      id="tenant"
+      type="text"
+      class="maya-input"
+      formControlName="tenantSlug"
+      autocomplete="organization"
+      placeholder="demo"
+      [class.is-invalid]="invalid('tenantSlug')"
+      (blur)="loadTenant(form.controls.tenantSlug.value)"
+    />
+    <span class="maya-hint">Identificador corto que le facilitó su organización.</span>
+  </div>
+
+  <div class="maya-field">
+    <label class="maya-label" for="login">
+      Correo o usuario <span class="maya-required">*</span>
+    </label>
+    <input
+      id="login"
+      type="text"
+      class="maya-input"
+      formControlName="login"
+      autocomplete="username"
+      placeholder="nombre@empresa.com"
+      [class.is-invalid]="invalid('login')"
+    />
+    @if (invalid('login')) {
+      <span class="maya-error">
+        <maya-icon name="alert" [size]="14" /> Introduzca su correo o nombre de usuario.
+      </span>
+    }
+  </div>
+
+  <div class="maya-field">
+    <div class="maya-spread">
+      <label class="maya-label" for="password">
+        Contraseña <span class="maya-required">*</span>
+      </label>
+      <a routerLink="/auth/forgot-password" class="maya-tiny">¿La ha olvidado?</a>
+    </div>
+    <div style="position: relative">
+      <input
+        id="password"
+        [type]="showPassword() ? 'text' : 'password'"
+        class="maya-input"
+        formControlName="password"
+        autocomplete="current-password"
+        placeholder="••••••••"
+        style="padding-right: 3rem"
+        [class.is-invalid]="invalid('password')"
+      />
+      <button
+        type="button"
+        class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+        style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%)"
+        (click)="togglePassword()"
+        [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+      >
+        <maya-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18" />
+      </button>
+    </div>
+    @if (invalid('password')) {
+      <span class="maya-error">
+        <maya-icon name="alert" [size]="14" /> La contraseña debe tener al menos 6 caracteres.
+      </span>
+    }
+  </div>
+
+  @if (requiresTwoFactor()) {
+    <div class="maya-field">
+      <label class="maya-label" for="totp">Código de verificación</label>
+      <input
+        id="totp"
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        class="maya-input"
+        formControlName="totp"
+        autocomplete="one-time-code"
+        placeholder="000000"
+        style="letter-spacing: 0.5em; text-align: center; font-size: var(--maya-text-lg)"
+      />
+      <span class="maya-hint">Introduzca el código de 6 dígitos de su aplicación.</span>
+    </div>
+  }
+
+  <label class="maya-checkbox">
+    <input type="checkbox" formControlName="remember" />
+    <span class="maya-small">Mantener la sesión iniciada en este dispositivo</span>
+  </label>
+
+  <button
+    type="submit"
+    class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block"
+    [disabled]="submitting()"
+  >
+    @if (submitting()) {
+      <maya-icon name="refresh" [size]="18" /> Accediendo…
+    } @else {
+      Acceder <maya-icon name="arrow-right" [size]="18" />
+    }
+  </button>
+
+  @if (tenant()?.allowSelfRegistration) {
+    <p class="maya-small maya-muted" style="text-align: center">
+      ¿Todavía no tiene cuenta?
+      <a [routerLink]="['/auth/register']" [queryParams]="{ tenant: form.controls.tenantSlug.value }">
+        Cree una gratis
+      </a>
+    </p>
+  }
+</form>

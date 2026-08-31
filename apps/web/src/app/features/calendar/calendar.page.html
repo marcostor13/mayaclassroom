@@ -1,0 +1,114 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Calendario</h1>
+    <p class="maya-page-header__subtitle">Sus clases, entregas y eventos en un solo lugar</p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="today()">
+      Hoy
+    </button>
+    <a href="/api/v1/calendar/export.ics" class="maya-btn maya-btn--secondary maya-btn--sm">
+      <maya-icon name="download" [size]="15" /> Exportar
+    </a>
+  </div>
+</header>
+
+<div class="calendar-layout">
+  <section class="maya-card">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="text-transform: capitalize; font-size: var(--maya-text-lg)">
+        {{ monthLabel() }}
+      </h2>
+      <div class="maya-row">
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+          (click)="shift(-1)"
+          aria-label="Mes anterior"
+        >
+          <maya-icon name="chevron-left" [size]="18" />
+        </button>
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+          (click)="shift(1)"
+          aria-label="Mes siguiente"
+        >
+          <maya-icon name="chevron-right" [size]="18" />
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar">
+      <div class="calendar__weekdays" aria-hidden="true">
+        @for (day of weekdays; track day) {
+          <span>{{ day }}</span>
+        }
+      </div>
+      <div class="calendar__grid" role="grid">
+        @for (cell of grid(); track cell.date.toISOString()) {
+          <button
+            type="button"
+            role="gridcell"
+            class="calendar__cell"
+            [class.is-outside]="!cell.inMonth"
+            [class.is-today]="cell.today"
+            [class.is-selected]="selected()?.toDateString() === cell.date.toDateString()"
+            (click)="select(cell)"
+            [attr.aria-label]="cell.date | mayaDate: 'long'"
+          >
+            <span class="calendar__day">{{ cell.date.getDate() }}</span>
+            @if (cell.events.length) {
+              <span class="calendar__dots">
+                @for (event of cell.events.slice(0, 3); track event.id) {
+                  <span class="calendar__dot" [style.background]="event.color"></span>
+                }
+              </span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <aside class="maya-card">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+        @if (selected()) {
+          {{ selected() | mayaDate: 'long' }}
+        } @else {
+          Próximos eventos
+        }
+      </h2>
+    </div>
+    <div class="maya-card__body">
+      @if (loading()) {
+        <div class="maya-skeleton" style="height: 200px"></div>
+      } @else if (selectedEvents().length) {
+        <ul class="event-list">
+          @for (event of selectedEvents(); track event.id) {
+            <li class="event">
+              <span class="event__bar" [style.background]="event.color"></span>
+              <div style="flex: 1; min-width: 0">
+                <p class="maya-bold maya-small">{{ event.name }}</p>
+                <p class="maya-tiny maya-muted">
+                  {{ event.startAt | mayaDate: 'datetime' }}
+                  @if (event.location) { · {{ event.location }} }
+                </p>
+                @if (event.actionUrl) {
+                  <a [routerLink]="event.actionUrl" class="maya-tiny">Ir a la actividad</a>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <maya-empty-state
+          icon="calendar"
+          title="Sin eventos"
+          description="No hay nada programado para este día."
+        />
+      }
+    </div>
+  </aside>
+</div>

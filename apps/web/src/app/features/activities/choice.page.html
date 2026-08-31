@@ -1,0 +1,56 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 280px"></div>
+} @else if (choice(); as poll) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', module()?.courseId]">Curso</a></li>
+      <li>{{ poll.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="activity-header">
+    <span class="activity-header__icon"><maya-icon name="list-checks" [size]="24" /></span>
+    <div>
+      <h1 class="activity-header__title">{{ poll.name }}</h1>
+      <p class="maya-small maya-muted">
+        {{ poll.allowMultiple ? 'Puede elegir varias opciones' : 'Elija una sola opción' }}
+      </p>
+    </div>
+  </header>
+
+  @if (poll.intro) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-4)">
+      <div class="maya-card__body maya-rich" [innerHTML]="poll.intro | safeHtml"></div>
+    </section>
+  }
+
+  <section class="maya-card">
+    <div class="maya-card__body question__options">
+      @for (option of poll.options; track option.id) {
+        <label class="question__option" [class.is-selected]="selected().includes(option.id)">
+          <input
+            [type]="poll.allowMultiple ? 'checkbox' : 'radio'"
+            name="choice-option"
+            [checked]="selected().includes(option.id)"
+            (change)="toggle(option.id)"
+          />
+          <span style="flex: 1">{{ option.text }}</span>
+          @if (option.count !== undefined) {
+            <span class="maya-badge">{{ option.count }} ({{ percentage(option.count) }} %)</span>
+          }
+        </label>
+      }
+    </div>
+    <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        (click)="save()"
+        [disabled]="!selected().length"
+      >
+        Guardar mi respuesta
+      </button>
+    </div>
+  </section>
+}

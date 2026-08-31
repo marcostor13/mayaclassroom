@@ -1,0 +1,136 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 300px"></div>
+} @else if (resource(); as item) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', module()?.courseId]">Curso</a></li>
+      <li>{{ item.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="activity-header">
+    <span class="activity-header__icon"><maya-icon [name]="icon(item.kind)" [size]="24" /></span>
+    <div>
+      <h1 class="activity-header__title">{{ item.name }}</h1>
+      @if (item.intro) {
+        <p class="maya-small maya-muted">{{ item.intro }}</p>
+      }
+    </div>
+  </header>
+
+  @switch (item.kind) {
+    @case (ModuleType.Page) {
+      <section class="maya-card">
+        <div class="maya-card__body maya-rich" [innerHTML]="item.content | safeHtml"></div>
+      </section>
+    }
+
+    @case (ModuleType.Label) {
+      <section class="maya-card">
+        <div class="maya-card__body maya-rich" [innerHTML]="item.content | safeHtml"></div>
+      </section>
+    }
+
+    @case (ModuleType.Url) {
+      <section class="maya-card">
+        <div class="maya-card__body maya-stack" style="align-items: flex-start">
+          <p class="maya-small maya-muted">Este recurso enlaza con un sitio externo:</p>
+          <a
+            [href]="item.externalUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="maya-btn maya-btn--primary"
+          >
+            <maya-icon name="link" [size]="16" /> Abrir enlace
+          </a>
+          <code class="maya-tiny maya-subtle">{{ item.externalUrl }}</code>
+        </div>
+      </section>
+    }
+
+    @case (ModuleType.Book) {
+      <div class="activity-layout">
+        <section class="maya-card">
+          <div class="maya-card__body maya-rich">
+            @if (item.chapters?.length) {
+              <h2>{{ item.chapters![chapter()].title }}</h2>
+              <div [innerHTML]="item.chapters![chapter()].content | safeHtml"></div>
+            } @else {
+              <p class="maya-muted">Este libro todavía no tiene capítulos.</p>
+            }
+          </div>
+          @if ((item.chapters?.length ?? 0) > 1) {
+            <div class="maya-card__footer" style="display: flex; justify-content: space-between">
+              <button
+                type="button"
+                class="maya-btn maya-btn--secondary maya-btn--sm"
+                [disabled]="chapter() === 0"
+                (click)="chapter.set(chapter() - 1)"
+              >
+                <maya-icon name="chevron-left" [size]="15" /> Anterior
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--secondary maya-btn--sm"
+                [disabled]="chapter() >= (item.chapters!.length - 1)"
+                (click)="chapter.set(chapter() + 1)"
+              >
+                Siguiente <maya-icon name="chevron-right" [size]="15" />
+              </button>
+            </div>
+          }
+        </section>
+
+        <aside class="maya-card">
+          <div class="maya-card__header">
+            <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Índice</h2>
+          </div>
+          <div class="maya-card__body maya-stack" style="gap: 2px">
+            @for (item2 of item.chapters ?? []; track item2.id; let i = $index) {
+              <button
+                type="button"
+                class="maya-menu__item"
+                [style.padding-left.px]="item2.subChapter ? 28 : 12"
+                [class.maya-bold]="i === chapter()"
+                (click)="chapter.set(i)"
+              >
+                {{ item2.title }}
+              </button>
+            }
+          </div>
+        </aside>
+      </div>
+    }
+
+    @default {
+      <section class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Archivos</h2>
+        </div>
+        <ul class="module-list" style="list-style: none; margin: 0; padding: 0">
+          @for (file of item.files; track file.id) {
+            <li
+              style="display: flex; align-items: center; gap: var(--maya-space-3); padding: var(--maya-space-3) var(--maya-space-5); border-top: 1px solid var(--maya-border)"
+            >
+              <maya-icon name="file" [size]="20" />
+              <div style="flex: 1; min-width: 0">
+                <a [href]="file.url" target="_blank" rel="noopener" class="maya-bold maya-small">
+                  {{ file.filename }}
+                </a>
+                <p class="maya-tiny maya-subtle">{{ file.size | fileSize }} · {{ file.mimeType }}</p>
+              </div>
+              <a [href]="file.url" download class="maya-btn maya-btn--soft maya-btn--sm">
+                <maya-icon name="download" [size]="15" /> Descargar
+              </a>
+            </li>
+          } @empty {
+            <li class="maya-card__body">
+              <p class="maya-small maya-muted">Este recurso no tiene archivos adjuntos.</p>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+}

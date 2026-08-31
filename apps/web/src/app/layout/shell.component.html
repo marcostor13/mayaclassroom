@@ -1,0 +1,186 @@
+<a class="maya-skip-link" href="#maya-main">Saltar al contenido principal</a>
+
+<div class="shell" [class.shell--collapsed]="collapsed()">
+  <!-- ══════════════ Barra superior ══════════════ -->
+  <header class="topbar">
+    <button
+      type="button"
+      class="topbar__burger maya-btn maya-btn--ghost maya-btn--icon"
+      (click)="layout.toggleMobileMenu()"
+      [attr.aria-expanded]="mobileOpen()"
+      aria-controls="maya-sidebar"
+      aria-label="Abrir el menú de navegación"
+    >
+      <maya-icon name="menu" [size]="22" />
+    </button>
+
+    <a routerLink="/dashboard" class="brand" aria-label="Maya Classroom, ir al panel">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="26" height="26">
+          <path
+            d="M16 45V19l10 13 6-8 6 8 10-13v26"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </span>
+      <span class="brand__text">
+        <strong>Maya</strong><span>Classroom</span>
+      </span>
+    </a>
+
+    <div class="topbar__search maya-hide-mobile">
+      <maya-icon name="search" [size]="18" />
+      <input
+        type="search"
+        class="topbar__search-input"
+        placeholder="Buscar cursos, actividades o personas…"
+        aria-label="Buscar en la plataforma"
+      />
+    </div>
+
+    <div class="topbar__actions">
+      <button
+        type="button"
+        class="maya-btn maya-btn--ghost maya-btn--icon"
+        (click)="theme.toggle()"
+        [attr.aria-label]="
+          theme.resolved() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'
+        "
+      >
+        <maya-icon [name]="themeIcon()" [size]="20" />
+      </button>
+
+      <a
+        routerLink="/messages"
+        class="maya-btn maya-btn--ghost maya-btn--icon topbar__badge-host"
+        aria-label="Mensajes"
+      >
+        <maya-icon name="message-square" [size]="20" />
+        @if (comms.unreadMessages() > 0) {
+          <span class="topbar__badge">{{ comms.unreadMessages() }}</span>
+        }
+      </a>
+
+      <a
+        routerLink="/notifications"
+        class="maya-btn maya-btn--ghost maya-btn--icon topbar__badge-host"
+        aria-label="Notificaciones"
+      >
+        <maya-icon name="bell" [size]="20" />
+        @if (comms.unreadNotifications() > 0) {
+          <span class="topbar__badge">{{ comms.unreadNotifications() }}</span>
+        }
+      </a>
+
+      <a routerLink="/profile" class="topbar__user" aria-label="Mi perfil">
+        <maya-avatar
+          size="sm"
+          [name]="user()?.fullName ?? ''"
+          [src]="user()?.avatarUrl ?? null"
+        />
+        <span class="topbar__user-name maya-hide-mobile">{{ user()?.firstName }}</span>
+      </a>
+
+      <button
+        type="button"
+        class="maya-btn maya-btn--ghost maya-btn--icon maya-hide-mobile"
+        (click)="logout()"
+        aria-label="Cerrar sesión"
+      >
+        <maya-icon name="log-out" [size]="20" />
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════ Menú lateral ══════════════ -->
+  @if (mobileOpen()) {
+    <div class="sidebar-backdrop maya-hide-desktop" (click)="layout.closeMobileMenu()"></div>
+  }
+
+  <nav
+    id="maya-sidebar"
+    class="sidebar"
+    [class.sidebar--open]="mobileOpen()"
+    aria-label="Navegación principal"
+  >
+    <div class="sidebar__scroll">
+      @for (group of navigation(); track group.name) {
+        <div class="sidebar__group">
+          <p class="sidebar__group-title" [class.maya-sr-only]="collapsed()">{{ group.name }}</p>
+          <ul class="sidebar__list">
+            @for (item of group.items; track item.route) {
+              <li>
+                <a
+                  [routerLink]="item.route"
+                  routerLinkActive="is-active"
+                  [routerLinkActiveOptions]="{ exact: !!item.exact }"
+                  class="sidebar__link"
+                  (click)="layout.closeMobileMenu()"
+                  [attr.title]="collapsed() ? item.label : null"
+                >
+                  <maya-icon [name]="item.icon" [size]="20" />
+                  <span class="sidebar__label">{{ item.label }}</span>
+                  @if (item.route === '/notifications' && comms.unreadNotifications() > 0) {
+                    <span class="sidebar__count">{{ comms.unreadNotifications() }}</span>
+                  }
+                  @if (item.route === '/messages' && comms.unreadMessages() > 0) {
+                    <span class="sidebar__count">{{ comms.unreadMessages() }}</span>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <div class="sidebar__footer">
+      <button
+        type="button"
+        class="sidebar__collapse maya-hide-mobile"
+        (click)="layout.toggleSidebar()"
+        [attr.aria-label]="collapsed() ? 'Expandir el menú' : 'Contraer el menú'"
+      >
+        <maya-icon [name]="collapsed() ? 'chevron-right' : 'chevron-left'" [size]="18" />
+        <span class="sidebar__label">Contraer</span>
+      </button>
+
+      <button type="button" class="sidebar__link maya-hide-desktop" (click)="logout()">
+        <maya-icon name="log-out" [size]="20" />
+        <span class="sidebar__label">Cerrar sesión</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══════════════ Contenido ══════════════ -->
+  <main id="maya-main" class="content" tabindex="-1">
+    <div class="content__inner">
+      <router-outlet />
+    </div>
+  </main>
+
+  <!-- ══════════════ Navegación inferior (móvil) ══════════════ -->
+  <nav class="bottomnav maya-hide-desktop" aria-label="Navegación rápida">
+    @for (item of mobileNav(); track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: !!item.exact }"
+        class="bottomnav__item"
+      >
+        <maya-icon [name]="item.icon" [size]="21" />
+        <span>{{ item.label }}</span>
+      </a>
+    }
+    <a routerLink="/profile" routerLinkActive="is-active" class="bottomnav__item">
+      <maya-icon name="user" [size]="21" />
+      <span>Perfil</span>
+    </a>
+  </nav>
+</div>
+
+<maya-toasts />

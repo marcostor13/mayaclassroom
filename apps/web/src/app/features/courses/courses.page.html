@@ -1,0 +1,157 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Mis cursos</h1>
+    <p class="maya-page-header__subtitle">
+      {{ visible().length }} {{ visible().length === 1 ? 'curso' : 'cursos' }} en su espacio de
+      aprendizaje
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    @if (canCreate()) {
+      <a routerLink="/courses/new" class="maya-btn maya-btn--primary">
+        <maya-icon name="plus" [size]="17" /> Crear curso
+      </a>
+    }
+    <a routerLink="/catalogue" class="maya-btn maya-btn--secondary">
+      <maya-icon name="layers" [size]="17" /> Catálogo
+    </a>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar__search">
+    <maya-icon name="search" [size]="18" />
+    <input
+      type="search"
+      class="toolbar__input"
+      placeholder="Buscar entre mis cursos…"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+      aria-label="Buscar cursos"
+    />
+  </div>
+
+  <div class="toolbar__filters" role="tablist" aria-label="Filtrar cursos">
+    @for (item of filters; track item.value) {
+      <button
+        type="button"
+        role="tab"
+        class="chip"
+        [class.is-active]="filter() === item.value"
+        [attr.aria-selected]="filter() === item.value"
+        (click)="setFilter(item.value)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+
+  <div class="toolbar__view maya-hide-mobile">
+    <button
+      type="button"
+      class="maya-btn maya-btn--ghost maya-btn--icon"
+      [class.is-active]="view() === 'cards'"
+      (click)="view.set('cards')"
+      aria-label="Ver como tarjetas"
+    >
+      <maya-icon name="grid" [size]="18" />
+    </button>
+    <button
+      type="button"
+      class="maya-btn maya-btn--ghost maya-btn--icon"
+      [class.is-active]="view() === 'list'"
+      (click)="view.set('list')"
+      aria-label="Ver como lista"
+    >
+      <maya-icon name="menu" [size]="18" />
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="maya-cards">
+    @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+      <div class="maya-skeleton" style="height: 230px"></div>
+    }
+  </div>
+} @else if (!visible().length) {
+  <maya-empty-state
+    icon="book"
+    title="No hay cursos que mostrar"
+    description="Pruebe con otro filtro o explore el catálogo para matricularse."
+  >
+    <a routerLink="/catalogue" class="maya-btn maya-btn--primary maya-btn--sm">Ver el catálogo</a>
+  </maya-empty-state>
+} @else if (view() === 'cards') {
+  <div class="maya-cards">
+    @for (course of visible(); track course.id; let i = $index) {
+      <a [routerLink]="['/courses', course.id]" class="maya-card maya-card--interactive card">
+        <div
+          class="card__cover"
+          [style.background]="
+            course.imageUrl
+              ? 'url(' + course.imageUrl + ') center/cover'
+              : 'linear-gradient(135deg,' + courseColor(i) + ', var(--maya-primary-deep))'
+          "
+        >
+          <span class="maya-badge card__code">{{ course.shortName }}</span>
+          <button
+            type="button"
+            class="card__fav"
+            (click)="toggleFavourite(course, $event)"
+            [attr.aria-label]="course.favourite ? 'Quitar de favoritos' : 'Marcar como favorito'"
+          >
+            <maya-icon name="star" [size]="18" />
+          </button>
+        </div>
+        <div class="maya-card__body maya-stack">
+          <h2 class="card__title maya-clamp-2">{{ course.fullName }}</h2>
+          @if (course.categoryName) {
+            <span class="maya-tiny maya-subtle">{{ course.categoryName }}</span>
+          }
+          <div class="maya-stack" style="gap: 6px; margin-top: auto">
+            <div class="maya-spread maya-tiny maya-muted">
+              <span>Progreso</span>
+              <strong>{{ course.progress ?? 0 }} %</strong>
+            </div>
+            <maya-progress [value]="course.progress ?? 0" size="thin" />
+          </div>
+        </div>
+      </a>
+    }
+  </div>
+} @else {
+  <div class="maya-table-wrap">
+    <table class="maya-table">
+      <thead>
+        <tr>
+          <th scope="col">Curso</th>
+          <th scope="col">Código</th>
+          <th scope="col">Progreso</th>
+          <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (course of visible(); track course.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['/courses', course.id]" class="maya-bold">{{ course.fullName }}</a>
+            </td>
+            <td><span class="maya-badge">{{ course.shortName }}</span></td>
+            <td style="min-width: 160px">
+              <maya-progress [value]="course.progress ?? 0" size="thin" />
+            </td>
+            <td>
+              <a
+                [routerLink]="['/courses', course.id]"
+                class="maya-btn maya-btn--ghost maya-btn--sm"
+              >
+                Abrir <maya-icon name="chevron-right" [size]="15" />
+              </a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

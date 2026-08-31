@@ -1,0 +1,238 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (attempt(); as active) {
+  <!-- ══ Intento en curso ══ -->
+  <div class="maya-spread" style="margin-bottom: var(--maya-space-4); flex-wrap: wrap">
+    <div>
+      <h1 style="font-size: var(--maya-text-xl)">{{ quiz()?.name }}</h1>
+      <p class="maya-small maya-muted">
+        Pregunta {{ current() + 1 }} de {{ questions().length }}
+      </p>
+    </div>
+    @if (timerLabel()) {
+      <span class="quiz-timer" [class.is-urgent]="(remaining() ?? 0) < 60">
+        <maya-icon name="clock" [size]="17" /> {{ timerLabel() }}
+      </span>
+    }
+  </div>
+
+  <!-- Navegador de preguntas -->
+  <nav class="maya-row" style="flex-wrap: wrap; margin-bottom: var(--maya-space-4)" aria-label="Preguntas">
+    @for (question of questions(); track question.id; let i = $index) {
+      <button
+        type="button"
+        class="maya-btn maya-btn--sm"
+        [class.maya-btn--primary]="i === current()"
+        [class.maya-btn--soft]="i !== current() && isAnswered(i)"
+        [class.maya-btn--secondary]="i !== current() && !isAnswered(i)"
+        style="min-width: 40px"
+        (click)="goTo(i)"
+        [attr.aria-label]="'Ir a la pregunta ' + (i + 1)"
+        [attr.aria-current]="i === current() ? 'true' : null"
+      >
+        {{ i + 1 }}
+      </button>
+    }
+  </nav>
+
+  @if (currentQuestion(); as question) {
+    <section class="maya-card">
+      <div class="question">
+        <span class="question__number">{{ current() + 1 }}</span>
+        <div class="question__text maya-rich" [innerHTML]="question.questionText | safeHtml"></div>
+
+        @switch (question.type) {
+          @case (QuestionType.MultiChoice) {
+            <div class="question__options" role="radiogroup" [attr.aria-label]="question.name">
+              @for (answer of question.answers; track answer.id) {
+                <label
+                  class="question__option"
+                  [class.is-selected]="isSelected(question.id, answer.id)"
+                >
+                  <input
+                    type="radio"
+                    [name]="'q-' + question.id"
+                    [checked]="isSelected(question.id, answer.id)"
+                    (change)="select(question.id, answer.id)"
+                    class="maya-radio"
+                    style="appearance: none; width: 20px; height: 20px; border: 2px solid var(--maya-border-strong); border-radius: 50%"
+                  />
+                  <span>{{ answer.text }}</span>
+                </label>
+              }
+            </div>
+          }
+          @case (QuestionType.TrueFalse) {
+            <div class="question__options">
+              @for (answer of question.answers; track answer.id) {
+                <label
+                  class="question__option"
+                  [class.is-selected]="isSelected(question.id, answer.id)"
+                >
+                  <input
+                    type="radio"
+                    [name]="'q-' + question.id"
+                    [checked]="isSelected(question.id, answer.id)"
+                    (change)="select(question.id, answer.id)"
+                  />
+                  <span>{{ answer.text }}</span>
+                </label>
+              }
+            </div>
+          }
+          @case (QuestionType.Essay) {
+            <textarea
+              class="maya-textarea"
+              rows="8"
+              placeholder="Escriba su respuesta…"
+              (change)="select(question.id, $any($event.target).value)"
+            ></textarea>
+          }
+          @default {
+            <input
+              type="text"
+              class="maya-input"
+              placeholder="Escriba su respuesta"
+              (change)="select(question.id, $any($event.target).value)"
+            />
+          }
+        }
+      </div>
+
+      <div class="maya-card__footer" style="display: flex; justify-content: space-between">
+        <button
+          type="button"
+          class="maya-btn maya-btn--secondary"
+          (click)="previous()"
+          [disabled]="current() === 0"
+        >
+          <maya-icon name="chevron-left" [size]="16" /> Anterior
+        </button>
+        @if (current() < questions().length - 1) {
+          <button type="button" class="maya-btn maya-btn--primary" (click)="next()">
+            Siguiente <maya-icon name="chevron-right" [size]="16" />
+          </button>
+        } @else {
+          <button type="button" class="maya-btn maya-btn--primary" (click)="finish()">
+            <maya-icon name="check" [size]="16" /> Enviar cuestionario
+          </button>
+        }
+      </div>
+    </section>
+  }
+} @else if (quiz(); as test) {
+  <!-- ══ Portada del cuestionario ══ -->
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', module()?.courseId]">Curso</a></li>
+      <li>{{ test.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="activity-header">
+    <span class="activity-header__icon"><maya-icon name="help-circle" [size]="24" /></span>
+    <div>
+      <h1 class="activity-header__title">{{ test.name }}</h1>
+      <div class="activity-header__meta">
+        <span><maya-icon name="layers" [size]="15" /> {{ test.questions.length }} preguntas</span>
+        <span><maya-icon name="star" [size]="15" /> {{ test.maxGrade }} puntos</span>
+        @if (test.timeLimitSeconds) {
+          <span>
+            <maya-icon name="clock" [size]="15" /> {{ test.timeLimitSeconds / 60 }} minutos
+          </span>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (test.intro) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-card__body maya-rich" [innerHTML]="test.intro | safeHtml"></div>
+    </section>
+  }
+
+  <div class="activity-layout">
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">Mis intentos</h2>
+        @if (bestGrade() !== null) {
+          <span class="maya-badge maya-badge--success">
+            Mejor nota: {{ bestGrade() }} / {{ test.maxGrade }}
+          </span>
+        }
+      </div>
+
+      @if (attempts().length) {
+        <div class="maya-table-wrap" style="border: none; border-radius: 0">
+          <table class="maya-table">
+            <thead>
+              <tr>
+                <th scope="col">Intento</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Comenzado</th>
+                <th scope="col">Calificación</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of attempts(); track item.id) {
+                <tr>
+                  <td>#{{ item.attempt }}</td>
+                  <td><span class="maya-badge">{{ stateLabel(item.state) }}</span></td>
+                  <td class="maya-small">{{ item.startedAt | mayaDate: 'datetime' }}</td>
+                  <td class="maya-bold">
+                    {{ item.grade !== null ? item.grade + ' / ' + test.maxGrade : '—' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="maya-card__body">
+          <p class="maya-small maya-muted">Todavía no ha realizado ningún intento.</p>
+        </div>
+      }
+
+      <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary maya-btn--lg"
+          (click)="start()"
+          [disabled]="!canAttempt()"
+        >
+          <maya-icon name="arrow-right" [size]="18" />
+          {{ attempts().length ? 'Nuevo intento' : 'Comenzar cuestionario' }}
+        </button>
+      </div>
+    </section>
+
+    <aside>
+      <section class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Condiciones</h2>
+        </div>
+        <div class="maya-card__body maya-stack" style="gap: var(--maya-space-3)">
+          <div class="detail">
+            <span class="detail__label">Intentos permitidos</span>
+            <span class="detail__value">
+              {{ test.attemptsAllowed === 0 ? 'Ilimitados' : test.attemptsAllowed }}
+            </span>
+          </div>
+          <div class="detail">
+            <span class="detail__label">Método de calificación</span>
+            <span class="detail__value">{{ test.gradeMethod }}</span>
+          </div>
+          <div class="detail">
+            <span class="detail__label">Apertura</span>
+            <span class="detail__value">{{ test.timeOpen | mayaDate: 'datetime' }}</span>
+          </div>
+          <div class="detail">
+            <span class="detail__label">Cierre</span>
+            <span class="detail__value">{{ test.timeClose | mayaDate: 'datetime' }}</span>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+}

@@ -1,0 +1,734 @@
+@use 'tokens' as *;
+
+/* =========================================================================
+   Biblioteca de componentes · Maya Classroom
+   Clases utilitarias globales que comparten todas las pantallas.
+   ========================================================================= */
+
+/* --- Botones ----------------------------------------------------------- */
+
+.maya-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--maya-space-2);
+  padding: 0.7rem 1.3rem;
+  border-radius: var(--maya-radius-pill);
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-sm);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+  transition:
+    background-color var(--maya-duration) var(--maya-ease),
+    color var(--maya-duration) var(--maya-ease),
+    border-color var(--maya-duration) var(--maya-ease),
+    transform var(--maya-duration-fast) var(--maya-ease),
+    box-shadow var(--maya-duration) var(--maya-ease);
+
+  &:active:not(:disabled) { transform: translateY(1px); }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  svg { width: 1.05em; height: 1.05em; flex-shrink: 0; }
+}
+
+.maya-btn--primary {
+  background: var(--maya-primary);
+  color: var(--maya-text-on-primary);
+  box-shadow: var(--maya-shadow-primary);
+
+  &:hover:not(:disabled) { background: var(--maya-primary-hover); }
+  &:active:not(:disabled) { background: var(--maya-primary-active); }
+}
+
+.maya-btn--secondary {
+  background: var(--maya-surface);
+  color: var(--maya-primary-deep);
+  border-color: var(--maya-border-strong);
+  box-shadow: var(--maya-shadow-xs);
+
+  &:hover:not(:disabled) {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-softer);
+  }
+}
+
+.maya-btn--soft {
+  background: var(--maya-primary-soft);
+  color: var(--maya-primary-deep);
+
+  &:hover:not(:disabled) { background: var(--maya-pastel); color: #fff; }
+}
+
+.maya-btn--ghost {
+  background: transparent;
+  color: var(--maya-text-muted);
+
+  &:hover:not(:disabled) {
+    background: var(--maya-surface-3);
+    color: var(--maya-text);
+  }
+}
+
+.maya-btn--danger {
+  background: var(--maya-danger);
+  color: #fff;
+
+  &:hover:not(:disabled) { filter: brightness(0.93); }
+}
+
+.maya-btn--sm { padding: 0.45rem 0.9rem; font-size: var(--maya-text-xs); }
+.maya-btn--lg { padding: 0.95rem 1.8rem; font-size: var(--maya-text-md); }
+.maya-btn--block { width: 100%; }
+
+.maya-btn--icon {
+  padding: 0.55rem;
+  aspect-ratio: 1;
+  border-radius: var(--maya-radius-md);
+}
+
+/* --- Tarjetas ---------------------------------------------------------- */
+
+.maya-card {
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  box-shadow: var(--maya-shadow-sm);
+  overflow: hidden;
+}
+
+.maya-card--interactive {
+  transition:
+    transform var(--maya-duration) var(--maya-ease-out),
+    box-shadow var(--maya-duration) var(--maya-ease-out),
+    border-color var(--maya-duration) var(--maya-ease);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--maya-shadow-md);
+    border-color: var(--maya-primary-soft);
+  }
+}
+
+.maya-card__body { padding: var(--maya-space-5); }
+.maya-card__header {
+  padding: var(--maya-space-5);
+  border-bottom: 1px solid var(--maya-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+}
+.maya-card__footer {
+  padding: var(--maya-space-4) var(--maya-space-5);
+  border-top: 1px solid var(--maya-border);
+  background: var(--maya-surface-2);
+}
+.maya-card__title {
+  font-size: var(--maya-text-lg);
+  font-weight: 700;
+  font-family: var(--maya-font-heading);
+}
+
+/* --- Formularios ------------------------------------------------------- */
+
+.maya-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-2);
+}
+
+.maya-label {
+  font-size: var(--maya-text-sm);
+  font-weight: 600;
+  color: var(--maya-text);
+
+  .maya-required { color: var(--maya-danger); margin-left: 2px; }
+}
+
+.maya-input,
+.maya-select,
+.maya-textarea {
+  width: 100%;
+  padding: 0.7rem 0.95rem;
+  background: var(--maya-surface);
+  border: 1.5px solid var(--maya-border-strong);
+  border-radius: var(--maya-radius-md);
+  color: var(--maya-text);
+  font-size: var(--maya-text-base);
+  transition:
+    border-color var(--maya-duration) var(--maya-ease),
+    box-shadow var(--maya-duration) var(--maya-ease),
+    background-color var(--maya-duration) var(--maya-ease);
+
+  &::placeholder { color: var(--maya-text-subtle); }
+
+  &:hover:not(:disabled) { border-color: var(--maya-pastel); }
+
+  &:focus {
+    outline: none;
+    border-color: var(--maya-primary);
+    box-shadow: 0 0 0 4px var(--maya-focus);
+  }
+
+  &:disabled {
+    background: var(--maya-surface-3);
+    color: var(--maya-text-subtle);
+    cursor: not-allowed;
+  }
+
+  &.is-invalid {
+    border-color: var(--maya-danger);
+    &:focus { box-shadow: 0 0 0 4px var(--maya-danger-soft); }
+  }
+}
+
+.maya-textarea { min-height: 120px; resize: vertical; }
+
+.maya-select {
+  appearance: none;
+  padding-right: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237a6a66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+}
+
+.maya-hint { font-size: var(--maya-text-xs); color: var(--maya-text-muted); }
+.maya-error {
+  font-size: var(--maya-text-xs);
+  color: var(--maya-danger);
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-1);
+}
+
+.maya-checkbox,
+.maya-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  cursor: pointer;
+  font-size: var(--maya-text-base);
+
+  input {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    border: 2px solid var(--maya-border-strong);
+    background: var(--maya-surface);
+    transition: all var(--maya-duration) var(--maya-ease);
+
+    &:checked {
+      background: var(--maya-primary);
+      border-color: var(--maya-primary);
+    }
+
+    &:focus-visible { box-shadow: 0 0 0 4px var(--maya-focus); }
+  }
+}
+
+.maya-checkbox input {
+  border-radius: var(--maya-radius-xs);
+
+  &:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+}
+
+.maya-radio input {
+  border-radius: 50%;
+
+  &:checked {
+    background: radial-gradient(circle, #fff 0 32%, var(--maya-primary) 34%);
+  }
+}
+
+.maya-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  cursor: pointer;
+
+  input {
+    appearance: none;
+    width: 46px;
+    height: 26px;
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-border-strong);
+    position: relative;
+    transition: background var(--maya-duration) var(--maya-ease);
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: var(--maya-shadow-xs);
+      transition: transform var(--maya-duration) var(--maya-ease-out);
+    }
+
+    &:checked {
+      background: var(--maya-primary);
+      &::after { transform: translateX(20px); }
+    }
+
+    &:focus-visible { box-shadow: 0 0 0 4px var(--maya-focus); }
+  }
+}
+
+/* --- Distintivos ------------------------------------------------------- */
+
+.maya-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-1);
+  padding: 0.24rem 0.7rem;
+  border-radius: var(--maya-radius-pill);
+  font-size: var(--maya-text-xs);
+  font-weight: 600;
+  line-height: 1.5;
+  background: var(--maya-surface-3);
+  color: var(--maya-text-muted);
+  white-space: nowrap;
+}
+
+.maya-badge--primary { background: var(--maya-primary-soft); color: var(--maya-primary-deep); }
+.maya-badge--success { background: var(--maya-success-soft); color: var(--maya-success); }
+.maya-badge--warning { background: var(--maya-warning-soft); color: #a4732a; }
+.maya-badge--danger { background: var(--maya-danger-soft); color: var(--maya-danger); }
+.maya-badge--info { background: var(--maya-info-soft); color: var(--maya-info); }
+.maya-badge--accent { background: var(--maya-accent-soft); color: #9a7118; }
+
+.maya-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* --- Avatares ---------------------------------------------------------- */
+
+.maya-avatar {
+  --size: 40px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--maya-pastel), var(--maya-primary));
+  color: #fff;
+  font-family: var(--maya-font-heading);
+  font-weight: 700;
+  font-size: calc(var(--size) * 0.38);
+  letter-spacing: 0.02em;
+  user-select: none;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.maya-avatar--xs { --size: 26px; }
+.maya-avatar--sm { --size: 32px; }
+.maya-avatar--lg { --size: 56px; }
+.maya-avatar--xl { --size: 88px; }
+
+.maya-avatar-group {
+  display: flex;
+
+  .maya-avatar {
+    border: 2px solid var(--maya-surface);
+    &:not(:first-child) { margin-left: -10px; }
+  }
+}
+
+/* --- Progreso ---------------------------------------------------------- */
+
+.maya-progress {
+  height: 8px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface-3);
+  overflow: hidden;
+
+  &__bar {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--maya-pastel), var(--maya-primary));
+    transition: width var(--maya-duration-slow) var(--maya-ease-out);
+  }
+
+  &--success &__bar { background: linear-gradient(90deg, #79d3ab, var(--maya-success)); }
+}
+
+.maya-progress--thin { height: 5px; }
+.maya-progress--thick { height: 12px; }
+
+/* --- Tablas ------------------------------------------------------------ */
+
+.maya-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--maya-radius-lg);
+  border: 1px solid var(--maya-border);
+  background: var(--maya-surface);
+}
+
+.maya-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--maya-text-sm);
+
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--maya-surface-3);
+    padding: var(--maya-space-3) var(--maya-space-4);
+    text-align: left;
+    font-weight: 600;
+    color: var(--maya-text-muted);
+    font-size: var(--maya-text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--maya-border);
+  }
+
+  td {
+    padding: var(--maya-space-3) var(--maya-space-4);
+    border-bottom: 1px solid var(--maya-border);
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background var(--maya-duration-fast) var(--maya-ease);
+    &:hover { background: var(--maya-surface-2); }
+    &:last-child td { border-bottom: none; }
+  }
+}
+
+/* --- Alertas ----------------------------------------------------------- */
+
+.maya-alert {
+  display: flex;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-4);
+  border-radius: var(--maya-radius-md);
+  border-left: 4px solid var(--maya-info);
+  background: var(--maya-info-soft);
+  color: var(--maya-text);
+  font-size: var(--maya-text-sm);
+}
+
+.maya-alert--success { border-color: var(--maya-success); background: var(--maya-success-soft); }
+.maya-alert--warning { border-color: var(--maya-warning); background: var(--maya-warning-soft); }
+.maya-alert--danger { border-color: var(--maya-danger); background: var(--maya-danger-soft); }
+
+/* --- Estado vacío ------------------------------------------------------ */
+
+.maya-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-12) var(--maya-space-5);
+  text-align: center;
+  color: var(--maya-text-muted);
+
+  &__icon {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--maya-radius-xl);
+    display: grid;
+    place-items: center;
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary);
+    margin-bottom: var(--maya-space-2);
+
+    svg { width: 34px; height: 34px; }
+  }
+
+  &__title {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-lg);
+    font-weight: 700;
+    color: var(--maya-text);
+  }
+}
+
+/* --- Esqueletos de carga ------------------------------------------------ */
+
+.maya-skeleton {
+  border-radius: var(--maya-radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--maya-surface-3) 25%,
+    var(--maya-bg-alt) 37%,
+    var(--maya-surface-3) 63%
+  );
+  background-size: 400% 100%;
+  animation: maya-shimmer 1.4s ease infinite;
+}
+
+@keyframes maya-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* --- Pestañas ---------------------------------------------------------- */
+
+.maya-tabs {
+  display: flex;
+  gap: var(--maya-space-1);
+  border-bottom: 1px solid var(--maya-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  &__tab {
+    padding: var(--maya-space-3) var(--maya-space-4);
+    font-size: var(--maya-text-sm);
+    font-weight: 600;
+    color: var(--maya-text-muted);
+    border-bottom: 2.5px solid transparent;
+    white-space: nowrap;
+    transition: all var(--maya-duration) var(--maya-ease);
+
+    &:hover { color: var(--maya-text); }
+
+    &.is-active {
+      color: var(--maya-primary);
+      border-bottom-color: var(--maya-primary);
+    }
+  }
+}
+
+/* --- Migas de pan ------------------------------------------------------ */
+
+.maya-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maya-space-2);
+  font-size: var(--maya-text-xs);
+  color: var(--maya-text-muted);
+
+  a { color: var(--maya-text-muted); &:hover { color: var(--maya-primary); } }
+  li { display: flex; align-items: center; gap: var(--maya-space-2); }
+  li:not(:last-child)::after { content: '/'; color: var(--maya-text-subtle); }
+  li:last-child { color: var(--maya-text); font-weight: 600; }
+}
+
+/* --- Modal y drawer ---------------------------------------------------- */
+
+.maya-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--maya-overlay);
+  backdrop-filter: blur(3px);
+  z-index: var(--maya-z-modal);
+  animation: maya-fade var(--maya-duration) var(--maya-ease);
+}
+
+.maya-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--maya-z-modal);
+  display: grid;
+  place-items: end center;
+  padding: 0;
+  pointer-events: none;
+
+  @include from($maya-bp-md) {
+    place-items: center;
+    padding: var(--maya-space-6);
+  }
+
+  &__panel {
+    pointer-events: auto;
+    width: 100%;
+    max-width: 560px;
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--maya-surface);
+    border-radius: var(--maya-radius-xl) var(--maya-radius-xl) 0 0;
+    box-shadow: var(--maya-shadow-lg);
+    animation: maya-slide-up var(--maya-duration-slow) var(--maya-ease-out);
+
+    @include from($maya-bp-md) {
+      border-radius: var(--maya-radius-xl);
+      animation: maya-pop var(--maya-duration) var(--maya-ease-out);
+    }
+  }
+
+  &__header {
+    padding: var(--maya-space-5);
+    border-bottom: 1px solid var(--maya-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--maya-space-3);
+  }
+
+  &__body { padding: var(--maya-space-5); overflow-y: auto; }
+
+  &__footer {
+    padding: var(--maya-space-4) var(--maya-space-5);
+    border-top: 1px solid var(--maya-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--maya-space-3);
+  }
+}
+
+@keyframes maya-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes maya-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes maya-pop {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Menú desplegable --------------------------------------------------- */
+
+.maya-menu {
+  position: absolute;
+  z-index: var(--maya-z-dropdown);
+  min-width: 210px;
+  padding: var(--maya-space-2);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  box-shadow: var(--maya-shadow-md);
+  animation: maya-pop var(--maya-duration-fast) var(--maya-ease-out);
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-3);
+    width: 100%;
+    padding: var(--maya-space-2) var(--maya-space-3);
+    border-radius: var(--maya-radius-sm);
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text);
+    text-align: left;
+    transition: background var(--maya-duration-fast) var(--maya-ease);
+
+    &:hover { background: var(--maya-surface-3); text-decoration: none; }
+    &--danger { color: var(--maya-danger); }
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--maya-border);
+    margin: var(--maya-space-2) 0;
+  }
+}
+
+/* --- Avisos flotantes --------------------------------------------------- */
+
+.maya-toasts {
+  position: fixed;
+  z-index: var(--maya-z-toast);
+  bottom: calc(var(--maya-bottomnav-height) + var(--maya-space-4));
+  left: var(--maya-space-4);
+  right: var(--maya-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-2);
+  pointer-events: none;
+
+  @include from($maya-bp-md) {
+    bottom: var(--maya-space-6);
+    right: var(--maya-space-6);
+    left: auto;
+    width: 380px;
+  }
+}
+
+.maya-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-4);
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-left: 4px solid var(--maya-primary);
+  box-shadow: var(--maya-shadow-lg);
+  animation: maya-slide-up var(--maya-duration) var(--maya-ease-out);
+
+  &--success { border-left-color: var(--maya-success); }
+  &--danger { border-left-color: var(--maya-danger); }
+  &--warning { border-left-color: var(--maya-warning); }
+}
+
+/* --- Encabezado de página ---------------------------------------------- */
+
+.maya-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+  margin-bottom: var(--maya-space-6);
+
+  @include from($maya-bp-md) {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: var(--maya-text-2xl);
+    font-weight: 800;
+
+    @include from($maya-bp-md) { font-size: var(--maya-text-3xl); }
+  }
+
+  &__subtitle {
+    color: var(--maya-text-muted);
+    font-size: var(--maya-text-sm);
+    margin-top: var(--maya-space-1);
+  }
+
+  &__actions { display: flex; gap: var(--maya-space-2); flex-wrap: wrap; }
+}
+
+/* --- Rejillas comunes --------------------------------------------------- */
+
+.maya-cards {
+  display: grid;
+  gap: var(--maya-space-4);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-md) { grid-template-columns: repeat(2, 1fr); }
+  @include from($maya-bp-xl) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.maya-stats {
+  display: grid;
+  gap: var(--maya-space-3);
+  grid-template-columns: repeat(2, 1fr);
+
+  @include from($maya-bp-lg) { grid-template-columns: repeat(4, 1fr); }
+}

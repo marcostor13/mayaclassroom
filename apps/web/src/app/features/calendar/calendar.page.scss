@@ -1,0 +1,97 @@
+@use '../../../styles/tokens' as *;
+
+.calendar-layout {
+  display: grid;
+  gap: var(--maya-space-5);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-lg) {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.calendar {
+  padding: var(--maya-space-4);
+
+  &__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: var(--maya-space-2);
+
+    span {
+      text-align: center;
+      font-size: var(--maya-text-xs);
+      font-weight: 700;
+      color: var(--maya-text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  &__cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: var(--maya-radius-sm);
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text);
+    transition: all var(--maya-duration-fast) var(--maya-ease);
+
+    &:hover { background: var(--maya-surface-3); }
+    &.is-outside { color: var(--maya-text-subtle); opacity: 0.55; }
+
+    &.is-today {
+      background: var(--maya-primary-softer);
+      color: var(--maya-primary-deep);
+      font-weight: 700;
+    }
+
+    &.is-selected {
+      background: var(--maya-primary);
+      color: #fff;
+      font-weight: 700;
+
+      .calendar__dot { background: #fff !important; }
+    }
+  }
+
+  &__dots { display: flex; gap: 3px; }
+
+  &__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--maya-primary);
+  }
+}
+
+.event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+}
+
+.event {
+  display: flex;
+  gap: var(--maya-space-3);
+
+  &__bar {
+    width: 4px;
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-primary);
+    flex-shrink: 0;
+  }
+}

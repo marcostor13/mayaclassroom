@@ -1,0 +1,100 @@
+<header class="maya-stack" style="gap: var(--maya-space-2); margin-bottom: var(--maya-space-6)">
+  <h1 style="font-size: var(--maya-text-2xl)">Cree su cuenta</h1>
+  <p class="maya-muted maya-small">Únase al aula virtual en menos de un minuto.</p>
+</header>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="maya-stack" style="gap: var(--maya-space-4)">
+  <div class="maya-field">
+    <label class="maya-label" for="reg-tenant">Empresa <span class="maya-required">*</span></label>
+    <input id="reg-tenant" class="maya-input" formControlName="tenantSlug" placeholder="demo" />
+  </div>
+
+  <div class="maya-grid" style="grid-template-columns: 1fr 1fr">
+    <div class="maya-field">
+      <label class="maya-label" for="reg-first">Nombre <span class="maya-required">*</span></label>
+      <input
+        id="reg-first"
+        class="maya-input"
+        formControlName="firstName"
+        autocomplete="given-name"
+        [class.is-invalid]="invalid('firstName')"
+      />
+    </div>
+    <div class="maya-field">
+      <label class="maya-label" for="reg-last">Apellidos <span class="maya-required">*</span></label>
+      <input
+        id="reg-last"
+        class="maya-input"
+        formControlName="lastName"
+        autocomplete="family-name"
+        [class.is-invalid]="invalid('lastName')"
+      />
+    </div>
+  </div>
+
+  <div class="maya-field">
+    <label class="maya-label" for="reg-email">
+      Correo electrónico <span class="maya-required">*</span>
+    </label>
+    <input
+      id="reg-email"
+      type="email"
+      class="maya-input"
+      formControlName="email"
+      autocomplete="email"
+      [class.is-invalid]="invalid('email')"
+    />
+    @if (invalid('email')) {
+      <span class="maya-error">
+        <maya-icon name="alert" [size]="14" /> Introduzca un correo electrónico válido.
+      </span>
+    }
+  </div>
+
+  <div class="maya-field">
+    <label class="maya-label" for="reg-user">
+      Nombre de usuario <span class="maya-required">*</span>
+    </label>
+    <input
+      id="reg-user"
+      class="maya-input"
+      formControlName="username"
+      autocomplete="username"
+      [class.is-invalid]="invalid('username')"
+    />
+  </div>
+
+  <div class="maya-field">
+    <label class="maya-label" for="reg-pass">
+      Contraseña <span class="maya-required">*</span>
+    </label>
+    <input
+      id="reg-pass"
+      type="password"
+      class="maya-input"
+      formControlName="password"
+      autocomplete="new-password"
+      [class.is-invalid]="invalid('password')"
+    />
+    <span class="maya-hint">Mínimo 8 caracteres, con una mayúscula y un número.</span>
+  </div>
+
+  <label class="maya-checkbox">
+    <input type="checkbox" formControlName="policy" />
+    <span class="maya-small">
+      Acepto las condiciones de uso y la política de privacidad de la plataforma.
+    </span>
+  </label>
+
+  <button
+    type="submit"
+    class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block"
+    [disabled]="submitting()"
+  >
+    @if (submitting()) { Creando la cuenta… } @else { Crear mi cuenta }
+  </button>
+
+  <p class="maya-small maya-muted" style="text-align: center">
+    ¿Ya tiene cuenta? <a routerLink="/auth/login">Acceda aquí</a>
+  </p>
+</form>

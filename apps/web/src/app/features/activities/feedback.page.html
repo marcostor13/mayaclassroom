@@ -1,0 +1,107 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 280px"></div>
+} @else if (survey(); as form) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', module()?.courseId]">Curso</a></li>
+      <li>{{ form.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="activity-header">
+    <span class="activity-header__icon"><maya-icon name="clipboard-list" [size]="24" /></span>
+    <div>
+      <h1 class="activity-header__title">{{ form.name }}</h1>
+      <p class="maya-small maya-muted">
+        {{ form.anonymous ? 'Encuesta anónima' : 'Encuesta identificada' }} ·
+        {{ form.responseCount }} respuestas
+      </p>
+    </div>
+  </header>
+
+  @if (form.intro) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-4)">
+      <div class="maya-card__body maya-rich" [innerHTML]="form.intro | safeHtml"></div>
+    </section>
+  }
+
+  @if (responded() && !form.multipleSubmit) {
+    <div class="maya-alert maya-alert--success">
+      <maya-icon name="check" [size]="18" />
+      <span>Ya ha completado esta encuesta. Gracias por su participación.</span>
+    </div>
+  } @else {
+    <section class="maya-card">
+      <div class="maya-card__body maya-stack" style="gap: var(--maya-space-5)">
+        @for (item of form.items; track item.id) {
+          @switch (item.type) {
+            @case ('label') {
+              <p class="maya-rich maya-small" [innerHTML]="item.label | safeHtml"></p>
+            }
+            @case ('info') {
+              <p class="maya-small maya-muted">{{ item.label }}</p>
+            }
+            @case ('multichoice') {
+              <fieldset class="maya-field" style="border: none; padding: 0; margin: 0">
+                <legend class="maya-label">
+                  {{ item.label }}
+                  @if (item.required) { <span class="maya-required">*</span> }
+                </legend>
+                <div class="question__options">
+                  @for (option of item.options ?? []; track option) {
+                    <label class="question__option">
+                      <input
+                        type="radio"
+                        [name]="'f-' + item.id"
+                        (change)="setAnswer(item.id, option)"
+                      />
+                      <span>{{ option }}</span>
+                    </label>
+                  }
+                </div>
+              </fieldset>
+            }
+            @case ('textarea') {
+              <div class="maya-field">
+                <label class="maya-label" [attr.for]="'f-' + item.id">{{ item.label }}</label>
+                <textarea
+                  [id]="'f-' + item.id"
+                  class="maya-textarea"
+                  rows="5"
+                  (change)="setAnswer(item.id, $any($event.target).value)"
+                ></textarea>
+              </div>
+            }
+            @case ('numeric') {
+              <div class="maya-field">
+                <label class="maya-label" [attr.for]="'f-' + item.id">{{ item.label }}</label>
+                <input
+                  [id]="'f-' + item.id"
+                  type="number"
+                  class="maya-input"
+                  (change)="setAnswer(item.id, $any($event.target).value)"
+                />
+              </div>
+            }
+            @default {
+              <div class="maya-field">
+                <label class="maya-label" [attr.for]="'f-' + item.id">{{ item.label }}</label>
+                <input
+                  [id]="'f-' + item.id"
+                  class="maya-input"
+                  (change)="setAnswer(item.id, $any($event.target).value)"
+                />
+              </div>
+            }
+          }
+        }
+      </div>
+      <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+        <button type="button" class="maya-btn maya-btn--primary" (click)="submit()">
+          Enviar respuestas
+        </button>
+      </div>
+    </section>
+  }
+}

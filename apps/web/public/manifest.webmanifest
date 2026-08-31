@@ -1,0 +1,13 @@
+{
+  "name": "Maya Classroom",
+  "short_name": "Maya",
+  "description": "Plataforma de aulas virtuales multiempresa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8F7",
+  "theme_color": "#E4574D",
+  "lang": "es",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

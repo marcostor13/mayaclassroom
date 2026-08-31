@@ -1,0 +1,187 @@
+<header class="maya-page-header">
+  <div class="maya-row" style="gap: var(--maya-space-4)">
+    <maya-avatar
+      size="xl"
+      [name]="auth.user()?.fullName ?? ''"
+      [src]="auth.user()?.avatarUrl ?? null"
+    />
+    <div>
+      <h1 class="maya-page-header__title">{{ auth.user()?.fullName }}</h1>
+      <p class="maya-page-header__subtitle">
+        {{ auth.user()?.email }} · {{ auth.user()?.tenantSlug }}
+      </p>
+    </div>
+  </div>
+</header>
+
+<div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'profile'"
+    [attr.aria-selected]="tab() === 'profile'"
+    (click)="tab.set('profile')"
+  >
+    Datos personales
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'security'"
+    [attr.aria-selected]="tab() === 'security'"
+    (click)="tab.set('security')"
+  >
+    Seguridad
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'sessions'"
+    [attr.aria-selected]="tab() === 'sessions'"
+    (click)="loadSessions()"
+  >
+    Dispositivos
+  </button>
+</div>
+
+@switch (tab()) {
+  @case ('profile') {
+    <form [formGroup]="form" (ngSubmit)="save()" class="maya-card">
+      <div class="maya-card__body maya-grid" style="grid-template-columns: 1fr">
+        <div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+          <div class="maya-field">
+            <label class="maya-label" for="p-first">Nombre</label>
+            <input id="p-first" class="maya-input" formControlName="firstName" />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="p-last">Apellidos</label>
+            <input id="p-last" class="maya-input" formControlName="lastName" />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="p-phone">Teléfono</label>
+            <input id="p-phone" class="maya-input" formControlName="phone" />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="p-city">Ciudad</label>
+            <input id="p-city" class="maya-input" formControlName="city" />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="p-country">País</label>
+            <input id="p-country" class="maya-input" formControlName="country" />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="p-dept">Departamento</label>
+            <input id="p-dept" class="maya-input" formControlName="department" />
+          </div>
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="p-desc">Sobre mí</label>
+          <textarea
+            id="p-desc"
+            class="maya-textarea"
+            rows="4"
+            formControlName="description"
+          ></textarea>
+        </div>
+      </div>
+      <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+        <button type="submit" class="maya-btn maya-btn--primary" [disabled]="saving()">
+          Guardar cambios
+        </button>
+      </div>
+    </form>
+  }
+
+  @case ('security') {
+    <div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))">
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+            Cambiar contraseña
+          </h2>
+        </div>
+        <div class="maya-card__body maya-stack">
+          <div class="maya-field">
+            <label class="maya-label" for="s-current">Contraseña actual</label>
+            <input
+              id="s-current"
+              type="password"
+              class="maya-input"
+              formControlName="currentPassword"
+              autocomplete="current-password"
+            />
+          </div>
+          <div class="maya-field">
+            <label class="maya-label" for="s-new">Contraseña nueva</label>
+            <input
+              id="s-new"
+              type="password"
+              class="maya-input"
+              formControlName="newPassword"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+        <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+          <button type="submit" class="maya-btn maya-btn--primary">Actualizar</button>
+        </div>
+      </form>
+
+      <section class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Privacidad</h2>
+        </div>
+        <div class="maya-card__body maya-stack" style="align-items: flex-start">
+          <p class="maya-small maya-muted">
+            Puede descargar una copia de todos sus datos personales almacenados en la plataforma,
+            conforme al RGPD.
+          </p>
+          <button type="button" class="maya-btn maya-btn--secondary" (click)="downloadData()">
+            <maya-icon name="download" [size]="16" /> Descargar mis datos
+          </button>
+          <button type="button" class="maya-btn maya-btn--ghost" (click)="logoutAll()">
+            <maya-icon name="log-out" [size]="16" /> Cerrar sesión en todos los dispositivos
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @case ('sessions') {
+    <section class="maya-card">
+      <div class="maya-table-wrap" style="border: none">
+        <table class="maya-table">
+          <thead>
+            <tr>
+              <th scope="col">Dispositivo</th>
+              <th scope="col">Dirección IP</th>
+              <th scope="col">Último uso</th>
+              <th scope="col"><span class="maya-sr-only">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (session of sessions(); track session['id']) {
+              <tr>
+                <td class="maya-bold maya-small">{{ session['device'] ?? 'Desconocido' }}</td>
+                <td class="maya-small">{{ session['ip'] }}</td>
+                <td class="maya-small">{{ $any(session['lastUsedAt']) | mayaDate: 'datetime' }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--sm"
+                    (click)="revokeSession($any(session['id']))"
+                  >
+                    Cerrar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+}

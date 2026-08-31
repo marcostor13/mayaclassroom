@@ -1,0 +1,84 @@
+@use '../../../styles/tokens' as *;
+
+.roles-layout {
+  display: grid;
+  gap: var(--maya-space-5);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-lg) {
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.role-item {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  width: 100%;
+  padding: var(--maya-space-3);
+  border-radius: var(--maya-radius-md);
+  color: var(--maya-text-muted);
+  transition: all var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface-3); color: var(--maya-text); }
+
+  &.is-active {
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary-deep);
+  }
+}
+
+.component-title {
+  font-size: var(--maya-text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--maya-text-subtle);
+  padding-bottom: var(--maya-space-2);
+  border-bottom: 1px solid var(--maya-border);
+  margin-bottom: var(--maya-space-3);
+}
+
+.capability-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-1);
+}
+
+.capability {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-2) var(--maya-space-3);
+  border-radius: var(--maya-radius-sm);
+  transition: background var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface-2); }
+}
+
+.permission-group {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface-3);
+  flex-shrink: 0;
+}
+
+.permission {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--maya-radius-xs);
+  color: var(--maya-text-subtle);
+  transition: all var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface); }
+
+  &.is-allow { background: var(--maya-success); color: #fff; }
+  &.is-notset { background: var(--maya-surface); color: var(--maya-text-muted); }
+  &.is-prevent { background: var(--maya-warning); color: #fff; }
+  &.is-prohibit { background: var(--maya-danger); color: #fff; }
+}

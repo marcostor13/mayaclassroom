@@ -1,0 +1,206 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/dashboard">Panel</a></li>
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    <li>{{ course()?.shortName ?? 'Curso' }}</li>
+  </ol>
+</nav>
+
+@if (loading() && !course()) {
+  <div class="maya-skeleton" style="height: 200px; margin-bottom: var(--maya-space-6)"></div>
+} @else if (course(); as detail) {
+  <!-- Cabecera del curso -->
+  <header class="course-hero">
+    <div class="course-hero__content">
+      <span class="maya-badge maya-badge--primary">{{ detail.shortName }}</span>
+      <h1 class="course-hero__title">{{ detail.fullName }}</h1>
+
+      <div class="course-hero__meta">
+        <span><maya-icon name="layers" [size]="15" /> {{ totalActivities() }} actividades</span>
+        <span><maya-icon name="users" [size]="15" /> {{ detail.enrolledCount ?? 0 }} participantes</span>
+        @if (detail.startDate) {
+          <span><maya-icon name="calendar" [size]="15" /> Desde {{ detail.startDate | mayaDate: 'long' }}</span>
+        }
+      </div>
+
+      <div class="course-hero__progress">
+        <div class="maya-spread maya-tiny" style="color: rgba(255,255,255,.9)">
+          <span>Su progreso en el curso</span>
+          <strong>{{ progress() }} %</strong>
+        </div>
+        <maya-progress [value]="progress()" size="thick" label="Progreso del curso" />
+      </div>
+    </div>
+
+    <div class="course-hero__actions">
+      @if (canEdit()) {
+        <a
+          [routerLink]="['/courses', courseId, 'edit']"
+          class="maya-btn maya-btn--secondary maya-btn--sm"
+        >
+          <maya-icon name="settings" [size]="16" /> Editar curso
+        </a>
+      }
+      @if (canGrade()) {
+        <a
+          [routerLink]="['/courses', courseId, 'gradebook']"
+          class="maya-btn maya-btn--secondary maya-btn--sm"
+        >
+          <maya-icon name="chart" [size]="16" /> Calificaciones
+        </a>
+      }
+    </div>
+  </header>
+
+  @if (detail.summary) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-card__body maya-rich" [innerHTML]="detail.summary | safeHtml"></div>
+    </section>
+  }
+
+  <!-- Pestañas -->
+  <div class="maya-tabs" role="tablist" aria-label="Secciones del curso">
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'contents'"
+      [attr.aria-selected]="tab() === 'contents'"
+      (click)="tab.set('contents')"
+    >
+      Contenido
+    </button>
+    <a
+      class="maya-tabs__tab"
+      [routerLink]="['/courses', courseId, 'participants']"
+      role="tab"
+      aria-selected="false"
+    >
+      Participantes
+    </a>
+    <a
+      class="maya-tabs__tab"
+      [routerLink]="['/courses', courseId, 'grades']"
+      role="tab"
+      aria-selected="false"
+    >
+      Mis calificaciones
+    </a>
+  </div>
+
+  <!-- Contenido del curso -->
+  <div class="sections">
+    @for (section of sections(); track section.id) {
+      <section class="section maya-card">
+        <button
+          type="button"
+          class="section__header"
+          (click)="toggleSection(section.id)"
+          [attr.aria-expanded]="!isCollapsed(section.id)"
+        >
+          <div class="section__heading">
+            <h2 class="section__title">{{ sectionTitle(section) }}</h2>
+            <span class="maya-tiny maya-muted">
+              {{ section.modules.length }}
+              {{ section.modules.length === 1 ? 'actividad' : 'actividades' }}
+            </span>
+          </div>
+          @if (!section.visible) {
+            <span class="maya-badge maya-badge--warning">Oculto</span>
+          }
+          <maya-icon
+            [name]="isCollapsed(section.id) ? 'chevron-right' : 'chevron-down'"
+            [size]="20"
+          />
+        </button>
+
+        @if (!isCollapsed(section.id)) {
+          @if (section.summary) {
+            <div
+              class="maya-rich section__summary"
+              [innerHTML]="section.summary | safeHtml"
+            ></div>
+          }
+
+          @if (section.modules.length) {
+            <ul class="module-list">
+              @for (module of section.modules; track module.id) {
+                <li class="module" [class.module--locked]="module.available === false">
+                  <span class="module__icon" aria-hidden="true">
+                    <maya-icon [name]="icon(module)" [size]="19" />
+                  </span>
+
+                  <div class="module__body">
+                    @if (module.available === false) {
+                      <span class="module__name module__name--locked">{{ module.name }}</span>
+                      <span class="maya-tiny module__restriction">
+                        <maya-icon name="lock" [size]="13" />
+                        {{ module.availabilityInfo }}
+                      </span>
+                    } @else {
+                      <a [routerLink]="link(module)" class="module__name">{{ module.name }}</a>
+                      <div class="module__meta">
+                        @if (!module.visible) {
+                          <span class="maya-badge maya-badge--warning">Oculta</span>
+                        }
+                        @if (module.gradeMax) {
+                          <span class="maya-tiny maya-subtle">
+                            Puntuación máx. {{ module.gradeMax }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  @if (module.completionTracking > 0 && module.available !== false) {
+                    <button
+                      type="button"
+                      class="module__check"
+                      [class.is-done]="isComplete(module)"
+                      [disabled]="module.completionTracking === 2"
+                      (click)="toggleCompletion(module, $event)"
+                      [attr.aria-label]="
+                        isComplete(module)
+                          ? 'Actividad completada'
+                          : 'Marcar la actividad como completada'
+                      "
+                      [attr.title]="
+                        module.completionTracking === 2
+                          ? 'Se completa automáticamente al cumplir las condiciones'
+                          : null
+                      "
+                    >
+                      <maya-icon name="check" [size]="15" />
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="maya-small maya-muted" style="padding: var(--maya-space-5)">
+              Esta sección todavía no tiene contenido.
+            </p>
+          }
+
+          @if (canEdit()) {
+            <div class="section__footer">
+              <a
+                [routerLink]="['/courses', courseId, 'edit']"
+                [queryParams]="{ section: section.id }"
+                class="maya-btn maya-btn--soft maya-btn--sm"
+              >
+                <maya-icon name="plus" [size]="15" /> Añadir actividad o recurso
+              </a>
+            </div>
+          }
+        }
+      </section>
+    } @empty {
+      <maya-empty-state
+        icon="layers"
+        title="El curso aún no tiene contenido"
+        description="El profesorado todavía no ha publicado actividades."
+      />
+    }
+  </div>
+}

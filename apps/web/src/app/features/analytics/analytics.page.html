@@ -1,0 +1,114 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Analíticas</h1>
+    <p class="maya-page-header__subtitle">
+      Participación, rendimiento e indicadores de riesgo de sus cursos
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    <select
+      class="maya-select"
+      style="min-width: 260px"
+      [ngModel]="selectedCourse()"
+      (ngModelChange)="selectedCourse.set($event); load()"
+      aria-label="Seleccionar curso"
+    >
+      @for (course of myCourses(); track course.id) {
+        <option [value]="course.id">{{ course.fullName }}</option>
+      }
+    </select>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 360px"></div>
+} @else if (overview(); as data) {
+  <section class="maya-stats" style="margin-bottom: var(--maya-space-6)">
+    <article class="maya-card">
+      <div class="maya-card__body">
+        <p class="maya-tiny maya-muted">Matriculados</p>
+        <p class="metric">{{ data.enrolled }}</p>
+      </div>
+    </article>
+    <article class="maya-card">
+      <div class="maya-card__body">
+        <p class="maya-tiny maya-muted">Activos (7 días)</p>
+        <p class="metric">{{ data.active7d }}</p>
+      </div>
+    </article>
+    <article class="maya-card">
+      <div class="maya-card__body">
+        <p class="maya-tiny maya-muted">Tasa de finalización</p>
+        <p class="metric">{{ data.completionRate }} %</p>
+      </div>
+    </article>
+    <article class="maya-card">
+      <div class="maya-card__body">
+        <p class="maya-tiny maya-muted">Nota media</p>
+        <p class="metric">{{ data.averageGrade ?? '—' }}</p>
+      </div>
+    </article>
+  </section>
+
+  <div class="analytics-layout">
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">
+          Actividad de los últimos 30 días
+        </h2>
+      </div>
+      <div class="maya-card__body">
+        @if (chart().length) {
+          <div class="chart" role="img" aria-label="Gráfica de actividad diaria">
+            @for (day of chart(); track day.date) {
+              <div class="chart__col" [title]="day.date + ': ' + (day.views + day.posts + day.submissions) + ' eventos'">
+                <div class="chart__bar" [style.height.%]="day.height"></div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="maya-small maya-muted">Todavía no hay actividad registrada.</p>
+        }
+      </div>
+    </section>
+
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+          Alumnado en riesgo
+        </h2>
+        <maya-icon name="alert" [size]="18" />
+      </div>
+      <div class="maya-card__body">
+        @if (data.atRiskUsers.length) {
+          <ul class="risk-list">
+            @for (user of data.atRiskUsers; track user.id) {
+              <li class="risk">
+                <div class="maya-spread">
+                  <strong class="maya-small">{{ user.fullName }}</strong>
+                  <span class="maya-badge maya-badge--danger">{{ user.risk }} %</span>
+                </div>
+                <maya-progress [value]="user.risk" size="thin" />
+                <ul class="maya-tiny maya-muted" style="margin: 4px 0 0 var(--maya-space-4)">
+                  @for (reason of user.reasons; track reason) {
+                    <li>{{ reason }}</li>
+                  }
+                </ul>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="maya-small maya-muted">
+            No se han detectado personas en riesgo de abandono. ¡Buen trabajo!
+          </p>
+        }
+      </div>
+    </section>
+  </div>
+} @else {
+  <maya-empty-state
+    icon="chart"
+    title="Sin datos"
+    description="Seleccione un curso para ver sus analíticas."
+  />
+}

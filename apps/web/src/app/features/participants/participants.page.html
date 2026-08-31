@@ -1,0 +1,174 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    <li><a [routerLink]="['/courses', courseId]">Curso</a></li>
+    <li>Participantes</li>
+  </ol>
+</nav>
+
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Participantes</h1>
+    <p class="maya-page-header__subtitle">{{ visible().length }} personas en este curso</p>
+  </div>
+  @if (canEnrol()) {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openEnrol()">
+        <maya-icon name="plus" [size]="16" /> Matricular usuarios
+      </button>
+    </div>
+  }
+</header>
+
+<div class="maya-field" style="max-width: 380px; margin-bottom: var(--maya-space-4)">
+  <input
+    type="search"
+    class="maya-input"
+    placeholder="Buscar participante…"
+    [ngModel]="search()"
+    (ngModelChange)="search.set($event)"
+    aria-label="Buscar participante"
+  />
+</div>
+
+@if (enrolling()) {
+  <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Matricular usuarios</h2>
+      <button
+        type="button"
+        class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+        (click)="enrolling.set(false)"
+        aria-label="Cerrar"
+      >
+        <maya-icon name="x" [size]="16" />
+      </button>
+    </div>
+    <div class="maya-card__body maya-stack">
+      <div class="maya-field" style="max-width: 260px">
+        <label class="maya-label" for="enrol-role">Rol en el curso</label>
+        <select
+          id="enrol-role"
+          class="maya-select"
+          [ngModel]="selectedRole()"
+          (ngModelChange)="selectedRole.set($event)"
+        >
+          <option value="student">Estudiante</option>
+          <option value="teacher">Profesor sin edición</option>
+          <option value="editingteacher">Profesor</option>
+        </select>
+      </div>
+      <div
+        style="max-height: 300px; overflow-y: auto; border: 1px solid var(--maya-border); border-radius: var(--maya-radius-md)"
+      >
+        @for (candidate of candidates(); track candidate.id) {
+          <label
+            class="maya-checkbox"
+            style="padding: var(--maya-space-3); border-bottom: 1px solid var(--maya-border)"
+          >
+            <input
+              type="checkbox"
+              [checked]="selectedUsers().includes(candidate.id)"
+              (change)="toggleUser(candidate.id)"
+            />
+            <span>
+              <strong class="maya-small">{{ candidate.fullName }}</strong>
+              <span class="maya-tiny maya-subtle" style="display: block">{{ candidate.email }}</span>
+            </span>
+          </label>
+        }
+      </div>
+    </div>
+    <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        (click)="enrol()"
+        [disabled]="!selectedUsers().length"
+      >
+        Matricular {{ selectedUsers().length }} usuarios
+      </button>
+    </div>
+  </section>
+}
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (visible().length) {
+  <div class="maya-table-wrap">
+    <table class="maya-table">
+      <thead>
+        <tr>
+          <th scope="col">Participante</th>
+          <th scope="col">Roles</th>
+          <th scope="col">Grupos</th>
+          <th scope="col">Último acceso</th>
+          <th scope="col">Estado</th>
+          @if (canEnrol()) {
+            <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of visible(); track item.id) {
+          <tr>
+            <td>
+              <div class="maya-row">
+                <maya-avatar
+                  size="sm"
+                  [name]="item.user?.fullName ?? ''"
+                  [src]="item.user?.avatarUrl ?? null"
+                />
+                <div>
+                  <p class="maya-bold maya-small">{{ item.user?.fullName }}</p>
+                  <p class="maya-tiny maya-subtle">{{ item.user?.email }}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+              @for (role of item.roles; track role.id) {
+                <span class="maya-badge maya-badge--primary" style="margin-right: 4px">
+                  {{ role.name }}
+                </span>
+              }
+            </td>
+            <td>
+              @for (group of item.groups; track group.id) {
+                <span class="maya-badge" style="margin-right: 4px">{{ group.name }}</span>
+              } @empty {
+                <span class="maya-tiny maya-subtle">—</span>
+              }
+            </td>
+            <td class="maya-small">{{ item.lastAccess | mayaDate: 'short' }}</td>
+            <td>
+              <span
+                class="maya-badge"
+                [class.maya-badge--success]="item.status === 'active'"
+                [class.maya-badge--warning]="item.status !== 'active'"
+              >
+                {{ item.status === 'active' ? 'Activo' : 'Suspendido' }}
+              </span>
+            </td>
+            @if (canEnrol()) {
+              <td>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  (click)="unenrol(item)"
+                >
+                  <maya-icon name="trash" [size]="15" /> Dar de baja
+                </button>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <maya-empty-state
+    icon="users"
+    title="Sin participantes"
+    description="Todavía no hay nadie matriculado en este curso."
+  />
+}

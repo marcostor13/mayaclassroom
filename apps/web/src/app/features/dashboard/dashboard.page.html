@@ -1,0 +1,209 @@
+<!-- Saludo -->
+<section class="hero">
+  <div class="hero__text">
+    <p class="hero__eyebrow">{{ greeting() }},</p>
+    <h1 class="hero__title">{{ auth.user()?.firstName }}</h1>
+    <p class="hero__lead">
+      @if (pendingDeadlines().length) {
+        Tiene <strong>{{ pendingDeadlines().length }}</strong>
+        {{ pendingDeadlines().length === 1 ? 'entrega pendiente' : 'entregas pendientes' }}.
+        ¡Vamos a por ello!
+      } @else {
+        No tiene entregas pendientes. Buen momento para avanzar en sus cursos.
+      }
+    </p>
+  </div>
+  <div class="hero__art" aria-hidden="true">
+    <maya-icon name="graduation-cap" [size]="42" />
+  </div>
+</section>
+
+<!-- Indicadores -->
+<section class="maya-stats" aria-label="Resumen de actividad">
+  @if (loading()) {
+    @for (item of [1, 2, 3, 4]; track item) {
+      <div class="maya-skeleton" style="height: 104px"></div>
+    }
+  } @else if (data(); as overview) {
+    <article class="stat">
+      <span class="stat__icon stat__icon--primary"><maya-icon name="book" [size]="18" /></span>
+      <p class="stat__value">{{ overview.stats.courses }}</p>
+      <p class="stat__label">Cursos activos</p>
+    </article>
+    <article class="stat">
+      <span class="stat__icon stat__icon--success"><maya-icon name="check" [size]="18" /></span>
+      <p class="stat__value">{{ overview.stats.averageProgress }} %</p>
+      <p class="stat__label">Progreso medio</p>
+    </article>
+    <article class="stat">
+      <span class="stat__icon stat__icon--warning"><maya-icon name="clock" [size]="18" /></span>
+      <p class="stat__value">{{ overview.stats.pendingDeadlines }}</p>
+      <p class="stat__label">Tareas por entregar</p>
+    </article>
+    <article class="stat">
+      <span class="stat__icon stat__icon--info"><maya-icon name="bell" [size]="18" /></span>
+      <p class="stat__value">{{ overview.stats.unreadNotifications }}</p>
+      <p class="stat__label">Avisos sin leer</p>
+    </article>
+  }
+</section>
+
+<div class="layout">
+  <!-- Columna principal -->
+  <div class="maya-stack" style="gap: var(--maya-space-6)">
+    <section>
+      <div class="maya-page-header" style="margin-bottom: var(--maya-space-4)">
+        <div>
+          <h2 class="maya-page-header__title" style="font-size: var(--maya-text-xl)">
+            Mis cursos
+          </h2>
+          <p class="maya-page-header__subtitle">Continúe donde lo dejó</p>
+        </div>
+        <a routerLink="/courses" class="maya-btn maya-btn--secondary maya-btn--sm">
+          Ver todos <maya-icon name="arrow-right" [size]="15" />
+        </a>
+      </div>
+
+      @if (loading()) {
+        <div class="maya-cards">
+          @for (item of [1, 2, 3]; track item) {
+            <div class="maya-skeleton" style="height: 210px"></div>
+          }
+        </div>
+      } @else if (inProgressCourses().length) {
+        <div class="maya-cards">
+          @for (course of inProgressCourses().slice(0, 6); track course.id; let i = $index) {
+            <a
+              [routerLink]="['/courses', course.id]"
+              class="maya-card maya-card--interactive course-card"
+            >
+              <div
+                class="course-card__cover"
+                [style.background]="
+                  course.imageUrl
+                    ? 'url(' + course.imageUrl + ') center/cover'
+                    : 'linear-gradient(135deg,' + courseColor(i) + ', var(--maya-primary-deep))'
+                "
+              >
+                <span class="maya-badge maya-badge--primary course-card__tag">
+                  {{ course.shortName }}
+                </span>
+              </div>
+              <div class="maya-card__body maya-stack" style="gap: var(--maya-space-3)">
+                <h3 class="course-card__title maya-clamp-2">{{ course.fullName }}</h3>
+                <div class="maya-stack" style="gap: 6px">
+                  <div class="maya-spread maya-tiny maya-muted">
+                    <span>Progreso</span>
+                    <strong>{{ course.progress ?? 0 }} %</strong>
+                  </div>
+                  <maya-progress [value]="course.progress ?? 0" size="thin" />
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      } @else {
+        <maya-empty-state
+          icon="book"
+          title="Todavía no tiene cursos"
+          description="Explore el catálogo y matricúlese en su primer curso."
+        >
+          <a routerLink="/catalogue" class="maya-btn maya-btn--primary maya-btn--sm">
+            Explorar el catálogo
+          </a>
+        </maya-empty-state>
+      }
+    </section>
+
+    <!-- Entregas próximas -->
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">Próximas entregas</h2>
+        <maya-icon name="clipboard-check" [size]="20" />
+      </div>
+      @if (pendingDeadlines().length) {
+        <ul class="deadline-list">
+          @for (deadline of pendingDeadlines(); track deadline.id) {
+            <li class="deadline">
+              <span class="deadline__marker" aria-hidden="true"></span>
+              <div class="deadline__info">
+                <a
+                  [routerLink]="deadline.moduleId ? ['/mod/assign', deadline.moduleId] : ['/courses', deadline.courseId]"
+                  class="deadline__name"
+                >
+                  {{ deadline.name }}
+                </a>
+                <span class="maya-tiny maya-muted">
+                  Entrega {{ deadline.dueDate | relativeTime }} ·
+                  {{ deadline.dueDate | mayaDate: 'datetime' }}
+                </span>
+              </div>
+              <span class="maya-badge maya-badge--warning">Pendiente</span>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="maya-card__body">
+          <p class="maya-small maya-muted">No hay entregas pendientes en los próximos días.</p>
+        </div>
+      }
+    </section>
+  </div>
+
+  <!-- Columna lateral -->
+  <aside class="maya-stack" style="gap: var(--maya-space-4)">
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">Línea de tiempo</h2>
+        <a routerLink="/calendar" class="maya-tiny">Calendario</a>
+      </div>
+      <div class="maya-card__body">
+        @if (data()?.upcomingEvents?.length) {
+          <ul class="timeline">
+            @for (event of data()!.upcomingEvents; track event.id) {
+              <li class="timeline__item">
+                <div class="timeline__date">
+                  <span class="timeline__day">{{ event.startAt | mayaDate: 'day' }}</span>
+                </div>
+                <div class="maya-stack" style="gap: 2px">
+                  <strong class="maya-small">{{ event.name }}</strong>
+                  <span class="maya-tiny maya-muted">
+                    {{ event.startAt | mayaDate: 'time' }}
+                    @if (event.location) { · {{ event.location }} }
+                  </span>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="maya-small maya-muted">No hay eventos próximos.</p>
+        }
+      </div>
+    </section>
+
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-lg)">Accesos rápidos</h2>
+      </div>
+      <div class="maya-card__body maya-stack" style="gap: var(--maya-space-2)">
+        <a routerLink="/catalogue" class="quick">
+          <maya-icon name="layers" [size]="18" /> Catálogo de cursos
+        </a>
+        <a routerLink="/badges" class="quick">
+          <maya-icon name="award" [size]="18" /> Mis insignias
+        </a>
+        <a routerLink="/competencies" class="quick">
+          <maya-icon name="target" [size]="18" /> Mis competencias
+        </a>
+        <a routerLink="/profile" class="quick">
+          <maya-icon name="user" [size]="18" /> Mi perfil
+        </a>
+        @if (auth.isTeacherAnywhere()) {
+          <a routerLink="/analytics" class="quick">
+            <maya-icon name="chart" [size]="18" /> Analíticas de mis cursos
+          </a>
+        }
+      </div>
+    </section>
+  </aside>
+</div>

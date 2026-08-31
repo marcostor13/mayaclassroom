@@ -1,0 +1,177 @@
+/* =========================================================================
+   Maya Classroom · Design tokens
+   Paleta: rojo elegante + rojo pastel sobre blanco cálido.
+   Todos los valores viven en variables CSS para permitir el tema oscuro y la
+   personalización de marca por empresa desde la API.
+   ========================================================================= */
+
+:root {
+  /* --- Marca ---------------------------------------------------------- */
+  --maya-primary: #e4574d;
+  --maya-primary-hover: #d24a41;
+  --maya-primary-active: #c2413a;
+  --maya-primary-deep: #8e2a22;
+  --maya-primary-soft: #fbdcd8;
+  --maya-primary-softer: #fff2f0;
+  --maya-pastel: #f4a8a0;
+  --maya-accent: #f2b441;
+  --maya-accent-soft: #fdf1d8;
+
+  /* --- Estados -------------------------------------------------------- */
+  --maya-success: #2e9e6b;
+  --maya-success-soft: #e2f5ec;
+  --maya-warning: #e2a03f;
+  --maya-warning-soft: #fdf2df;
+  --maya-danger: #d64545;
+  --maya-danger-soft: #fdeaea;
+  --maya-info: #3e7bc6;
+  --maya-info-soft: #e8f0fb;
+
+  /* --- Superficies ---------------------------------------------------- */
+  --maya-bg: #fff8f7;
+  --maya-bg-alt: #fdf3f1;
+  --maya-surface: #ffffff;
+  --maya-surface-2: #fffafa;
+  --maya-surface-3: #fdf0ee;
+  --maya-overlay: rgba(42, 35, 32, 0.48);
+
+  /* --- Texto ---------------------------------------------------------- */
+  --maya-text: #2a2320;
+  --maya-text-muted: #7a6a66;
+  --maya-text-subtle: #a2918c;
+  --maya-text-on-primary: #ffffff;
+
+  /* --- Bordes --------------------------------------------------------- */
+  --maya-border: #f0e0dd;
+  --maya-border-strong: #e4cdc8;
+  --maya-focus: rgba(228, 87, 77, 0.35);
+
+  /* --- Radios --------------------------------------------------------- */
+  --maya-radius-xs: 6px;
+  --maya-radius-sm: 10px;
+  --maya-radius-md: 14px;
+  --maya-radius-lg: 20px;
+  --maya-radius-xl: 28px;
+  --maya-radius-pill: 999px;
+
+  /* --- Sombras -------------------------------------------------------- */
+  --maya-shadow-xs: 0 1px 2px rgba(142, 42, 34, 0.06);
+  --maya-shadow-sm: 0 2px 8px rgba(142, 42, 34, 0.07);
+  --maya-shadow-md: 0 8px 24px rgba(142, 42, 34, 0.09);
+  --maya-shadow-lg: 0 18px 46px rgba(142, 42, 34, 0.13);
+  --maya-shadow-primary: 0 10px 26px rgba(228, 87, 77, 0.28);
+
+  /* --- Espaciado (escala de 4 px) ------------------------------------- */
+  --maya-space-0: 0;
+  --maya-space-1: 0.25rem;
+  --maya-space-2: 0.5rem;
+  --maya-space-3: 0.75rem;
+  --maya-space-4: 1rem;
+  --maya-space-5: 1.25rem;
+  --maya-space-6: 1.5rem;
+  --maya-space-8: 2rem;
+  --maya-space-10: 2.5rem;
+  --maya-space-12: 3rem;
+  --maya-space-16: 4rem;
+
+  /* --- Tipografía ------------------------------------------------------ */
+  --maya-font-heading: 'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --maya-font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --maya-font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
+
+  --maya-text-xs: 0.75rem;
+  --maya-text-sm: 0.875rem;
+  --maya-text-base: 0.9375rem;
+  --maya-text-md: 1rem;
+  --maya-text-lg: 1.125rem;
+  --maya-text-xl: 1.375rem;
+  --maya-text-2xl: 1.75rem;
+  --maya-text-3xl: 2.25rem;
+  --maya-text-4xl: 2.875rem;
+
+  --maya-leading-tight: 1.2;
+  --maya-leading-snug: 1.4;
+  --maya-leading-normal: 1.6;
+
+  /* --- Capas ---------------------------------------------------------- */
+  --maya-z-base: 1;
+  --maya-z-sticky: 100;
+  --maya-z-drawer: 200;
+  --maya-z-dropdown: 300;
+  --maya-z-modal: 400;
+  --maya-z-toast: 500;
+
+  /* --- Movimiento ------------------------------------------------------ */
+  --maya-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --maya-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --maya-duration-fast: 120ms;
+  --maya-duration: 200ms;
+  --maya-duration-slow: 340ms;
+
+  /* --- Estructura ------------------------------------------------------ */
+  --maya-sidebar-width: 268px;
+  --maya-sidebar-collapsed: 76px;
+  --maya-topbar-height: 64px;
+  --maya-bottomnav-height: 66px;
+  --maya-container: 1360px;
+
+  color-scheme: light;
+}
+
+/* --- Tema oscuro ------------------------------------------------------ */
+:root[data-theme='dark'] {
+  --maya-primary: #ef6b60;
+  --maya-primary-hover: #f47e74;
+  --maya-primary-active: #d9564c;
+  --maya-primary-deep: #ffb3aa;
+  --maya-primary-soft: #48211d;
+  --maya-primary-softer: #331716;
+  --maya-accent-soft: #3a2d15;
+
+  --maya-success-soft: #16301f;
+  --maya-warning-soft: #33270f;
+  --maya-danger-soft: #37191a;
+  --maya-info-soft: #16233a;
+
+  --maya-bg: #17110f;
+  --maya-bg-alt: #1d1614;
+  --maya-surface: #221a18;
+  --maya-surface-2: #281f1c;
+  --maya-surface-3: #2f2421;
+  --maya-overlay: rgba(0, 0, 0, 0.66);
+
+  --maya-text: #f6ecea;
+  --maya-text-muted: #bda9a4;
+  --maya-text-subtle: #90807b;
+
+  --maya-border: #362a27;
+  --maya-border-strong: #4a3934;
+  --maya-focus: rgba(239, 107, 96, 0.4);
+
+  --maya-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --maya-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --maya-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.46);
+  --maya-shadow-lg: 0 18px 46px rgba(0, 0, 0, 0.55);
+  --maya-shadow-primary: 0 10px 26px rgba(239, 107, 96, 0.3);
+
+  color-scheme: dark;
+}
+
+/* --- Puntos de ruptura (mobile-first) --------------------------------- */
+$maya-bp-sm: 480px;
+$maya-bp-md: 768px;
+$maya-bp-lg: 1024px;
+$maya-bp-xl: 1280px;
+$maya-bp-2xl: 1536px;
+
+@mixin from($breakpoint) {
+  @media (min-width: $breakpoint) {
+    @content;
+  }
+}
+
+@mixin until($breakpoint) {
+  @media (max-width: #{$breakpoint - 1px}) {
+    @content;
+  }
+}

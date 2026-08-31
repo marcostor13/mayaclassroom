@@ -1,0 +1,184 @@
+@use '../../../styles/tokens' as *;
+
+.activity-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-4);
+  margin-bottom: var(--maya-space-5);
+
+  &__icon {
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--maya-radius-lg);
+    background: linear-gradient(135deg, var(--maya-pastel), var(--maya-primary));
+    color: #fff;
+    box-shadow: var(--maya-shadow-primary);
+  }
+
+  &__title {
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    margin-bottom: var(--maya-space-2);
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--maya-space-4);
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text-muted);
+
+    span { display: inline-flex; align-items: center; gap: 6px; }
+    .is-overdue { color: var(--maya-danger); font-weight: 600; }
+  }
+}
+
+.activity-layout {
+  display: grid;
+  gap: var(--maya-space-5);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-lg) {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+  font-size: var(--maya-text-sm);
+  padding-bottom: var(--maya-space-2);
+  border-bottom: 1px dashed var(--maya-border);
+
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+  &__label { color: var(--maya-text-muted); }
+  &__value { font-weight: 600; text-align: right; }
+}
+
+.grade-box {
+  padding: var(--maya-space-5);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-success-soft);
+  border: 1px solid color-mix(in srgb, var(--maya-success) 24%, transparent);
+  text-align: center;
+
+  &__value {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-3xl);
+    font-weight: 800;
+    color: var(--maya-success);
+  }
+
+  &__max {
+    font-size: var(--maya-text-lg);
+    color: var(--maya-text-muted);
+    margin-left: 4px;
+  }
+}
+
+/* Cuestionario */
+
+.question {
+  padding: var(--maya-space-5);
+  border-bottom: 1px solid var(--maya-border);
+
+  &:last-child { border-bottom: none; }
+
+  &__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--maya-radius-sm);
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary-deep);
+    font-weight: 700;
+    font-size: var(--maya-text-sm);
+    margin-bottom: var(--maya-space-3);
+  }
+
+  &__text {
+    font-size: var(--maya-text-md);
+    font-weight: 600;
+    margin-bottom: var(--maya-space-4);
+  }
+
+  &__options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--maya-space-2);
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-3);
+    padding: var(--maya-space-3) var(--maya-space-4);
+    border: 1.5px solid var(--maya-border);
+    border-radius: var(--maya-radius-md);
+    cursor: pointer;
+    transition: all var(--maya-duration) var(--maya-ease);
+
+    &:hover { border-color: var(--maya-pastel); background: var(--maya-surface-2); }
+
+    &.is-selected {
+      border-color: var(--maya-primary);
+      background: var(--maya-primary-softer);
+    }
+  }
+}
+
+.quiz-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-2) var(--maya-space-4);
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-warning-soft);
+  color: #a4732a;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  &.is-urgent { background: var(--maya-danger-soft); color: var(--maya-danger); }
+}
+
+/* Foro */
+
+.discussion {
+  display: flex;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-4) var(--maya-space-5);
+  border-bottom: 1px solid var(--maya-border);
+
+  &:last-child { border-bottom: none; }
+
+  &__title {
+    font-weight: 600;
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text);
+
+    &:hover { color: var(--maya-primary); }
+  }
+}
+
+.post {
+  padding: var(--maya-space-4);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+
+  &--reply { margin-left: var(--maya-space-6); background: var(--maya-surface-2); }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-3);
+    margin-bottom: var(--maya-space-3);
+  }
+
+  &__author { font-weight: 600; font-size: var(--maya-text-sm); }
+}

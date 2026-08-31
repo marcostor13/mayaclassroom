@@ -1,0 +1,108 @@
+{
+  "name": "@maya/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API NestJS 11 de Maya Classroom",
+  "license": "MIT",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts"
+  },
+  "dependencies": {
+    "@maya/shared": "1.0.0",
+    "@nestjs/common": "^11.2.3",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.2.3",
+    "@nestjs/event-emitter": "^3.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/mapped-types": "^2.1.0",
+    "@nestjs/mongoose": "^11.0.4",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.2.3",
+    "@nestjs/schedule": "^6.1.0",
+    "@nestjs/serve-static": "^5.0.3",
+    "@nestjs/swagger": "^11.4.7",
+    "@nestjs/terminus": "^11.0.0",
+    "@nestjs/throttler": "^6.4.0",
+    "argon2": "^0.44.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "compression": "^1.8.0",
+    "dayjs": "^1.11.13",
+    "handlebars": "^4.7.8",
+    "helmet": "^8.1.0",
+    "mongoose": "^8.19.0",
+    "multer": "^2.0.1",
+    "nanoid": "^3.3.11",
+    "nodemailer": "^7.0.3",
+    "otplib": "^12.0.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "sharp": "^0.34.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.2.3",
+    "@types/compression": "^1.7.5",
+    "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^22.15.0",
+    "@types/nodemailer": "^6.4.17",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
+    "@types/qrcode": "^1.5.5",
+    "@types/supertest": "^6.0.3",
+    "jest": "^29.7.0",
+    "prettier": "^3.5.3",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.3.2",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "~5.9.2",
+    "@eslint/js": "^9.24.0",
+    "eslint": "^9.24.0",
+    "typescript-eslint": "^8.30.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/",
+      "/dist/"
+    ]
+  }
+}

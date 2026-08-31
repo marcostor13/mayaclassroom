@@ -1,0 +1,191 @@
+@use '../../../styles/tokens' as *;
+
+.course-hero {
+  position: relative;
+  overflow: hidden;
+  padding: var(--maya-space-6);
+  border-radius: var(--maya-radius-xl);
+  margin-bottom: var(--maya-space-5);
+  color: #fff;
+  background:
+    radial-gradient(100% 130% at 88% 0%, rgba(255, 210, 160, 0.36) 0%, transparent 60%),
+    linear-gradient(135deg, var(--maya-primary) 0%, var(--maya-primary-active) 52%, var(--maya-primary-deep) 100%);
+  box-shadow: var(--maya-shadow-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+
+  @include from($maya-bp-lg) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--maya-space-8);
+  }
+
+  .maya-badge--primary {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--maya-primary-deep);
+  }
+
+  &__content { flex: 1; min-width: 0; }
+
+  &__title {
+    font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+    margin: var(--maya-space-3) 0 var(--maya-space-3);
+    color: #fff;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--maya-space-4);
+    font-size: var(--maya-text-sm);
+    color: rgba(255, 255, 255, 0.86);
+    margin-bottom: var(--maya-space-5);
+
+    span { display: inline-flex; align-items: center; gap: 6px; }
+  }
+
+  &__progress {
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--maya-space-2);
+
+    .maya-progress { background: rgba(255, 255, 255, 0.25); }
+    .maya-progress__bar { background: #fff; }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--maya-space-2);
+  }
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+  margin-top: var(--maya-space-5);
+}
+
+.section {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-3);
+    width: 100%;
+    padding: var(--maya-space-4) var(--maya-space-5);
+    text-align: left;
+    color: var(--maya-text);
+    transition: background var(--maya-duration-fast) var(--maya-ease);
+
+    &:hover { background: var(--maya-surface-2); }
+  }
+
+  &__heading { flex: 1; min-width: 0; }
+
+  &__title {
+    font-size: var(--maya-text-lg);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  &__summary {
+    padding: 0 var(--maya-space-5) var(--maya-space-4);
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text-muted);
+    border-bottom: 1px solid var(--maya-border);
+  }
+
+  &__footer {
+    padding: var(--maya-space-4) var(--maya-space-5);
+    border-top: 1px solid var(--maya-border);
+    background: var(--maya-surface-2);
+  }
+}
+
+.module-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.module {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3) var(--maya-space-5);
+  border-top: 1px solid var(--maya-border);
+  transition: background var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface-2); }
+
+  &--locked { opacity: 0.72; }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--maya-radius-md);
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary);
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__name {
+    font-weight: 600;
+    font-size: var(--maya-text-sm);
+    color: var(--maya-text);
+
+    &:hover { color: var(--maya-primary); }
+
+    &--locked { color: var(--maya-text-muted); cursor: not-allowed; }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-2);
+    flex-wrap: wrap;
+  }
+
+  &__restriction {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--maya-warning);
+  }
+
+  &__check {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid var(--maya-border-strong);
+    color: transparent;
+    transition: all var(--maya-duration) var(--maya-ease);
+
+    &:hover:not(:disabled) { border-color: var(--maya-primary); color: var(--maya-pastel); }
+
+    &.is-done {
+      background: var(--maya-success);
+      border-color: var(--maya-success);
+      color: #fff;
+    }
+
+    &:disabled { cursor: default; }
+  }
+}

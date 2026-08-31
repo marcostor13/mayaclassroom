@@ -1,0 +1,162 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Configuración de la empresa</h1>
+    <p class="maya-page-header__subtitle">
+      Identidad, marca y políticas de acceso de {{ tenant()?.name }}
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--primary" (click)="save()" [disabled]="saving()">
+      <maya-icon name="check" [size]="16" /> Guardar cambios
+    </button>
+  </div>
+</header>
+
+<div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr))">
+  <!-- Datos de la empresa -->
+  <section class="maya-card" [formGroup]="form">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Datos generales</h2>
+      <maya-icon name="building" [size]="18" />
+    </div>
+    <div class="maya-card__body maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="t-name">Nombre comercial</label>
+        <input id="t-name" class="maya-input" formControlName="name" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-legal">Razón social</label>
+        <input id="t-legal" class="maya-input" formControlName="legalName" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-email">Correo de contacto</label>
+        <input id="t-email" type="email" class="maya-input" formControlName="contactEmail" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-phone">Teléfono</label>
+        <input id="t-phone" class="maya-input" formControlName="contactPhone" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-domain">Dominio propio</label>
+        <input id="t-domain" class="maya-input" formControlName="domain" placeholder="aula.miempresa.com" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Marca -->
+  <section class="maya-card" [formGroup]="brandingForm">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Marca</h2>
+      <maya-icon name="sparkles" [size]="18" />
+    </div>
+    <div class="maya-card__body maya-stack">
+      <div class="maya-grid" style="grid-template-columns: 1fr 1fr">
+        <div class="maya-field">
+          <label class="maya-label" for="t-primary">Color principal</label>
+          <input
+            id="t-primary"
+            type="color"
+            class="maya-input"
+            style="height: 48px; padding: 4px"
+            formControlName="primaryColor"
+            (change)="previewBranding()"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="t-accent">Color de acento</label>
+          <input
+            id="t-accent"
+            type="color"
+            class="maya-input"
+            style="height: 48px; padding: 4px"
+            formControlName="accentColor"
+            (change)="previewBranding()"
+          />
+        </div>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-logo">URL del logotipo</label>
+        <input id="t-logo" class="maya-input" formControlName="logoUrl" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-welcome">Mensaje de bienvenida</label>
+        <textarea
+          id="t-welcome"
+          class="maya-textarea"
+          rows="3"
+          formControlName="welcomeMessage"
+        ></textarea>
+      </div>
+      <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="previewBranding()">
+        <maya-icon name="eye" [size]="15" /> Previsualizar
+      </button>
+    </div>
+  </section>
+
+  <!-- Políticas -->
+  <section class="maya-card" [formGroup]="settingsForm">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Políticas de acceso</h2>
+      <maya-icon name="shield" [size]="18" />
+    </div>
+    <div class="maya-card__body maya-stack">
+      <div class="maya-grid" style="grid-template-columns: 1fr 1fr">
+        <div class="maya-field">
+          <label class="maya-label" for="t-lang">Idioma por defecto</label>
+          <select id="t-lang" class="maya-select" formControlName="defaultLanguage">
+            <option value="es">Español</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="t-tz">Zona horaria</label>
+          <input id="t-tz" class="maya-input" formControlName="timezone" />
+        </div>
+      </div>
+
+      <label class="maya-switch">
+        <input type="checkbox" formControlName="allowSelfRegistration" />
+        <span class="maya-small">Permitir registro autónomo</span>
+      </label>
+      <label class="maya-switch">
+        <input type="checkbox" formControlName="requireEmailVerification" />
+        <span class="maya-small">Exigir verificación del correo</span>
+      </label>
+      <label class="maya-switch">
+        <input type="checkbox" formControlName="allowGuestAccess" />
+        <span class="maya-small">Permitir acceso de invitados</span>
+      </label>
+      <label class="maya-switch">
+        <input type="checkbox" formControlName="enforceTwoFactor" />
+        <span class="maya-small">Obligar verificación en dos pasos</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- Uso -->
+  @if (tenant(); as info) {
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Uso del plan</h2>
+        <span class="maya-badge maya-badge--primary">{{ info.plan }}</span>
+      </div>
+      <div class="maya-card__body maya-stack">
+        <div class="maya-spread maya-small">
+          <span class="maya-muted">Usuarios</span>
+          <strong>{{ info.userCount ?? 0 }} / {{ info.limits.maxUsers }}</strong>
+        </div>
+        <div class="maya-spread maya-small">
+          <span class="maya-muted">Cursos</span>
+          <strong>{{ info.courseCount ?? 0 }} / {{ info.limits.maxCourses }}</strong>
+        </div>
+        <div class="maya-spread maya-small">
+          <span class="maya-muted">Almacenamiento</span>
+          <strong>
+            {{ (info.limits.usedStorageBytes / 1048576).toFixed(1) }} MB /
+            {{ (info.limits.maxStorageBytes / 1073741824).toFixed(0) }} GB
+          </strong>
+        </div>
+      </div>
+    </section>
+  }
+</div>
