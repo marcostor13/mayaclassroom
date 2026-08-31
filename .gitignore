@@ -37,3 +37,9 @@ Thumbs.db
 storage/
 uploads/
 tmp/
+
+# salidas del utillaje de revisión de interfaz (.claude/skills/revisar-ui)
+/capturas/
+/banco/
+CLAUDE.local.md
+.claude/settings.local.json
