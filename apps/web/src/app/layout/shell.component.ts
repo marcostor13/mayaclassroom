@@ -37,9 +37,13 @@ export class ShellComponent {
 
   /** Elementos de menú visibles según las capacidades del usuario. */
   readonly navigation = computed(() => {
-    const visible = NAV_ITEMS.filter(
-      (item) => !item.capabilities?.length || this.auth.canAny(item.capabilities),
-    );
+    const visible = NAV_ITEMS.filter((item) => {
+      // `platformAdmin` no se cubre con capacidades: los endpoints de ámbito
+      // plataforma se protegen con el indicador del usuario, no con el RBAC
+      // por contexto, y `canAny` daría verdadero a cualquier gestor.
+      if (item.platformAdmin && !this.auth.isPlatformAdmin()) return false;
+      return !item.capabilities?.length || this.auth.canAny(item.capabilities);
+    });
     const groups: { name: NavItem['group']; items: NavItem[] }[] = [];
     for (const item of visible) {
       let group = groups.find((g) => g.name === item.group);

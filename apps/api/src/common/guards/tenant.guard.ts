@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { TENANT_HEADER } from '@maya/shared';
-import { MayaRequest } from '../types/request-context';
+import type { MayaRequest } from '../types/request-context';
 
 /**
  * Refuerza el aislamiento multiempresa: si la petición declara una empresa

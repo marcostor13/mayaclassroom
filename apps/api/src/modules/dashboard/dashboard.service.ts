@@ -10,7 +10,7 @@ import { MessagingService } from '../messaging/messaging.service';
 import { AssignService } from '../activities/assign/assign.service';
 import { GradesService } from '../grades/grades.service';
 import { UsersService } from '../users/users.service';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 
 /**
  * Agrega la información del panel principal: mis cursos, línea de tiempo,

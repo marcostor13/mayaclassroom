@@ -26,23 +26,25 @@ marca, sus usuarios, sus roles y su oferta formativa.
 ## Instalación rápida
 
 ```bash
-# 1 · Requisitos: Node ≥ 22.22.3 (el CLI de Angular 22 lo exige) y npm ≥ 10
+# 1 · Requisitos: Bun ≥ 1.2 y Node ≥ 22.22.3 (los CLI de Nest y Angular se
+#     invocan con shebang `node`; Angular 22 exige esa versión mínima).
+bun --version
 node -v
 
 # 2 · Dependencias del monorepo
-npm install
+bun install
 
 # 3 · Configuración
 cp .env.example .env          # y edite MONGODB_URI con su clúster de Atlas
 
 # 4 · Compilar los contratos compartidos
-npm run build:shared
+bun run build:shared
 
 # 5 · Datos de demostración (crea empresa, usuarios y cursos de ejemplo)
-npm run seed
+bun run seed
 
 # 6 · Arrancar API (:3000) y cliente (:4200) a la vez
-npm run dev
+bun run dev
 ```
 
 Abra `http://localhost:4200` y acceda con la empresa **`demo`**:
@@ -88,13 +90,13 @@ maya-classroom/
 
 | Comando | Descripción |
 |---|---|
-| `npm run dev` | API y cliente en modo desarrollo |
-| `npm run dev:api` | Solo la API (`http://localhost:3000`) |
-| `npm run dev:web` | Solo el cliente (`http://localhost:4200`) |
-| `npm run build` | Compila los tres paquetes |
-| `npm run seed` | Siembra datos de demostración |
-| `npm run test` | Pruebas de la API |
-| `npm run lint` | Análisis estático de la API |
+| `bun run dev` | API y cliente en modo desarrollo |
+| `bun run dev:api` | Solo la API (`http://localhost:3000`) |
+| `bun run dev:web` | Solo el cliente (`http://localhost:4200`) |
+| `bun run build` | Compila los tres paquetes |
+| `bun run seed` | Siembra datos de demostración |
+| `bun run test` | Pruebas de la API |
+| `bun run lint` | Análisis estático de la API |
 
 ---
 
@@ -163,14 +165,84 @@ La línea gráfica parte de un **rojo elegante** (`#E4574D`) con apoyos en
 
 ## Despliegue
 
+### Manual
+
 ```bash
-npm run build
-NODE_ENV=production node apps/api/dist/main.js   # API
+bun run build
+NODE_ENV=production bun apps/api/dist/main.js   # API
 # Sirva apps/web/dist/web/browser con cualquier CDN o servidor estático
 ```
 
 También hay un `docker-compose.yml` listo para levantar API, cliente y una
 instancia local de MongoDB.
+
+### Continuo: Coolify + GitHub Actions + Cloudflare Tunnel
+
+Cada push a `main` dispara `.github/workflows/deploy.yml`, que compila y prueba
+todo y, solo si pasa, sincroniza el DNS y encola el despliegue de las dos
+aplicaciones en Coolify. Un último trabajo espera a que ambos dominios
+respondan 200 antes de dar el despliegue por bueno.
+
+No hay IP pública: Cloudflare entrega el tráfico por un **túnel**, así que cada
+dominio es un `CNAME` a `<tunnel>.cfargotunnel.com` con el proxy activado, y el
+proxy de Coolify enruta por nombre de host.
+
+| Dominio | Aplicación | Imagen |
+|---|---|---|
+| `mayaclassroom.ignia.site` | cliente Angular | `apps/web/Dockerfile` (nginx) |
+| `api-mayaclassroom.ignia.site` | API NestJS | `apps/api/Dockerfile` |
+
+> El dominio de la API es un subdominio de **un solo nivel** a propósito. El
+> certificado gratuito de Cloudflare cubre `ignia.site` y `*.ignia.site`, pero
+> no `*.*.ignia.site`: un host como `api.mayaclassroom.ignia.site` resuelve por
+> DNS y luego falla el handshake TLS.
+
+El cliente y la API viven en dominios distintos, así que el navegador llama
+directamente a la API. La URL se incrusta en el paquete al construir la imagen
+(`ARG API_URL` en `apps/web/Dockerfile`) y el acceso lo autoriza `CORS_ORIGINS`
+en la API.
+
+#### Utilidad de despliegue
+
+```bash
+bun run deploy --list     # Inventario de Coolify: proyectos, servidores y apps
+bun run deploy --dns      # Crea o ajusta los CNAME del túnel (idempotente)
+bun run deploy --check    # Verifica que los UUID apuntan a este repositorio
+bun run deploy            # Encola el despliegue de ambas aplicaciones
+bun run deploy --api      # Solo la API
+bun run deploy --web      # Solo el cliente
+```
+
+`--check` se ejecuta siempre antes de desplegar y aborta si algún UUID pertenece
+a otro repositorio. La comprobación existe porque `.env.deploy` se copia entre
+proyectos con facilidad y un UUID heredado publica este código encima de la
+aplicación de otro.
+
+#### Configuración en GitHub
+
+Variables del repositorio (`Settings → Secrets and variables → Actions`):
+
+| Variable | Valor |
+|---|---|
+| `COOLIFY_URL` | URL de la instancia de Coolify |
+| `FRONTEND_DOMAIN` | `mayaclassroom.ignia.site` |
+| `BACKEND_DOMAIN` | `api-mayaclassroom.ignia.site` |
+| `CLOUDFLARE_ZONE_NAME` | `ignia.site` (la zona, no el subdominio) |
+
+Secretos del repositorio:
+
+| Secreto | Origen |
+|---|---|
+| `COOLIFY_TOKEN` | Coolify → Keys & Tokens → API tokens |
+| `COOLIFY_API_UUID` | `bun run deploy --list` |
+| `COOLIFY_WEB_UUID` | `bun run deploy --list` |
+| `CLOUDFLARE_API_TOKEN` | Token con permiso `Zone:DNS:Edit` |
+| `CLOUDFLARE_TUNNEL_ID` | Identificador del Cloudflare Tunnel |
+
+Los valores de runtime (`MONGODB_URI`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`,
+`CORS_ORIGINS`, `NODE_DNS_SERVERS`…) se configuran en las variables de entorno
+de cada aplicación **dentro de Coolify**, no en GitHub: no participan en la
+construcción. La plantilla completa está en `.env.deploy`, que no se versiona.
 
 ---
 

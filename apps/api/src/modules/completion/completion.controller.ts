@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { CompletionService } from './completion.service';
 
 @ApiTags('Finalización')

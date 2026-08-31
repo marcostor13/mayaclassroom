@@ -200,5 +200,5 @@ efectivas del usuario, obtenidas en `/auth/me`.
 
 1. Declararla en `CAP` y en `CAPABILITY_CATALOG` (`packages/shared`).
 2. Incluirla en los arquetipos de rol pertinentes en `ROLE_PRESETS`.
-3. Ejecutar `npm run seed` para reprovisionar los roles del sistema.
+3. Ejecutar `bun run seed` para reprovisionar los roles del sistema.
 4. Protegerla con `@RequireCapability(...)` en el controlador.

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, CompetencyProficiency, ContextLevel, LearningPlanStatus } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { CompetenciesService } from './competencies.service';
 
 @ApiTags('Competencias')

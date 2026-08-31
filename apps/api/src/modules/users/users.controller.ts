@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestj
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel, LogAction, UserStatus } from '@maya/shared';
 import { Audit, CurrentUser, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { UsersService } from './users.service';
 import {
   BulkUserActionDto,

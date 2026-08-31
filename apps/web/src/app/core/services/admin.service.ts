@@ -8,6 +8,7 @@ import {
   IssuedBadgeDto,
   Paginated,
   TenantDto,
+  TenantStatus,
   UserDto,
 } from '../models';
 import { ApiService } from './api.service';
@@ -87,12 +88,24 @@ export class AdminService {
     return this.api.patch<TenantDto>('/tenants/me', payload);
   }
 
-  tenants(query: Record<string, string | number> = {}): Observable<Paginated<TenantDto>> {
+  tenants(query: Record<string, string | number | undefined> = {}): Observable<Paginated<TenantDto>> {
     return this.api.get<Paginated<TenantDto>>('/tenants', query);
   }
 
   createTenant(payload: Record<string, unknown>): Observable<TenantDto> {
     return this.api.post<TenantDto>('/tenants', payload);
+  }
+
+  updateTenant(id: string, payload: Record<string, unknown>): Observable<TenantDto> {
+    return this.api.patch<TenantDto>(`/tenants/${id}`, payload);
+  }
+
+  setTenantStatus(id: string, status: TenantStatus): Observable<TenantDto> {
+    return this.api.patch<TenantDto>(`/tenants/${id}/status`, { status });
+  }
+
+  deleteTenant(id: string): Observable<void> {
+    return this.api.delete<void>(`/tenants/${id}`);
   }
 
   /* ------------------------- Cohortes e insignias ------------------------ */

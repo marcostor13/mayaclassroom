@@ -1,0 +1,179 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Empresas</h1>
+    <p class="maya-page-header__subtitle">{{ total() }} empresas en la plataforma</p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--primary" (click)="creating.set(!creating())">
+      <maya-icon name="plus" [size]="16" /> Nueva empresa
+    </button>
+  </div>
+</header>
+
+@if (creating()) {
+  <form [formGroup]="form" (ngSubmit)="create()" class="maya-card" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Crear empresa</h2>
+    </div>
+    <div class="maya-card__body maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+      <div class="maya-field">
+        <label class="maya-label" for="t-slug">Identificador</label>
+        <input id="t-slug" class="maya-input" formControlName="slug" autocomplete="off" />
+        <span class="maya-hint">Se usa para entrar. Minúsculas, números y guiones.</span>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-name">Nombre</label>
+        <input id="t-name" class="maya-input" formControlName="name" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-email">Correo de contacto</label>
+        <input id="t-email" type="email" class="maya-input" formControlName="contactEmail" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-legal">Razón social</label>
+        <input id="t-legal" class="maya-input" formControlName="legalName" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-tax">Identificación fiscal</label>
+        <input id="t-tax" class="maya-input" formControlName="taxId" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-phone">Teléfono</label>
+        <input id="t-phone" class="maya-input" formControlName="contactPhone" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-domain">Dominio propio</label>
+        <input id="t-domain" class="maya-input" formControlName="domain" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-plan">Plan</label>
+        <select id="t-plan" class="maya-select" formControlName="plan">
+          @for (plan of plans; track plan.value) {
+            <option [value]="plan.value">{{ plan.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="t-status">Estado inicial</label>
+        <select id="t-status" class="maya-select" formControlName="status">
+          <option value="trial">En pruebas</option>
+          <option value="active">Activa</option>
+        </select>
+      </div>
+    </div>
+    <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); justify-content: flex-end">
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="creating.set(false)">
+        Cancelar
+      </button>
+      <button type="submit" class="maya-btn maya-btn--primary">Crear empresa</button>
+    </div>
+  </form>
+}
+
+<div class="maya-row" style="flex-wrap: wrap; margin-bottom: var(--maya-space-4)">
+  <input
+    type="search"
+    class="maya-input"
+    style="max-width: 320px"
+    placeholder="Buscar por nombre o identificador…"
+    [ngModel]="search()"
+    [ngModelOptions]="{ standalone: true }"
+    (ngModelChange)="search.set($event)"
+    (keyup.enter)="load()"
+    aria-label="Buscar empresas"
+  />
+  <select
+    class="maya-select"
+    style="max-width: 200px"
+    [ngModel]="status()"
+    [ngModelOptions]="{ standalone: true }"
+    (ngModelChange)="status.set($event); load()"
+    aria-label="Filtrar por estado"
+  >
+    <option value="">Todos los estados</option>
+    <option value="active">Activas</option>
+    <option value="trial">En pruebas</option>
+    <option value="suspended">Suspendidas</option>
+    <option value="archived">Archivadas</option>
+  </select>
+  <button type="button" class="maya-btn maya-btn--secondary" (click)="load()">
+    <maya-icon name="search" [size]="16" /> Buscar
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 340px"></div>
+} @else if (tenants().length) {
+  <div class="maya-table-wrap">
+    <table class="maya-table">
+      <thead>
+        <tr>
+          <th scope="col">Empresa</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Usuarios</th>
+          <th scope="col">Alta</th>
+          <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (tenant of tenants(); track tenant.id) {
+          <tr>
+            <td>
+              <p class="maya-bold maya-small">{{ tenant.name }}</p>
+              <p class="maya-tiny maya-subtle">{{ tenant.slug }} · {{ tenant.contactEmail }}</p>
+            </td>
+            <td class="maya-small">{{ planLabel(tenant.plan) }}</td>
+            <td>
+              <span
+                class="maya-badge"
+                [class.maya-badge--success]="tenant.status === 'active'"
+                [class.maya-badge--warning]="tenant.status === 'trial'"
+                [class.maya-badge--danger]="tenant.status === 'suspended'"
+              >
+                {{ statusLabel(tenant.status) }}
+              </span>
+            </td>
+            <td class="maya-small">{{ tenant.userCount ?? '—' }}</td>
+            <td class="maya-small">{{ tenant.createdAt | mayaDate: 'short' }}</td>
+            <td>
+              <div class="maya-row">
+                @if (tenant.status === 'suspended') {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--sm"
+                    (click)="setStatus(tenant, TenantStatus.Active)"
+                  >
+                    Reactivar
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--sm"
+                    (click)="setStatus(tenant, TenantStatus.Suspended)"
+                  >
+                    Suspender
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  (click)="remove(tenant)"
+                  [attr.aria-label]="'Dar de baja ' + tenant.name"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <maya-empty-state
+    icon="building"
+    title="Sin empresas"
+    description="Cree la primera empresa de la plataforma."
+  />
+}

@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, Public, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { CertificatesService } from './certificates.service';
 import { AppConfig } from '../../config';
 

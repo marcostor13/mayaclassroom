@@ -5,7 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Types } from 'mongoose';
 import { UserStatus } from '@maya/shared';
 import { JwtConfig } from '../../../config';
-import { RequestUser } from '../../../common/types/request-context';
+import type { RequestUser } from '../../../common/types/request-context';
 import { AuthService } from '../auth.service';
 
 export interface JwtPayload {

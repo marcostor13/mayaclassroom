@@ -14,11 +14,11 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && node ./scripts/fix-esm.mjs",
+    "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && bun ./scripts/fix-esm.mjs",
     "watch": "tsc -p tsconfig.cjs.json --watch"
   },
   "devDependencies": {
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.2"
   },
   "module": "dist/esm/index.js"
 }

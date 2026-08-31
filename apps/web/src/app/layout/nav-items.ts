@@ -8,6 +8,8 @@ export interface NavItem {
   capabilities?: string[];
   /** Sección del menú lateral. */
   group: 'principal' | 'docencia' | 'administración';
+  /** Solo visible para administradores de plataforma. */
+  platformAdmin?: boolean;
   /** Se muestra también en la barra inferior móvil. */
   mobile?: boolean;
   exact?: boolean;
@@ -77,5 +79,12 @@ export const NAV_ITEMS: NavItem[] = [
     route: '/admin/tenant',
     group: 'administración',
     capabilities: [CAP.TENANT_UPDATE, CAP.TENANT_MANAGE_BRANDING],
+  },
+  {
+    label: 'Empresas',
+    icon: 'building',
+    route: '/admin/tenants',
+    group: 'administración',
+    platformAdmin: true,
   },
 ];

@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { ContextLevel } from '@maya/shared';
 import { CAPABILITY_KEY, CapabilityRequirement } from '../decorators/capability.decorator';
 import { PLATFORM_ADMIN_KEY } from '../decorators/platform-admin.decorator';
-import { MayaRequest } from '../types/request-context';
+import type { MayaRequest } from '../types/request-context';
 import { AccessService } from '../../modules/rbac/access.service';
 import { ContextsService } from '../../modules/contexts/contexts.service';
 

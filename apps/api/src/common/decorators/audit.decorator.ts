@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { LogAction } from '@maya/shared';
+import type { LogAction } from '@maya/shared';
 
 export const AUDIT_KEY = 'maya:audit';
 

@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { randomUUID } from 'node:crypto';
-import { MayaRequest } from '../types/request-context';
+import type { MayaRequest } from '../types/request-context';
 
 /** Traza cada petición con un identificador correlacionable. */
 @Injectable()

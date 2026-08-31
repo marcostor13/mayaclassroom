@@ -1,5 +1,6 @@
-import { ExecutionContext, createParamDecorator } from '@nestjs/common';
-import { MayaRequest, RequestUser } from '../types/request-context';
+import type { ExecutionContext} from '@nestjs/common';
+import { createParamDecorator } from '@nestjs/common';
+import type { MayaRequest, RequestUser } from '../types/request-context';
 
 /** Inyecta el usuario autenticado (o una de sus propiedades). */
 export const CurrentUser = createParamDecorator(

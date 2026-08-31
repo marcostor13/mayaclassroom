@@ -1,6 +1,6 @@
-import { Request } from 'express';
-import { Types } from 'mongoose';
-import { AuthenticatedUser } from '@maya/shared';
+import type { Request } from 'express';
+import type { Types } from 'mongoose';
+import type { AuthenticatedUser } from '@maya/shared';
 
 export interface RequestUser extends AuthenticatedUser {
   /** Identificadores en formato ObjectId para consultas directas. */

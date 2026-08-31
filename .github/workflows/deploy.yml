@@ -1,0 +1,137 @@
+name: Desplegar
+
+# Entrega continua: cada push a `main` compila, prueba y, solo si todo pasa,
+# dispara el despliegue de las dos aplicaciones en Coolify.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      objetivo:
+        description: 'Qué desplegar'
+        required: true
+        default: 'ambos'
+        type: choice
+        options: [ambos, api, web]
+
+# Un despliegue a la vez: si llegan dos push seguidos, el segundo espera en vez
+# de competir por el mismo contenedor.
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    name: Compilar y probar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Preparar Node
+        # Bun gestiona dependencias y guiones, pero los CLI de Nest y Angular se
+        # invocan con shebang `node`. Angular 22 exige Node >= 22.22.3.
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Instalar dependencias
+        run: bun install --frozen-lockfile
+
+      - name: Compilar los contratos compartidos
+        run: bun run build:shared
+
+      - name: Verificar tipos de la API
+        run: bunx tsc -p apps/api/tsconfig.json --noEmit
+
+      - name: Análisis estático de la API
+        run: bun run lint
+
+      - name: Pruebas de la API
+        run: bun run test
+
+      - name: Compilar la API
+        run: bun run build:api
+
+      - name: Compilar el cliente
+        run: bun run build:web
+
+  desplegar:
+    name: Desplegar en Coolify
+    needs: verificar
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Sincronizar DNS en Cloudflare
+        # Idempotente: crea los CNAME al túnel la primera vez y no toca nada
+        # después. Se ejecuta antes del despliegue para que el dominio ya
+        # resuelva cuando el contenedor quede sano.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_NAME: ${{ vars.CLOUDFLARE_ZONE_NAME }}
+          CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
+          FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
+          BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+        run: bun run deploy --dns
+
+      - name: Desplegar
+        # El guion valida antes que cada UUID pertenece a este repositorio; si
+        # no, aborta sin disparar nada. Es la protección contra un UUID heredado
+        # de otro proyecto, que desplegaría este código sobre una app ajena.
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_API_UUID: ${{ secrets.COOLIFY_API_UUID }}
+          COOLIFY_WEB_UUID: ${{ secrets.COOLIFY_WEB_UUID }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+          FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
+          BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+        run: |
+          case "${{ inputs.objetivo || 'ambos' }}" in
+            api) bun run deploy --api ;;
+            web) bun run deploy --web ;;
+            *)   bun run deploy ;;
+          esac
+
+  comprobar:
+    name: Comprobar en producción
+    needs: desplegar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Esperar a que las aplicaciones respondan
+        # Coolify construye las imágenes de forma asíncrona, así que el paso
+        # anterior solo encola. Aquí se espera al resultado real.
+        env:
+          FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
+          BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+        run: |
+          set -u
+          esperar() {
+            local url="$1" nombre="$2" intento=0
+            until [ "$intento" -ge 40 ]; do
+              codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
+              if [ "$codigo" = "200" ]; then
+                echo "OK    $nombre responde 200"
+                return 0
+              fi
+              intento=$((intento + 1))
+              echo "      $nombre -> $codigo (intento $intento/40)"
+              sleep 15
+            done
+            echo "FALLO $nombre no respondió 200 tras 10 minutos"
+            return 1
+          }
+          esperar "https://${BACKEND_DOMAIN}/api/v1/health" "API"
+          esperar "https://${FRONTEND_DOMAIN}/" "Cliente"

@@ -17,6 +17,8 @@ export interface DatabaseConfig {
   dbName: string;
   autoIndex: boolean;
   maxPoolSize: number;
+  /** Servidores DNS explícitos para la resolución SRV de `mongodb+srv://`. */
+  dnsServers: string[];
 }
 
 export interface JwtConfig {
@@ -94,6 +96,7 @@ export const databaseConfig = registerAs(
     dbName: process.env.MONGODB_DB ?? 'maya_classroom',
     autoIndex: toBool(process.env.MONGODB_AUTO_INDEX, true),
     maxPoolSize: toInt(process.env.MONGODB_POOL_SIZE, 20),
+    dnsServers: toList(process.env.NODE_DNS_SERVERS, []),
   }),
 );
 

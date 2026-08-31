@@ -91,7 +91,7 @@ políticas del sitio y RGPD, tareas programadas (cron), auditoría.
 resuelve permisos y tiene su lenguaje visual completo.
 
 ### 1.1 Arquitectura
-- Monorepo con **npm workspaces**: `apps/api`, `apps/web`, `packages/shared`.
+- Monorepo con **workspaces de Bun**: `apps/api`, `apps/web`, `packages/shared`.
 - `packages/shared`: contratos TypeScript (DTO, enums, catálogo de capacidades,
   constantes de roles) consumidos por API y Web — una única fuente de verdad.
 - API NestJS 11 modular: `config`, `database`, `common` (guards, interceptors,

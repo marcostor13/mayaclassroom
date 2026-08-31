@@ -5,6 +5,12 @@ import { Types } from 'mongoose';
  * Base común de todos los documentos: marca temporal, borrado lógico y
  * pertenencia a una empresa (tenant). El aislamiento multiempresa se apoya en
  * `tenant` + índices compuestos en cada colección.
+ *
+ * Nota: las opciones `toJSON`/`toObject` de este decorador NO las heredan los
+ * esquemas hijos (`SchemaFactory.createForClass` solo lee el decorador de la
+ * clase concreta). Quien garantiza de verdad la serialización con `id` es el
+ * complemento global registrado en `DatabaseModule`; esto se conserva por
+ * coherencia si alguna vez se instancia la base directamente.
  */
 @Schema({
   timestamps: true,

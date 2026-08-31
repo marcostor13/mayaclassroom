@@ -3,12 +3,12 @@ import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import compression from 'compression';
 import { API_VERSION, MAYA_BRAND, TENANT_HEADER } from '@maya/shared';
 import { AppModule } from './app.module';
-import { AppConfig } from './config';
+import type { AppConfig } from './config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggingInterceptor, TransformInterceptor } from './common/interceptors';
 

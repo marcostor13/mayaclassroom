@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { GradesService } from './grades.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';
 import { UsersService } from '../users/users.service';

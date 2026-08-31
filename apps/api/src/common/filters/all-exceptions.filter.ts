@@ -6,10 +6,10 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { MongoServerError } from 'mongodb';
 import { Error as MongooseError } from 'mongoose';
-import { MayaRequest } from '../types/request-context';
+import type { MayaRequest } from '../types/request-context';
 
 interface NormalizedError {
   status: number;

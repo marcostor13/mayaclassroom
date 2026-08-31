@@ -7,7 +7,7 @@ import {
   LogAction,
 } from '@maya/shared';
 import { Audit, CurrentUser, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { CoursesService } from './courses.service';
 import { CourseViewService } from './course-view.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';

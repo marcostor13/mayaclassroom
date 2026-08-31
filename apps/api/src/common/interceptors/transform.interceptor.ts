@@ -1,6 +1,6 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
-import { MayaRequest } from '../types/request-context';
+import type { MayaRequest } from '../types/request-context';
 
 export interface ApiEnvelope<T> {
   success: true;

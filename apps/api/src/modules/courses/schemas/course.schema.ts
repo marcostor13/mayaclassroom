@@ -69,4 +69,12 @@ export const CourseSchema = SchemaFactory.createForClass(Course);
 
 CourseSchema.index({ tenant: 1, shortName: 1 }, { unique: true });
 CourseSchema.index({ tenant: 1, category: 1, sortOrder: 1 });
-CourseSchema.index({ fullName: 'text', shortName: 'text', summary: 'text' });
+// `language_override` es obligatorio aquí: por defecto MongoDB usa el campo
+// `language` del documento para elegir el stemmer, pero en un curso ese campo
+// es el idioma en que se imparte (y admite null o códigos que MongoDB no
+// reconoce). Sin este ajuste, insertar un curso con `language: null` falla con
+// «found language override field in document with non-string type».
+CourseSchema.index(
+  { fullName: 'text', shortName: 'text', summary: 'text' },
+  { default_language: 'es', language_override: 'textLanguage', name: 'course_text' },
+);

@@ -8,8 +8,8 @@
 
 # Node
 /node_modules
-npm-debug.log
-yarn-error.log
+bun-debug.log
+
 
 # IDEs and editors
 .idea/

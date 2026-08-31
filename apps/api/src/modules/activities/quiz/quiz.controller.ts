@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/commo
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../../common/decorators';
-import { RequestUser } from '../../../common/types/request-context';
+import type { RequestUser } from '../../../common/types/request-context';
 import { QuizService } from './quiz.service';
 import { CoursesService } from '../../courses/courses.service';
 import { AddQuizQuestionsDto, ManualGradeDto, SaveResponseDto } from './dto/quiz.dto';

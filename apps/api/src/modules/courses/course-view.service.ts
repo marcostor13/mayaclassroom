@@ -10,7 +10,7 @@ import {
 import { CoursesService } from './courses.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { CompletionService } from '../completion/completion.service';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { AccessService } from '../rbac/access.service';
 import { ContextsService } from '../contexts/contexts.service';
 import { ContextLevel } from '@maya/shared';

@@ -53,7 +53,11 @@ import { PlatformModule } from './modules/platform/platform.module';
       cache: true,
       load: configurations,
       validate: validateEnv,
-      envFilePath: ['.env.local', '.env'],
+      // Los guiones del espacio de trabajo se ejecutan con el directorio de
+      // trabajo en apps/api, mientras que en Docker es la raíz del proyecto:
+      // se buscan ambas ubicaciones para que el fichero de la raíz se cargue
+      // en los dos casos.
+      envFilePath: ['.env.local', '.env', '../../.env.local', '../../.env'],
       expandVariables: true,
     }),
     ThrottlerModule.forRootAsync({

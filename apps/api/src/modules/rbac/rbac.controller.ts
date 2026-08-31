@@ -11,7 +11,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, CAPABILITY_CATALOG, ContextLevel, groupCapabilitiesByComponent } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { RolesService } from './roles.service';
 import { AccessService } from './access.service';
 import {

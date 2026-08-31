@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Req } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser, Public } from '../../common/decorators';
-import { MayaRequest, RequestUser } from '../../common/types/request-context';
+import type { MayaRequest, RequestUser } from '../../common/types/request-context';
 import { AuthService } from './auth.service';
 import {
   ChangePasswordDto,

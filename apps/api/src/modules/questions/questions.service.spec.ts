@@ -1,6 +1,6 @@
 import { QuestionType } from '@maya/shared';
 import { QuestionsService } from './questions.service';
-import { QuestionDocument } from './schemas/question.schema';
+import type { QuestionDocument } from './schemas/question.schema';
 
 /** Construye una pregunta mínima con la forma que espera `gradeAnswer`. */
 function question(overrides: Partial<QuestionDocument>): QuestionDocument {

@@ -2,7 +2,7 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Reflector } from '@nestjs/core';
 import { Observable, tap } from 'rxjs';
 import { AUDIT_KEY, AuditMetadata } from '../decorators/audit.decorator';
-import { MayaRequest } from '../types/request-context';
+import type { MayaRequest } from '../types/request-context';
 import { LogsService } from '../../modules/logs/logs.service';
 
 /** Registra en el log de eventos las acciones marcadas con `@Audit(...)`. */

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { CAP } from '@maya/shared';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
-import { capabilityGuard } from './core/guards/capability.guard';
+import { capabilityGuard, platformAdminGuard } from './core/guards/capability.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -217,6 +217,15 @@ export const routes: Routes = [
         data: { capabilities: [CAP.COHORT_VIEW, CAP.COHORT_MANAGE] },
         loadComponent: () =>
           import('./features/admin/cohorts.page').then((m) => m.AdminCohortsPage),
+      },
+      {
+        path: 'admin/tenants',
+        title: 'Empresas · Maya Classroom',
+        // Ámbito plataforma, no empresa: se exige ser administrador de
+        // plataforma, igual que los endpoints `@PlatformAdminOnly` que consume.
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/tenants.page').then((m) => m.AdminTenantsPage),
       },
       {
         path: 'admin/tenant',

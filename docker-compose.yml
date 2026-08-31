@@ -37,6 +37,9 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-cambie-esta-clave-de-acceso-de-32-caracteres}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-cambie-esta-clave-de-refresco-de-32-caracteres}
       STORAGE_LOCAL_PATH: /data/storage
+      # Normalmente vacío: Docker ya provee su propio resolver. Se deja
+      # disponible por si el anfitrión necesita servidores DNS explícitos.
+      NODE_DNS_SERVERS: ${NODE_DNS_SERVERS:-}
     volumes:
       - maya-storage:/data/storage
     ports:

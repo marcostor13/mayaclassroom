@@ -13,27 +13,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Preparar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Preparar Node
+        # Bun gestiona dependencias y guiones, pero los CLI de Nest y Angular se
+        # invocan con shebang `node`. Angular 22 exige Node ≥ 22.22.3.
         uses: actions/setup-node@v4
         with:
-          # El CLI de Angular 22 exige Node ≥ 22.22.3.
           node-version: 24
-          cache: npm
 
       - name: Instalar dependencias
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Compilar los contratos compartidos
-        run: npm run build:shared
+        run: bun run build:shared
 
       - name: Verificar tipos de la API
-        run: npx tsc -p apps/api/tsconfig.json --noEmit
+        run: bunx tsc -p apps/api/tsconfig.json --noEmit
+
+      - name: Análisis estático de la API
+        run: bun run lint
 
       - name: Pruebas de la API
-        run: npm run test --workspace @maya/api
+        run: bun run test
 
       - name: Compilar la API
-        run: npm run build:api
+        run: bun run build:api
 
       - name: Compilar el cliente
-        run: npm run build:web
+        run: bun run build:web

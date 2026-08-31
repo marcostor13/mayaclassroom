@@ -10,10 +10,10 @@ import {
   Res,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { CAP, ContextLevel, CustomFieldScope, CustomFieldType } from '@maya/shared';
 import { CurrentUser, PlatformAdminOnly, RequireCapability } from '../../common/decorators';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { CustomFieldsService } from './custom-fields.service';
 import { TagsService } from './tags.service';
 import { WebServicesService } from './web-services.service';

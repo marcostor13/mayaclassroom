@@ -10,10 +10,21 @@ export default tseslint.config(
   },
   {
     languageOptions: {
-      parserOptions: { sourceType: 'module' },
+      // El análisis con tipos es obligatorio para `consistent-type-imports`:
+      // sin él la regla no distingue una interfaz de una clase inyectada y
+      // convertiría en `import type` dependencias que Nest necesita en runtime.
+      parserOptions: { sourceType: 'module', projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      // Imprescindible con Bun en la cadena de herramientas (`bun test`, el
+      // guion de siembra): su transpilador procesa cada fichero por separado y
+      // no puede deducir qué importaciones son solo de tipos, así que las
+      // emitiría como importaciones reales y fallarían en tiempo de ejecución.
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'error',
         {

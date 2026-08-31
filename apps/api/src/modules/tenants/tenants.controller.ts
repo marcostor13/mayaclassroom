@@ -8,7 +8,7 @@ import {
   RequireCapability,
 } from '../../common/decorators';
 import { PaginationQueryDto } from '../../common/dto';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto, UpdateTenantDto } from './dto/tenant.dto';
 

@@ -2,30 +2,33 @@
   "name": "maya-classroom",
   "version": "1.0.0",
   "private": true,
-  "description": "Maya Classroom \u2014 Plataforma de aulas virtuales multiempresa (Angular 22 + NestJS 11 + MongoDB Atlas)",
+  "description": "Maya Classroom — Plataforma de aulas virtuales multiempresa (Angular 22 + NestJS 11 + MongoDB Atlas)",
   "license": "MIT",
   "engines": {
-    "node": ">=22.22.3",
-    "npm": ">=10"
+    "bun": ">=1.2.0",
+    "node": ">=22.22.3"
   },
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
+  "trustedDependencies": [
+    "@parcel/watcher"
+  ],
   "scripts": {
-    "build": "npm run build --workspace @maya/shared && npm run build --workspace @maya/api && npm run build --workspace @maya/web",
-    "build:shared": "npm run build --workspace @maya/shared",
-    "build:api": "npm run build --workspace @maya/api",
-    "build:web": "npm run build --workspace @maya/web",
-    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "npm run start:dev --workspace @maya/api",
-    "dev:web": "npm run start --workspace @maya/web",
-    "seed": "npm run seed --workspace @maya/api",
-    "test": "npm run test --workspace @maya/api",
-    "lint": "npm run lint --workspace @maya/api"
+    "build": "bun run build:shared && bun run build:api && bun run build:web",
+    "build:shared": "bun run --filter @maya/shared build",
+    "build:api": "bun run --filter @maya/api build",
+    "build:web": "bun run --filter @maya/web build",
+    "dev": "concurrently -n api,web -c magenta,cyan \"bun run dev:api\" \"bun run dev:web\"",
+    "dev:api": "bun run --filter @maya/api start:dev",
+    "dev:web": "bun run --filter @maya/web start",
+    "seed": "bun run --filter @maya/api seed",
+    "test": "bun run --filter @maya/api test",
+    "lint": "bun run --filter @maya/api lint",
+    "deploy": "bun run scripts/deploy.ts"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
-    "typescript": "~5.9.2"
+    "concurrently": "^9.1.2"
   }
 }

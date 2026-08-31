@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
 import { PaginationQueryDto } from '../../common/dto';
-import { RequestUser } from '../../common/types/request-context';
+import type { RequestUser } from '../../common/types/request-context';
 import { CohortsService } from './cohorts.service';
 
 @ApiTags('Cohortes')
