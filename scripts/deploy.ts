@@ -52,6 +52,35 @@ const mal = (t: string) => console.log(`${COLOR.mal}FALLO${COLOR.fin} ${t}`);
 const aviso = (t: string) => console.log(`${COLOR.aviso}AVISO${COLOR.fin} ${t}`);
 const info = (t: string) => console.log(`${COLOR.tenue}     ${t}${COLOR.fin}`);
 
+/**
+ * Comprueba de una vez todas las variables que necesita una acción.
+ *
+ * Existe porque en CI una variable no configurada no llega ausente sino como
+ * cadena vacía: `${{ vars.LO_QUE_SEA }}` sin valor define la variable a "". Con
+ * `exigir` de una en una el guion aborta en la primera y hay que repetir el
+ * despliegue por cada secreto que falte. Aquí se listan todas juntas, con la
+ * longitud de las presentes para detectar un pegado a medias sin revelar el
+ * valor.
+ */
+function exigirTodas(claves: readonly string[]): void {
+  const faltan = claves.filter((clave) => !process.env[clave]);
+  if (faltan.length === 0) return;
+
+  mal(`faltan ${faltan.length} de ${claves.length} variables de configuración`);
+  for (const clave of claves) {
+    const valor = process.env[clave];
+    console.log(
+      valor
+        ? `  ${COLOR.ok}OK${COLOR.fin}    ${clave} (${valor.length} caracteres)`
+        : `  ${COLOR.mal}FALTA${COLOR.fin} ${clave}`,
+    );
+  }
+  throw new Error(
+    'Defina las que faltan en .env.deploy (local) o en Settings > Secrets and ' +
+      'variables > Actions del repositorio (CI).',
+  );
+}
+
 async function pedir<T>(url: string, opciones: RequestInit = {}): Promise<T> {
   const r = await fetch(url, opciones);
   const texto = await r.text();
@@ -92,6 +121,7 @@ function coolify() {
 }
 
 async function listar(): Promise<void> {
+  exigirTodas(['COOLIFY_URL', 'COOLIFY_TOKEN']);
   const c = coolify();
   const [proyectos, servidores, apps] = await Promise.all([
     c.get<{ uuid: string; name: string }[]>('/api/v1/projects'),
@@ -126,6 +156,7 @@ interface RegistroDns {
  * enruta por nombre de host, así que el registro debe ir con proxy activado.
  */
 async function sincronizarDns(): Promise<void> {
+  exigirTodas(['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_TUNNEL_ID', 'FRONTEND_DOMAIN', 'BACKEND_DOMAIN']);
   const token = exigir('CLOUDFLARE_API_TOKEN');
   const tunel = exigir('CLOUDFLARE_TUNNEL_ID');
   const dominios = [exigir('FRONTEND_DOMAIN'), exigir('BACKEND_DOMAIN')];
@@ -133,7 +164,10 @@ async function sincronizarDns(): Promise<void> {
   const api = 'https://api.cloudflare.com/client/v4';
 
   // La zona es el dominio registrable, no el subdominio donde se publica.
-  const zonaNombre = process.env.CLOUDFLARE_ZONE_NAME ?? dominios[0].split('.').slice(-2).join('.');
+  // `||` y no `??`: en CI la variable sin configurar llega como "" y `??` no
+  // cae al respaldo con una cadena vacía, así que se consultaba la zona «» y el
+  // error resultante no señalaba a la variable que faltaba.
+  const zonaNombre = process.env.CLOUDFLARE_ZONE_NAME || dominios[0].split('.').slice(-2).join('.');
   const zonas = await pedir<{ result: { id: string; name: string }[] }>(
     `${api}/zones?name=${encodeURIComponent(zonaNombre)}`,
     { headers: cabeceras },
@@ -204,6 +238,7 @@ async function sincronizarDns(): Promise<void> {
  * de otro proyecto, que puede estar en producción.
  */
 async function comprobar(): Promise<number> {
+  exigirTodas(['COOLIFY_URL', 'COOLIFY_TOKEN', 'GITHUB_OWNER', 'GITHUB_REPO']);
   const c = coolify();
   const repo = `${exigir('GITHUB_OWNER')}/${exigir('GITHUB_REPO')}`;
   const apps = await c.get<AppCoolify[]>('/api/v1/applications');
@@ -249,6 +284,9 @@ async function comprobar(): Promise<number> {
 /* -------------------------------- Despliegue ------------------------------ */
 
 async function desplegar(objetivos: ('api' | 'web')[]): Promise<void> {
+  exigirTodas(
+    objetivos.map((objetivo) => (objetivo === 'api' ? 'COOLIFY_API_UUID' : 'COOLIFY_WEB_UUID')),
+  );
   // Nunca se dispara un despliegue sin validar antes a quién apunta el UUID.
   if ((await comprobar()) > 0) {
     throw new Error('La configuración de despliegue no es coherente; no se ha disparado nada.');
