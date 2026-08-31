@@ -84,7 +84,7 @@ export class CoursesPage {
   }
 
   courseColor(index: number): string {
-    const palette = ['#E4574D', '#F2B441', '#3E7BC6', '#2E9E6B', '#8E2A22', '#B4629B'];
+    const palette = ['#FF3B2E', '#FFB020', '#1E6FE0', '#12A150', '#A81609', '#A855C7'];
     return palette[index % palette.length];
   }
 }

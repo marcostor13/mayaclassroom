@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Maya Classroom">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F4A8A0"/>
-      <stop offset="1" stop-color="#C2413A"/>
+    <linearGradient id="sheen" x1="0" y1="0" x2=".7" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".34"/>
+      <stop offset=".55" stop-color="#fff" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".1"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="url(#g)"/>
-  <path d="M16 45V19l10 13 6-8 6 8 10-13v26" fill="none" stroke="#fff" stroke-width="5"
-        stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="64" height="64" rx="19" fill="#FF3B2E"/>
+  <rect width="64" height="64" rx="19" fill="url(#sheen)"/>
+  <path d="M18 46V25.4a2.9 2.9 0 0 1 5.15-1.83L32 34.6l8.85-11.03A2.9 2.9 0 0 1 46 25.4V46"
+        fill="none" stroke="#fff" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="45" r="3.4" fill="#fff"/>
 </svg>

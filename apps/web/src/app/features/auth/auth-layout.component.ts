@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
-import { IconComponent, ToastContainerComponent } from '../../shared';
+import { IconComponent, LogoComponent, ToastContainerComponent } from '../../shared';
 
 /** Marco visual de las pantallas de acceso: panel de marca + formulario. */
 @Component({
   selector: 'maya-auth-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, IconComponent, ToastContainerComponent],
+  imports: [RouterOutlet, RouterLink, IconComponent, LogoComponent, ToastContainerComponent],
   templateUrl: './auth-layout.component.html',
   styleUrl: './auth-layout.component.scss',
 })

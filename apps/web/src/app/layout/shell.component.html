@@ -5,31 +5,17 @@
   <header class="topbar">
     <button
       type="button"
-      class="topbar__burger maya-btn maya-btn--ghost maya-btn--icon"
+      class="topbar__burger maya-btn maya-btn--ghost maya-btn--icon maya-app-only"
       (click)="layout.toggleMobileMenu()"
       [attr.aria-expanded]="mobileOpen()"
       aria-controls="maya-sidebar"
       aria-label="Abrir el menú de navegación"
     >
-      <maya-icon name="menu" [size]="22" />
+      <maya-icon [name]="mobileOpen() ? 'x' : 'menu'" [size]="22" />
     </button>
 
-    <a routerLink="/dashboard" class="brand" aria-label="Maya Classroom, ir al panel">
-      <span class="brand__mark" aria-hidden="true">
-        <svg viewBox="0 0 64 64" width="26" height="26">
-          <path
-            d="M16 45V19l10 13 6-8 6 8 10-13v26"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </span>
-      <span class="brand__text">
-        <strong>Maya</strong><span>Classroom</span>
-      </span>
+    <a routerLink="/dashboard" class="topbar__brand" aria-label="Maya Classroom, ir al panel">
+      <maya-logo class="logo--mark-only-mobile" [size]="36" />
     </a>
 
     <div class="topbar__search maya-hide-mobile">
@@ -56,12 +42,12 @@
 
       <a
         routerLink="/messages"
-        class="maya-btn maya-btn--ghost maya-btn--icon topbar__badge-host"
+        class="maya-btn maya-btn--ghost maya-btn--icon topbar__badge-host maya-desktop-only"
         aria-label="Mensajes"
       >
         <maya-icon name="message-square" [size]="20" />
-        @if (comms.unreadMessages() > 0) {
-          <span class="topbar__badge">{{ comms.unreadMessages() }}</span>
+        @if (comms.unreadMessages(); as count) {
+          <span class="topbar__badge">{{ count > 99 ? '99+' : count }}</span>
         }
       </a>
 
@@ -71,23 +57,19 @@
         aria-label="Notificaciones"
       >
         <maya-icon name="bell" [size]="20" />
-        @if (comms.unreadNotifications() > 0) {
-          <span class="topbar__badge">{{ comms.unreadNotifications() }}</span>
+        @if (comms.unreadNotifications(); as count) {
+          <span class="topbar__badge">{{ count > 99 ? '99+' : count }}</span>
         }
       </a>
 
-      <a routerLink="/profile" class="topbar__user" aria-label="Mi perfil">
-        <maya-avatar
-          size="sm"
-          [name]="user()?.fullName ?? ''"
-          [src]="user()?.avatarUrl ?? null"
-        />
-        <span class="topbar__user-name maya-hide-mobile">{{ user()?.firstName }}</span>
+      <a routerLink="/profile" class="topbar__user maya-desktop-only" aria-label="Mi perfil">
+        <maya-avatar size="sm" [name]="user()?.fullName ?? ''" [src]="user()?.avatarUrl ?? null" />
+        <span class="topbar__user-name">{{ user()?.firstName }}</span>
       </a>
 
       <button
         type="button"
-        class="maya-btn maya-btn--ghost maya-btn--icon maya-hide-mobile"
+        class="maya-btn maya-btn--ghost maya-btn--icon maya-desktop-only"
         (click)="logout()"
         aria-label="Cerrar sesión"
       >
@@ -98,15 +80,27 @@
 
   <!-- ══════════════ Menú lateral ══════════════ -->
   @if (mobileOpen()) {
-    <div class="sidebar-backdrop maya-hide-desktop" (click)="layout.closeMobileMenu()"></div>
+    <div class="scrim maya-app-only" (click)="layout.closeMobileMenu()"></div>
   }
 
   <nav
     id="maya-sidebar"
     class="sidebar"
     [class.sidebar--open]="mobileOpen()"
+    [attr.aria-hidden]="!isDesktop() && !mobileOpen() ? 'true' : null"
+    [attr.inert]="!isDesktop() && !mobileOpen() ? '' : null"
     aria-label="Navegación principal"
   >
+    <!-- Cabecera del cajón: identidad de quien ha entrado, como en una app -->
+    <a routerLink="/profile" class="sidebar__account maya-app-only">
+      <maya-avatar size="lg" [name]="user()?.fullName ?? ''" [src]="user()?.avatarUrl ?? null" />
+      <span class="sidebar__account-text">
+        <strong>{{ user()?.fullName }}</strong>
+        <span>Ver mi perfil</span>
+      </span>
+      <maya-icon name="chevron-right" [size]="18" />
+    </a>
+
     <div class="sidebar__scroll">
       @for (group of navigation(); track group.name) {
         <div class="sidebar__group">
@@ -122,13 +116,16 @@
                   (click)="layout.closeMobileMenu()"
                   [attr.title]="collapsed() ? item.label : null"
                 >
-                  <maya-icon [name]="item.icon" [size]="20" />
+                  <span class="sidebar__icon">
+                    <maya-icon
+                      [name]="item.icon"
+                      [variant]="isActive(item) ? 'solid' : 'outline'"
+                      [size]="20"
+                    />
+                  </span>
                   <span class="sidebar__label">{{ item.label }}</span>
-                  @if (item.route === '/notifications' && comms.unreadNotifications() > 0) {
-                    <span class="sidebar__count">{{ comms.unreadNotifications() }}</span>
-                  }
-                  @if (item.route === '/messages' && comms.unreadMessages() > 0) {
-                    <span class="sidebar__count">{{ comms.unreadMessages() }}</span>
+                  @if (badgeFor(item.route); as count) {
+                    <span class="sidebar__count">{{ count > 99 ? '99+' : count }}</span>
                   }
                 </a>
               </li>
@@ -141,16 +138,18 @@
     <div class="sidebar__footer">
       <button
         type="button"
-        class="sidebar__collapse maya-hide-mobile"
+        class="sidebar__collapse maya-desktop-only"
         (click)="layout.toggleSidebar()"
         [attr.aria-label]="collapsed() ? 'Expandir el menú' : 'Contraer el menú'"
       >
-        <maya-icon [name]="collapsed() ? 'chevron-right' : 'chevron-left'" [size]="18" />
+        <span class="sidebar__icon">
+          <maya-icon [name]="collapsed() ? 'chevron-right' : 'chevron-left'" [size]="18" />
+        </span>
         <span class="sidebar__label">Contraer</span>
       </button>
 
-      <button type="button" class="sidebar__link maya-hide-desktop" (click)="logout()">
-        <maya-icon name="log-out" [size]="20" />
+      <button type="button" class="sidebar__link sidebar__link--danger maya-app-only" (click)="logout()">
+        <span class="sidebar__icon"><maya-icon name="log-out" [size]="20" /></span>
         <span class="sidebar__label">Cerrar sesión</span>
       </button>
     </div>
@@ -163,24 +162,103 @@
     </div>
   </main>
 
-  <!-- ══════════════ Navegación inferior (móvil) ══════════════ -->
-  <nav class="bottomnav maya-hide-desktop" aria-label="Navegación rápida">
-    @for (item of mobileNav(); track item.route) {
+  <!-- ══════════════ Navegación inferior (app) ══════════════ -->
+  <nav class="bottomnav maya-app-only" aria-label="Navegación rápida">
+    @for (item of bottomNav(); track item.route) {
       <a
         [routerLink]="item.route"
         routerLinkActive="is-active"
         [routerLinkActiveOptions]="{ exact: !!item.exact }"
         class="bottomnav__item"
       >
-        <maya-icon [name]="item.icon" [size]="21" />
-        <span>{{ item.label }}</span>
+        <span class="bottomnav__icon">
+          <maya-icon
+            [name]="item.icon"
+            [variant]="isActive(item) ? 'solid' : 'outline'"
+            [size]="23"
+          />
+          @if (badgeFor(item.route); as count) {
+            <span class="bottomnav__dot" [attr.aria-label]="count + ' sin leer'"></span>
+          }
+        </span>
+        <span class="bottomnav__label">{{ shortLabel(item) }}</span>
       </a>
     }
-    <a routerLink="/profile" routerLinkActive="is-active" class="bottomnav__item">
-      <maya-icon name="user" [size]="21" />
-      <span>Perfil</span>
-    </a>
+
+    <button
+      type="button"
+      class="bottomnav__item"
+      [class.is-active]="moreIsActive()"
+      (click)="layout.openMoreSheet()"
+      [attr.aria-expanded]="moreOpen()"
+      aria-controls="maya-more-sheet"
+    >
+      <span class="bottomnav__icon">
+        <maya-icon name="grid" [variant]="moreIsActive() ? 'solid' : 'outline'" [size]="23" />
+      </span>
+      <span class="bottomnav__label">Más</span>
+    </button>
   </nav>
+
+  <!-- ══════════════ Hoja «Más» (app) ══════════════ -->
+  @if (moreOpen()) {
+    <div class="scrim maya-app-only" (click)="layout.closeMoreSheet()"></div>
+
+    <div
+      id="maya-more-sheet"
+      class="sheet maya-app-only"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Más secciones"
+    >
+      <div class="maya-modal__handle"></div>
+
+      <div class="sheet__head">
+        <h2 class="sheet__title">Más</h2>
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--icon"
+          (click)="layout.closeMoreSheet()"
+          aria-label="Cerrar"
+        >
+          <maya-icon name="x" [size]="20" />
+        </button>
+      </div>
+
+      <div class="sheet__body">
+        @for (group of moreNavigation(); track group.name) {
+          <p class="sheet__group-title">{{ group.name }}</p>
+          <div class="sheet__grid">
+            @for (item of group.items; track item.route) {
+              <a
+                [routerLink]="item.route"
+                class="sheet__tile"
+                [class.is-active]="isActive(item)"
+                (click)="layout.closeMoreSheet()"
+              >
+                <span class="sheet__tile-icon">
+                  <maya-icon
+                    [name]="item.icon"
+                    [variant]="isActive(item) ? 'solid' : 'outline'"
+                    [size]="22"
+                  />
+                  @if (badgeFor(item.route); as count) {
+                    <span class="sheet__tile-badge">{{ count > 99 ? '99+' : count }}</span>
+                  }
+                </span>
+                <span class="sheet__tile-label">{{ shortLabel(item) }}</span>
+              </a>
+            }
+          </div>
+        }
+
+        <button type="button" class="sheet__logout" (click)="logout()">
+          <maya-icon name="log-out" [size]="20" />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    </div>
+  }
 </div>
 
 <maya-toasts />

@@ -2,6 +2,8 @@ import { CAP } from '@maya/shared';
 
 export interface NavItem {
   label: string;
+  /** Etiqueta corta para la barra inferior, donde solo caben ~10 caracteres. */
+  shortLabel?: string;
   icon: string;
   route: string;
   /** Basta con una de estas capacidades para ver el elemento. */
@@ -10,28 +12,36 @@ export interface NavItem {
   group: 'principal' | 'docencia' | 'administración';
   /** Solo visible para administradores de plataforma. */
   platformAdmin?: boolean;
-  /** Se muestra también en la barra inferior móvil. */
+  /**
+   * Candidato a la barra inferior móvil. Solo los cuatro primeros visibles
+   * llegan a ella; el resto vive en la hoja «Más».
+   */
   mobile?: boolean;
   exact?: boolean;
 }
 
+/** Orden de las secciones en el menú lateral. */
+export const NAV_GROUPS: NavItem['group'][] = ['principal', 'docencia', 'administración'];
+
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Panel', icon: 'home', route: '/dashboard', group: 'principal', mobile: true, exact: true },
-  { label: 'Mis cursos', icon: 'book', route: '/courses', group: 'principal', mobile: true },
-  { label: 'Calendario', icon: 'calendar', route: '/calendar', group: 'principal', mobile: true },
-  { label: 'Mensajes', icon: 'message-square', route: '/messages', group: 'principal', mobile: true },
-  { label: 'Notificaciones', icon: 'bell', route: '/notifications', group: 'principal' },
-  { label: 'Mis insignias', icon: 'award', route: '/badges', group: 'principal' },
-  { label: 'Competencias', icon: 'target', route: '/competencies', group: 'principal' },
+  { label: 'Panel', shortLabel: 'Inicio', icon: 'home', route: '/dashboard', group: 'principal', mobile: true, exact: true },
+  { label: 'Mis cursos', shortLabel: 'Cursos', icon: 'book', route: '/courses', group: 'principal', mobile: true },
+  { label: 'Calendario', shortLabel: 'Agenda', icon: 'calendar', route: '/calendar', group: 'principal', mobile: true },
+  { label: 'Mensajes', shortLabel: 'Chats', icon: 'message-square', route: '/messages', group: 'principal', mobile: true },
+  { label: 'Notificaciones', shortLabel: 'Avisos', icon: 'bell', route: '/notifications', group: 'principal' },
+  { label: 'Mis insignias', shortLabel: 'Logros', icon: 'award', route: '/badges', group: 'principal' },
+  { label: 'Competencias', shortLabel: 'Metas', icon: 'target', route: '/competencies', group: 'principal' },
 
   {
     label: 'Catálogo de cursos',
+    shortLabel: 'Catálogo',
     icon: 'layers',
     route: '/catalogue',
     group: 'docencia',
   },
   {
     label: 'Banco de preguntas',
+    shortLabel: 'Preguntas',
     icon: 'help-circle',
     route: '/question-bank',
     group: 'docencia',
@@ -54,6 +64,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Roles y permisos',
+    shortLabel: 'Roles',
     icon: 'shield',
     route: '/admin/roles',
     group: 'administración',

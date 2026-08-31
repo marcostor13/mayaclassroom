@@ -8,8 +8,8 @@
   margin-bottom: var(--maya-space-5);
   color: #fff;
   background:
-    radial-gradient(100% 130% at 88% 0%, rgba(255, 210, 160, 0.36) 0%, transparent 60%),
-    linear-gradient(135deg, var(--maya-primary) 0%, var(--maya-primary-active) 52%, var(--maya-primary-deep) 100%);
+    var(--maya-gradient-sheen),
+    linear-gradient(135deg, #ff6a4d 0%, var(--maya-primary) 46%, var(--maya-primary-active) 100%);
   box-shadow: var(--maya-shadow-primary);
   display: flex;
   flex-direction: column;

@@ -1,4 +1,5 @@
 export * from './components/icon.component';
+export * from './components/logo.component';
 export * from './components/avatar.component';
 export * from './components/empty-state.component';
 export * from './components/progress-bar.component';

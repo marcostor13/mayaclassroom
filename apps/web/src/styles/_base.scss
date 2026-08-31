@@ -17,6 +17,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* Evita el rebote horizontal al deslizar el cajón lateral. */
+  overflow-x: hidden;
 }
 
 body {
@@ -28,6 +30,20 @@ body {
   background: var(--maya-bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* El destello gris de iOS al tocar rompe la sensación de app nativa: los
+     estados táctiles se resuelven con `:active` en cada componente. */
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Bloqueo de desplazamiento mientras hay un cajón u hoja abiertos. El
+   desplazamiento del documento se congela sin perder la posición, que
+   `LayoutService` restaura al cerrar. */
+body.maya-locked {
+  position: fixed;
+  inset-inline: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 img,
@@ -81,7 +97,9 @@ h3 { font-size: var(--maya-text-xl); }
 h4 { font-size: var(--maya-text-lg); }
 
 a {
-  color: var(--maya-primary);
+  /* `primary` no alcanza el contraste de texto sobre blanco (3.4:1); `ink`
+     sí (6.1:1). */
+  color: var(--maya-primary-ink);
   text-decoration: none;
   transition: color var(--maya-duration) var(--maya-ease);
 
@@ -170,6 +188,15 @@ pre {
   height: 10px;
 }
 
+/* En la experiencia de app las barras nativas sobran: el contenido se
+   desplaza con el dedo. */
+@include until($maya-bp-app) {
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
 *::-webkit-scrollbar-thumb {
   background: var(--maya-border-strong);
   border-radius: var(--maya-radius-pill);
@@ -250,6 +277,18 @@ pre {
   @include from($maya-bp-md) { display: none !important; }
 }
 
+/* Visibilidad ligada a la frontera app ↔ escritorio ($maya-bp-app), no al
+   punto `md`. El armazón cambia de barra lateral fija a cajón + barra
+   inferior en `lg`, así que su cromo debe usar estas utilidades: con las de
+   `md` la tableta se quedaba sin barra inferior y sin barra lateral visible. */
+.maya-app-only {
+  @include desktop-only { display: none !important; }
+}
+
+.maya-desktop-only {
+  @include app-only { display: none !important; }
+}
+
 /* --- Contenido enriquecido (resúmenes, páginas, mensajes) -------------- */
 
 .maya-rich {
@@ -285,4 +324,20 @@ pre {
 
     th { font-weight: 600; background: var(--maya-surface-3); }
   }
+}
+
+
+/* --- Zonas seguras ------------------------------------------------------ */
+
+.maya-safe-bottom { padding-bottom: var(--maya-safe-bottom); }
+.maya-safe-top { padding-top: var(--maya-safe-top); }
+
+/* --- Titulares -----------------------------------------------------------
+   Mobile-first: los tamaños base son los del móvil y crecen a partir de `md`
+   para que ningún titular desborde en pantallas de 360 px. */
+
+@include until($maya-bp-md) {
+  h1 { font-size: var(--maya-text-2xl); }
+  h2 { font-size: var(--maya-text-xl); }
+  h3 { font-size: var(--maya-text-lg); }
 }

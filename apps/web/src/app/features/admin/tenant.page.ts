@@ -30,8 +30,8 @@ export class AdminTenantPage {
   });
 
   readonly brandingForm = this.fb.nonNullable.group({
-    primaryColor: ['#E4574D'],
-    accentColor: ['#F2B441'],
+    primaryColor: ['#FF3B2E'],
+    accentColor: ['#FFB020'],
     logoUrl: [''],
     welcomeMessage: [''],
   });

@@ -21,8 +21,8 @@
     padding: var(--maya-space-12);
     color: #fff;
     background:
-      radial-gradient(120% 90% at 12% 8%, #f4a8a0 0%, transparent 55%),
-      linear-gradient(150deg, #e4574d 0%, #c2413a 46%, #8e2a22 100%);
+      radial-gradient(120% 90% at 12% 8%, rgba(255, 255, 255, 0.22) 0%, transparent 55%),
+      linear-gradient(150deg, #ff6a4d 0%, var(--maya-primary) 42%, var(--maya-primary-active) 100%);
 
     @include from($maya-bp-lg) {
       display: flex;
@@ -45,7 +45,7 @@
     &--1 {
       width: 340px;
       height: 340px;
-      background: #ffd7a0;
+      background: #ffb199;
       top: -80px;
       right: -60px;
     }
@@ -53,7 +53,7 @@
     &--2 {
       width: 420px;
       height: 420px;
-      background: #ff9a8f;
+      background: #ff7a66;
       bottom: -140px;
       left: -100px;
     }
@@ -62,12 +62,15 @@
   &__logo {
     display: flex;
     align-items: center;
-    gap: var(--maya-space-3);
-    font-family: var(--maya-font-heading);
-    font-size: var(--maya-text-lg);
-    font-weight: 800;
-    letter-spacing: -0.02em;
     margin-bottom: var(--maya-space-10);
+    color: #fff;
+
+    /* El símbolo se apoya sobre el propio degradado rojo del panel: se le
+       reasigna el color de marca a un blanco translúcido para que no
+       desaparezca sobre él. Las variables CSS atraviesan la encapsulación,
+       así que basta con redefinirla aquí. */
+    --maya-primary: rgba(255, 255, 255, 0.18);
+    --maya-shadow-primary: none;
   }
 
   &__claim {
@@ -130,8 +133,9 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: var(--maya-space-6) var(--maya-space-4);
-    background: var(--maya-bg);
+    padding: calc(var(--maya-space-6) + var(--maya-safe-top)) var(--maya-space-4)
+      calc(var(--maya-space-6) + var(--maya-safe-bottom));
+    background: var(--maya-surface);
 
     @include from($maya-bp-md) {
       padding: var(--maya-space-10);
@@ -152,6 +156,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+  }
+
+  /* Marca compacta para móvil, donde el panel lateral no se muestra. */
+  &__mark {
+    align-self: flex-start;
+    margin-bottom: var(--maya-space-6);
+
+    &:hover { text-decoration: none; }
   }
 
   &__footer {

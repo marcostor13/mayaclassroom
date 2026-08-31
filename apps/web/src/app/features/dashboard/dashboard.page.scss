@@ -14,8 +14,8 @@
   border-radius: var(--maya-radius-xl);
   color: #fff;
   background:
-    radial-gradient(110% 140% at 90% 10%, rgba(255, 215, 160, 0.42) 0%, transparent 58%),
-    linear-gradient(135deg, var(--maya-primary) 0%, var(--maya-primary-active) 55%, var(--maya-primary-deep) 100%);
+    var(--maya-gradient-sheen),
+    linear-gradient(135deg, #ff6a4d 0%, var(--maya-primary) 46%, var(--maya-primary-active) 100%);
   box-shadow: var(--maya-shadow-primary);
 
   @include from($maya-bp-md) {
@@ -77,7 +77,7 @@
 
     &--primary { background: var(--maya-primary-soft); color: var(--maya-primary-deep); }
     &--success { background: var(--maya-success-soft); color: var(--maya-success); }
-    &--warning { background: var(--maya-warning-soft); color: #a4732a; }
+    &--warning { background: var(--maya-warning-soft); color: var(--maya-warning); }
     &--info { background: var(--maya-info-soft); color: var(--maya-info); }
   }
 

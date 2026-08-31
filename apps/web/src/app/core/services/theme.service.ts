@@ -45,7 +45,7 @@ export class ThemeService {
     document.documentElement.dataset['theme'] = resolved;
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', resolved === 'dark' ? '#17110f' : '#E4574D');
+      ?.setAttribute('content', resolved === 'dark' ? '#0d0e11' : '#ff3b2e');
   }
 
   /** Aplica los colores de la empresa sobre los tokens de marca. */

@@ -12,14 +12,19 @@
   align-items: center;
   justify-content: center;
   gap: var(--maya-space-2);
-  padding: 0.7rem 1.3rem;
+  /* 44 px de alto mínimo: el objetivo táctil recomendado en móvil. */
+  min-height: 44px;
+  padding: 0.72rem 1.35rem;
   border-radius: var(--maya-radius-pill);
   font-family: var(--maya-font-heading);
   font-size: var(--maya-text-sm);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1;
   white-space: nowrap;
   border: 1.5px solid transparent;
+  user-select: none;
+  -webkit-user-select: none;
   transition:
     background-color var(--maya-duration) var(--maya-ease),
     color var(--maya-duration) var(--maya-ease),
@@ -27,16 +32,19 @@
     transform var(--maya-duration-fast) var(--maya-ease),
     box-shadow var(--maya-duration) var(--maya-ease);
 
-  &:active:not(:disabled) { transform: translateY(1px); }
+  /* Hundido al pulsar, como en una app nativa. */
+  &:active:not(:disabled) { transform: scale(0.97); }
 
   &:disabled,
   &[aria-disabled='true'] {
-    opacity: 0.5;
+    opacity: 0.45;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 
-  svg { width: 1.05em; height: 1.05em; flex-shrink: 0; }
+  /* En un botón con texto el icono se escala con la tipografía. */
+  svg { width: 1.15em; height: 1.15em; flex-shrink: 0; }
 }
 
 .maya-btn--primary {
@@ -50,7 +58,7 @@
 
 .maya-btn--secondary {
   background: var(--maya-surface);
-  color: var(--maya-primary-deep);
+  color: var(--maya-primary-ink);
   border-color: var(--maya-border-strong);
   box-shadow: var(--maya-shadow-xs);
 
@@ -61,10 +69,10 @@
 }
 
 .maya-btn--soft {
-  background: var(--maya-primary-soft);
-  color: var(--maya-primary-deep);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
 
-  &:hover:not(:disabled) { background: var(--maya-pastel); color: #fff; }
+  &:hover:not(:disabled) { background: var(--maya-primary-soft); }
 }
 
 .maya-btn--ghost {
@@ -84,14 +92,54 @@
   &:hover:not(:disabled) { filter: brightness(0.93); }
 }
 
-.maya-btn--sm { padding: 0.45rem 0.9rem; font-size: var(--maya-text-xs); }
-.maya-btn--lg { padding: 0.95rem 1.8rem; font-size: var(--maya-text-md); }
+.maya-btn--sm {
+  min-height: 36px;
+  padding: 0.45rem 0.95rem;
+  font-size: var(--maya-text-xs);
+}
+
+.maya-btn--lg {
+  min-height: 52px;
+  padding: 1rem 1.9rem;
+  font-size: var(--maya-text-md);
+}
+
 .maya-btn--block { width: 100%; }
 
 .maya-btn--icon {
-  padding: 0.55rem;
+  min-height: 0;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   aspect-ratio: 1;
-  border-radius: var(--maya-radius-md);
+  border-radius: var(--maya-radius-pill);
+
+  /* Un botón solo-icono respeta el tamaño declarado en `maya-icon`: atarlo a
+     la tipografía del botón lo encogía a ~16 px y el distintivo de avisos
+     acababa tapándolo. */
+  svg { width: auto; height: auto; }
+}
+
+/* Acción flotante: la acción principal de una pantalla en móvil, anclada
+   sobre la barra inferior. */
+.maya-fab {
+  position: fixed;
+  right: var(--maya-space-4);
+  bottom: calc(var(--maya-bottomnav-height) + var(--maya-safe-bottom) + var(--maya-space-4));
+  z-index: var(--maya-z-sticky);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--maya-radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--maya-primary);
+  color: #fff;
+  box-shadow: var(--maya-shadow-primary);
+  transition: transform var(--maya-duration) var(--maya-ease-spring);
+
+  &:active { transform: scale(0.92); }
+
+  @include desktop-only { display: none; }
 }
 
 /* --- Tarjetas ---------------------------------------------------------- */
@@ -104,6 +152,8 @@
   overflow: hidden;
 }
 
+.maya-card--flat { box-shadow: none; }
+
 .maya-card--interactive {
   transition:
     transform var(--maya-duration) var(--maya-ease-out),
@@ -111,9 +161,15 @@
     border-color var(--maya-duration) var(--maya-ease);
 
   &:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     box-shadow: var(--maya-shadow-md);
     border-color: var(--maya-primary-soft);
+  }
+
+  /* En táctil no hay hover: la respuesta es la pulsación. */
+  @include app-only {
+    &:hover { transform: none; box-shadow: var(--maya-shadow-sm); }
+    &:active { transform: scale(0.985); }
   }
 }
 
@@ -157,12 +213,14 @@
 .maya-select,
 .maya-textarea {
   width: 100%;
-  padding: 0.7rem 0.95rem;
+  min-height: 48px;
+  padding: 0.8rem 1rem;
   background: var(--maya-surface);
   border: 1.5px solid var(--maya-border-strong);
   border-radius: var(--maya-radius-md);
   color: var(--maya-text);
-  font-size: var(--maya-text-base);
+  /* Safari en iOS hace zoom sobre cualquier campo por debajo de 16 px. */
+  font-size: 16px;
   transition:
     border-color var(--maya-duration) var(--maya-ease),
     box-shadow var(--maya-duration) var(--maya-ease),
@@ -184,13 +242,17 @@
     cursor: not-allowed;
   }
 
+  @include from($maya-bp-md) {
+    font-size: var(--maya-text-base);
+  }
+
   &.is-invalid {
     border-color: var(--maya-danger);
     &:focus { box-shadow: 0 0 0 4px var(--maya-danger-soft); }
   }
 }
 
-.maya-textarea { min-height: 120px; resize: vertical; }
+.maya-textarea { min-height: 128px; resize: vertical; }
 
 .maya-select {
   appearance: none;
@@ -308,8 +370,9 @@
 }
 
 .maya-badge--primary { background: var(--maya-primary-soft); color: var(--maya-primary-deep); }
+.maya-badge--solid { background: var(--maya-primary); color: #fff; }
 .maya-badge--success { background: var(--maya-success-soft); color: var(--maya-success); }
-.maya-badge--warning { background: var(--maya-warning-soft); color: #a4732a; }
+.maya-badge--warning { background: var(--maya-warning-soft); color: var(--maya-warning); }
 .maya-badge--danger { background: var(--maya-danger-soft); color: var(--maya-danger); }
 .maya-badge--info { background: var(--maya-info-soft); color: var(--maya-info); }
 .maya-badge--accent { background: var(--maya-accent-soft); color: #9a7118; }
@@ -372,6 +435,7 @@
     border-radius: inherit;
     background: linear-gradient(90deg, var(--maya-pastel), var(--maya-primary));
     transition: width var(--maya-duration-slow) var(--maya-ease-out);
+    min-width: 0;
   }
 
   &--success &__bar { background: linear-gradient(90deg, #79d3ab, var(--maya-success)); }
@@ -452,9 +516,9 @@
   color: var(--maya-text-muted);
 
   &__icon {
-    width: 72px;
-    height: 72px;
-    border-radius: var(--maya-radius-xl);
+    width: 76px;
+    height: 76px;
+    border-radius: var(--maya-radius-2xl);
     display: grid;
     place-items: center;
     background: var(--maya-primary-softer);
@@ -499,6 +563,9 @@
   border-bottom: 1px solid var(--maya-border);
   overflow-x: auto;
   scrollbar-width: none;
+  /* El desplazamiento horizontal no debe arrastrar la página detrás. */
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 
   &::-webkit-scrollbar { display: none; }
 
@@ -514,10 +581,143 @@
     &:hover { color: var(--maya-text); }
 
     &.is-active {
-      color: var(--maya-primary);
+      color: var(--maya-primary-ink);
       border-bottom-color: var(--maya-primary);
     }
   }
+}
+
+/* Control segmentado: alternativa compacta a las pestañas, la forma habitual
+   de cambiar de vista dentro de una app. */
+.maya-segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: 100%;
+
+  &::-webkit-scrollbar { display: none; }
+
+  &__item {
+    padding: 0.5rem 1rem;
+    border-radius: var(--maya-radius-pill);
+    font-size: var(--maya-text-sm);
+    font-weight: 600;
+    color: var(--maya-text-muted);
+    white-space: nowrap;
+    transition:
+      background var(--maya-duration) var(--maya-ease),
+      color var(--maya-duration) var(--maya-ease);
+
+    &:hover { color: var(--maya-text); text-decoration: none; }
+
+    &.is-active {
+      background: var(--maya-surface);
+      color: var(--maya-primary-ink);
+      box-shadow: var(--maya-shadow-xs);
+    }
+  }
+}
+
+/* Fila de filtros deslizable, al estilo de las categorías de una app de
+   reparto. */
+.maya-chips {
+  display: flex;
+  gap: var(--maya-space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.maya-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--maya-radius-pill);
+  border: 1.5px solid var(--maya-border);
+  background: var(--maya-surface);
+  color: var(--maya-text-muted);
+  font-size: var(--maya-text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all var(--maya-duration) var(--maya-ease);
+
+  &:hover { border-color: var(--maya-border-strong); color: var(--maya-text); text-decoration: none; }
+  &:active { transform: scale(0.96); }
+
+  &.is-active {
+    background: var(--maya-primary);
+    border-color: var(--maya-primary);
+    color: #fff;
+  }
+}
+
+/* Baldosa de icono: el cuadrado redondeado de color que acompaña a cada
+   elemento en las pantallas de la app. */
+.maya-icon-tile {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+
+  &--solid {
+    background: var(--maya-primary);
+    color: #fff;
+  }
+
+  &--success { background: var(--maya-success-soft); color: var(--maya-success); }
+  &--warning { background: var(--maya-warning-soft); color: var(--maya-warning); }
+  &--info { background: var(--maya-info-soft); color: var(--maya-info); }
+  &--neutral { background: var(--maya-surface-3); color: var(--maya-text-muted); }
+
+  &--sm { width: 34px; height: 34px; border-radius: var(--maya-radius-sm); }
+  &--lg { width: 56px; height: 56px; border-radius: var(--maya-radius-lg); }
+}
+
+/* Fila de lista pulsable: patrón dominante en las pantallas móviles. */
+.maya-row-item {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  width: 100%;
+  padding: var(--maya-space-3) var(--maya-space-4);
+  background: var(--maya-surface);
+  color: var(--maya-text);
+  text-align: left;
+  transition: background var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface-2); text-decoration: none; }
+  &:active { background: var(--maya-surface-3); }
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__title {
+    font-weight: 600;
+    font-size: var(--maya-text-base);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    font-size: var(--maya-text-xs);
+    color: var(--maya-text-muted);
+  }
+
+  &__chevron { color: var(--maya-text-subtle); flex-shrink: 0; }
+
+  & + & { border-top: 1px solid var(--maya-border); }
 }
 
 /* --- Migas de pan ------------------------------------------------------ */
@@ -569,14 +769,29 @@
     display: flex;
     flex-direction: column;
     background: var(--maya-surface);
-    border-radius: var(--maya-radius-xl) var(--maya-radius-xl) 0 0;
+    border-radius: var(--maya-radius-2xl) var(--maya-radius-2xl) 0 0;
     box-shadow: var(--maya-shadow-lg);
-    animation: maya-slide-up var(--maya-duration-slow) var(--maya-ease-out);
+    padding-bottom: var(--maya-safe-bottom);
+    animation: maya-sheet-up var(--maya-duration-slow) var(--maya-ease-out);
 
     @include from($maya-bp-md) {
       border-radius: var(--maya-radius-xl);
+      padding-bottom: 0;
       animation: maya-pop var(--maya-duration) var(--maya-ease-out);
     }
+  }
+
+  /* Asidero de arrastre: la señal visual de que el panel es una hoja
+     deslizable, no un diálogo de escritorio. */
+  &__handle {
+    width: 42px;
+    height: 4px;
+    flex-shrink: 0;
+    margin: var(--maya-space-3) auto var(--maya-space-1);
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-border-strong);
+
+    @include from($maya-bp-md) { display: none; }
   }
 
   &__header {
@@ -607,6 +822,10 @@
 @keyframes maya-pop {
   from { transform: scale(0.96); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+@keyframes maya-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 /* --- Menú desplegable --------------------------------------------------- */
@@ -650,7 +869,7 @@
 .maya-toasts {
   position: fixed;
   z-index: var(--maya-z-toast);
-  bottom: calc(var(--maya-bottomnav-height) + var(--maya-space-4));
+  bottom: calc(var(--maya-bottomnav-height) + var(--maya-safe-bottom) + var(--maya-space-3));
   left: var(--maya-space-4);
   right: var(--maya-space-4);
   display: flex;
@@ -658,7 +877,7 @@
   gap: var(--maya-space-2);
   pointer-events: none;
 
-  @include from($maya-bp-md) {
+  @include desktop-only {
     bottom: var(--maya-space-6);
     right: var(--maya-space-6);
     left: auto;
@@ -676,6 +895,7 @@
   background: var(--maya-surface);
   border: 1px solid var(--maya-border);
   border-left: 4px solid var(--maya-primary);
+  border-radius: var(--maya-radius-lg);
   box-shadow: var(--maya-shadow-lg);
   animation: maya-slide-up var(--maya-duration) var(--maya-ease-out);
 
@@ -697,6 +917,8 @@
     align-items: flex-end;
     justify-content: space-between;
   }
+
+  &__title { letter-spacing: -0.03em; }
 
   &__title {
     font-size: var(--maya-text-2xl);

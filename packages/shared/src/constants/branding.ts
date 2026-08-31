@@ -1,6 +1,6 @@
 /* -------------------------------------------------------------------------- */
 /*  Identidad de marca — Maya Classroom                                        */
-/*  Rojo pastel elegante + blanco. Los mismos tokens alimentan el tema SCSS    */
+/*  Rojo vívido sobre blanco puro. Los mismos tokens alimentan el tema SCSS    */
 /*  del cliente y la personalización por empresa desde la API.                 */
 /* -------------------------------------------------------------------------- */
 
@@ -9,20 +9,23 @@ export const MAYA_BRAND = {
   shortName: 'Maya',
   tagline: 'Aprende, enseña y crece.',
   colors: {
-    /** Rojo elegante principal. */
-    primary: '#E4574D',
-    primaryDark: '#C2413A',
-    primaryDeep: '#8E2A22',
-    /** Rojo pastel de apoyo. */
-    pastel: '#F4A8A0',
-    pastelSoft: '#FBDCD8',
-    surfaceTint: '#FFF8F7',
-    accent: '#F2B441',
-    success: '#2E9E6B',
-    warning: '#E2A03F',
-    danger: '#D64545',
-    info: '#3E7BC6',
-    ink: '#2A2320',
+    /** Rojo de marca: se usa como relleno (botones, marca, chips). */
+    primary: '#FF3B2E',
+    primaryDark: '#D91F12',
+    /** Rojo legible sobre blanco (6.1:1): enlaces y texto de marca. */
+    primaryInk: '#C31B0D',
+    /** El más oscuro (7.6:1): texto de marca sobre fondos claros teñidos. */
+    primaryDeep: '#A81609',
+    /** Rojo claro de apoyo. */
+    pastel: '#FF8F7D',
+    pastelSoft: '#FFE1DD',
+    surfaceTint: '#FFF3F1',
+    accent: '#FFB020',
+    success: '#12A150',
+    warning: '#D98A00',
+    danger: '#E02020',
+    info: '#1E6FE0',
+    ink: '#101114',
     white: '#FFFFFF',
   },
   fonts: {
