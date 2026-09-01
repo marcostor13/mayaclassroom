@@ -5,6 +5,7 @@
  *   bun run deploy --list      Inventario de Coolify (proyectos, servidores, apps)
  *   bun run deploy --dns       Crea o actualiza los CNAME del túnel en Cloudflare
  *   bun run deploy --check     Verifica que la configuración apunta a donde debe
+ *   bun run deploy --esperar   Espera a que el despliegue termine y los dominios respondan
  *   bun run deploy             Dispara el despliegue de las dos aplicaciones
  *   bun run deploy --api       Solo la API
  *   bun run deploy --web       Solo el cliente
@@ -305,6 +306,144 @@ async function desplegar(objetivos: ('api' | 'web')[]): Promise<void> {
   }
 }
 
+/* -------------------------------- Espera ---------------------------------- */
+
+interface DespliegueCoolify {
+  deployment_uuid: string;
+  commit: string | null;
+  status: string;
+  created_at: string;
+}
+
+const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Dominio público de una aplicación.
+ *
+ * La variable de entorno manda, pero si llega vacía se usa el `fqdn` que
+ * Coolify tiene configurado. Esto existe porque un `${{ vars.X }}` sin definir
+ * no aborta el job: se expande a cadena vacía y la comprobación acaba pidiendo
+ * «https:///», que falla al instante y durante todos los reintentos sin que el
+ * registro diga por qué. Coolify es la fuente de verdad del dominio, así que
+ * sirve de respaldo.
+ */
+function dominioDe(app: AppCoolify | undefined, variable: string): string | null {
+  const delEntorno = process.env[variable];
+  if (delEntorno) return delEntorno.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  const fqdn = app?.fqdn?.split(',')[0]?.trim();
+  if (!fqdn) return null;
+  aviso(`${variable} no está definida; se usa el dominio de Coolify (${fqdn}).`);
+  return fqdn.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+}
+
+/** Espera a que Coolify termine de construir el despliegue de una aplicación. */
+async function esperarConstruccion(uuid: string, etiqueta: string, sha?: string): Promise<boolean> {
+  const c = coolify();
+  const limite = Date.now() + 20 * 60 * 1000;
+  let ultimo = '';
+
+  while (Date.now() < limite) {
+    const { deployments } = await c.get<{ deployments: DespliegueCoolify[] }>(
+      `/api/v1/deployments/applications/${uuid}?take=10`,
+    );
+    // Se sigue el despliegue de ESTE commit; si no aparece (despliegue manual,
+    // o Coolify aún no lo ha registrado) se sigue el más reciente.
+    const propio = sha ? deployments.find((d) => d.commit?.startsWith(sha.slice(0, 7))) : undefined;
+    const d = propio ?? deployments[0];
+    if (!d) {
+      info(`${etiqueta}: Coolify aún no ha registrado ningún despliegue`);
+      await dormir(10_000);
+      continue;
+    }
+
+    if (d.status !== ultimo) {
+      info(`${etiqueta}: despliegue ${d.deployment_uuid} · ${d.status}`);
+      ultimo = d.status;
+    }
+    if (d.status === 'finished') return true;
+    if (d.status === 'failed' || d.status.startsWith('cancelled')) {
+      mal(`${etiqueta}: la construcción terminó en «${d.status}». Revise el registro en Coolify.`);
+      return false;
+    }
+    await dormir(10_000);
+  }
+  mal(`${etiqueta}: la construcción no terminó en 20 minutos`);
+  return false;
+}
+
+/** Espera a que una URL pública devuelva 200. */
+async function esperarUrl(url: string, etiqueta: string): Promise<boolean> {
+  const limite = Date.now() + 10 * 60 * 1000;
+  let intento = 0;
+  let ultimo = '';
+
+  while (Date.now() < limite) {
+    intento++;
+    let codigo = '000';
+    try {
+      const r = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(10_000) });
+      codigo = String(r.status);
+    } catch (error) {
+      codigo = `sin respuesta (${error instanceof Error ? error.message : String(error)})`;
+    }
+    if (codigo === '200') {
+      ok(`${etiqueta}: ${url} responde 200 (intento ${intento})`);
+      return true;
+    }
+    if (codigo !== ultimo) {
+      info(`${etiqueta}: ${url} -> ${codigo}`);
+      ultimo = codigo;
+    }
+    await dormir(15_000);
+  }
+  mal(`${etiqueta}: ${url} no respondió 200 tras 10 minutos (último: ${ultimo})`);
+  return false;
+}
+
+/**
+ * Comprobación posterior al despliegue.
+ *
+ * Se ejecuta como paso propio y no como guion suelto en el workflow para que
+ * reutilice `exigirTodas`: una variable sin configurar se señala por su nombre
+ * en cinco segundos, en vez de disfrazarse de diez minutos de reintentos.
+ */
+async function esperarProduccion(): Promise<number> {
+  exigirTodas(['COOLIFY_URL', 'COOLIFY_TOKEN', 'COOLIFY_API_UUID', 'COOLIFY_WEB_UUID']);
+  const c = coolify();
+  const apps = await c.get<AppCoolify[]>('/api/v1/applications');
+  const sha = process.env.GITHUB_SHA;
+  if (sha) info(`comprobando el despliegue del commit ${sha.slice(0, 7)}`);
+
+  const objetivos = [
+    ['API', 'COOLIFY_API_UUID', 'BACKEND_DOMAIN', '/api/v1/health'],
+    ['WEB', 'COOLIFY_WEB_UUID', 'FRONTEND_DOMAIN', '/'],
+  ] as const;
+
+  let fallos = 0;
+  for (const [etiqueta, claveUuid, claveDominio, ruta] of objetivos) {
+    const uuid = exigir(claveUuid);
+    const dominio = dominioDe(
+      apps.find((a) => a.uuid === uuid),
+      claveDominio,
+    );
+    if (!dominio) {
+      mal(`${etiqueta}: no hay dominio. Defina ${claveDominio} o el FQDN de la aplicación en Coolify.`);
+      fallos++;
+      continue;
+    }
+
+    // Las dos esperas van seguidas a propósito: si la construcción falla no
+    // tiene sentido esperar diez minutos a una URL que servirá la versión
+    // anterior y devolverá 200 igualmente, ocultando el fallo real.
+    if (!(await esperarConstruccion(uuid, etiqueta, sha))) {
+      fallos++;
+      continue;
+    }
+    if (!(await esperarUrl(`https://${dominio}${ruta}`, etiqueta))) fallos++;
+  }
+  return fallos;
+}
+
 /* ----------------------------------- Main --------------------------------- */
 
 const args = process.argv.slice(2);
@@ -317,6 +456,8 @@ try {
     await sincronizarDns();
   } else if (args.includes('--check')) {
     process.exit((await comprobar()) > 0 ? 1 : 0);
+  } else if (args.includes('--esperar')) {
+    process.exit((await esperarProduccion()) > 0 ? 1 : 0);
   } else {
     const soloApi = args.includes('--api');
     const soloWeb = args.includes('--web');

@@ -109,29 +109,29 @@ jobs:
     name: Comprobar en producción
     needs: desplegar
     runs-on: ubuntu-latest
+    # El MISMO entorno que `desplegar`. Sin esta línea el job solo ve las
+    # variables de nivel repositorio: las definidas en el entorno `production`
+    # llegan vacías, la comprobación pide «https:///» y falla los cuarenta
+    # reintentos seguidos aunque producción esté sana. Ese era el fallo.
+    environment: production
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Esperar a que las aplicaciones respondan
         # Coolify construye las imágenes de forma asíncrona, así que el paso
-        # anterior solo encola. Aquí se espera al resultado real.
+        # anterior solo encola. Aquí se espera primero a que la construcción
+        # termine y después a que el dominio público responda: comprobar solo
+        # la URL da un 200 engañoso servido por la versión anterior.
         env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_API_UUID: ${{ secrets.COOLIFY_API_UUID }}
+          COOLIFY_WEB_UUID: ${{ secrets.COOLIFY_WEB_UUID }}
           FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
           BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
-        run: |
-          set -u
-          esperar() {
-            local url="$1" nombre="$2" intento=0
-            until [ "$intento" -ge 40 ]; do
-              codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
-              if [ "$codigo" = "200" ]; then
-                echo "OK    $nombre responde 200"
-                return 0
-              fi
-              intento=$((intento + 1))
-              echo "      $nombre -> $codigo (intento $intento/40)"
-              sleep 15
-            done
-            echo "FALLO $nombre no respondió 200 tras 10 minutos"
-            return 1
-          }
-          esperar "https://${BACKEND_DOMAIN}/api/v1/health" "API"
-          esperar "https://${FRONTEND_DOMAIN}/" "Cliente"
+        run: bun run deploy --esperar
