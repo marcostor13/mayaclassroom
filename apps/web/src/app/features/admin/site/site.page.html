@@ -1,0 +1,651 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Administración del sitio</h1>
+    <p class="maya-page-header__subtitle">
+      Registros, copias de seguridad, privacidad y servicios de la plataforma
+    </p>
+  </div>
+</header>
+
+@if (sections().length) {
+  <div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+    @for (item of sections(); track item.key) {
+      <button
+        type="button"
+        role="tab"
+        class="maya-tabs__tab"
+        [class.is-active]="section() === item.key"
+        [attr.aria-selected]="section() === item.key"
+        (click)="select(item.key)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+} @else {
+  <maya-empty-state
+    icon="lock"
+    title="Sin acceso"
+    description="Su cuenta no tiene permisos de administración del sitio."
+  />
+}
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+}
+
+<!-- ══════════════════ Registros ══════════════════ -->
+@if (!loading() && section() === 'logs') {
+  <div class="maya-row" style="margin-bottom: var(--maya-space-4); gap: var(--maya-space-2)">
+    <input
+      type="search"
+      class="maya-input"
+      style="max-width: 340px"
+      placeholder="Filtrar por descripción…"
+      aria-label="Filtrar el registro de eventos"
+      [ngModel]="logSearch()"
+      (ngModelChange)="logSearch.set($event)"
+      (keyup.enter)="select('logs')"
+    />
+    <button type="button" class="maya-btn maya-btn--secondary" (click)="select('logs')">
+      <maya-icon name="search" [size]="15" />
+    </button>
+  </div>
+
+  @if (logs().length) {
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Cuándo</th>
+            <th scope="col">Quién</th>
+            <th scope="col">Acción</th>
+            <th scope="col">Origen</th>
+            <th scope="col">Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of logs(); track entry.id) {
+            <tr>
+              <td class="maya-tiny">{{ entry.createdAt | mayaDate: 'datetime' }}</td>
+              <td class="maya-small">{{ entry.userName ?? '—' }}</td>
+              <td>
+                <span class="maya-badge">{{ entry.action }}</span>
+              </td>
+              <td class="maya-tiny maya-subtle">{{ entry.component }} · {{ entry.target }}</td>
+              <td class="maya-small maya-truncate">{{ entry.description ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="list-checks"
+      title="Sin eventos"
+      description="El registro se llenará conforme se use la plataforma."
+    />
+  }
+}
+
+<!-- ══════════════════ Copias de seguridad ══════════════════ -->
+@if (!loading() && section() === 'backups') {
+  <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Crear una copia</h2>
+    </div>
+    <div class="maya-card__body maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="bk-course">Curso</label>
+        <select
+          id="bk-course"
+          class="maya-select"
+          [ngModel]="backupCourseId()"
+          (ngModelChange)="backupCourseId.set($event)"
+        >
+          <option value="">Elija un curso…</option>
+          @for (course of myCourses(); track course.id) {
+            <option [value]="course.id">{{ course.fullName }}</option>
+          }
+        </select>
+      </div>
+      <label class="maya-checkbox">
+        <input
+          type="checkbox"
+          [checked]="backupIncludeUsers()"
+          (change)="backupIncludeUsers.set($any($event.target).checked)"
+        />
+        <span>Incluir matrículas y calificaciones</span>
+      </label>
+    </div>
+    <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="createBackup()">
+        {{ saving() ? 'Creando…' : 'Crear copia' }}
+      </button>
+    </div>
+  </section>
+
+  @if (backups().length) {
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Curso</th>
+            <th scope="col">Fichero</th>
+            <th scope="col">Tamaño</th>
+            <th scope="col">Creada</th>
+            <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (backup of backups(); track backup.id) {
+            <tr>
+              <td class="maya-small maya-bold">{{ backup.courseName }}</td>
+              <td class="maya-tiny maya-subtle">{{ backup.filename }}</td>
+              <td class="maya-small">{{ backup.size | fileSize }}</td>
+              <td class="maya-tiny">{{ backup.createdAt | mayaDate: 'short' }}</td>
+              <td>
+                <span class="maya-row" style="gap: var(--maya-space-1); justify-content: flex-end">
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="'Descargar ' + backup.filename"
+                    (click)="downloadBackup(backup)"
+                  >
+                    <maya-icon name="download" [size]="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="'Eliminar ' + backup.filename"
+                    (click)="removeBackup(backup)"
+                  >
+                    <maya-icon name="trash" [size]="15" />
+                  </button>
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="database"
+      title="Sin copias"
+      description="Cree una copia antes de cambios importantes en un curso."
+    />
+  }
+}
+
+<!-- ══════════════════ Etiquetas ══════════════════ -->
+@if (!loading() && section() === 'tags') {
+  <div class="maya-row" style="margin-bottom: var(--maya-space-4); gap: var(--maya-space-2)">
+    <input
+      type="search"
+      class="maya-input"
+      style="max-width: 340px"
+      placeholder="Buscar etiquetas…"
+      aria-label="Buscar etiquetas"
+      [ngModel]="tagSearch()"
+      (ngModelChange)="tagSearch.set($event)"
+      (keyup.enter)="select('tags')"
+    />
+    <button type="button" class="maya-btn maya-btn--secondary" (click)="select('tags')">
+      <maya-icon name="search" [size]="15" />
+    </button>
+  </div>
+
+  @if (tags().length) {
+    <div class="maya-stack" style="gap: var(--maya-space-2)">
+      @for (tag of tags(); track tag.id) {
+        <article class="maya-card maya-card--flat">
+          <div class="maya-card__body maya-spread">
+            <span style="min-width: 0">
+              <span class="maya-bold maya-small">{{ tag.rawName }}</span>
+              <span class="maya-tiny maya-subtle" style="display: block">
+                Usada {{ tag.usageCount }} {{ tag.usageCount === 1 ? 'vez' : 'veces' }}
+              </span>
+            </span>
+            <span class="maya-row" style="gap: var(--maya-space-2)">
+              <label class="maya-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="tag.isStandard"
+                  [attr.aria-label]="'Marcar ' + tag.rawName + ' como estándar'"
+                  (change)="toggleStandard(tag)"
+                />
+                <span class="maya-tiny">Estándar</span>
+              </label>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Eliminar ' + tag.rawName"
+                (click)="removeTag(tag)"
+              >
+                <maya-icon name="trash" [size]="15" />
+              </button>
+            </span>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="tag"
+      title="Sin etiquetas"
+      description="Las etiquetas aparecen al usarlas en cursos y actividades."
+    />
+  }
+}
+
+<!-- ══════════════════ Campos personalizados ══════════════════ -->
+@if (!loading() && section() === 'fields') {
+  <div class="maya-spread" style="margin-bottom: var(--maya-space-4)">
+    <p class="maya-small maya-muted">
+      Campos añadidos al perfil de usuario, a los cursos o a las categorías.
+    </p>
+    <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNewField()">
+      <maya-icon name="plus" [size]="15" /> Nuevo campo
+    </button>
+  </div>
+
+  @if (fields().length) {
+    <div class="maya-stack" style="gap: var(--maya-space-2)">
+      @for (field of fields(); track field.id) {
+        <article class="maya-card maya-card--flat">
+          <div class="maya-card__body maya-spread">
+            <span style="min-width: 0">
+              <span class="maya-bold maya-small">{{ field.name }}</span>
+              <span class="maya-tiny maya-subtle" style="display: block">
+                {{ field.shortName }} · {{ field.type }} · {{ field.scope }}
+                @if (field.required) { · obligatorio }
+              </span>
+            </span>
+            <button
+              type="button"
+              class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+              [attr.aria-label]="'Eliminar ' + field.name"
+              (click)="removeField(field)"
+            >
+              <maya-icon name="trash" [size]="15" />
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="sliders"
+      title="Sin campos personalizados"
+      description="Añada campos para recoger datos propios de su organización."
+    />
+  }
+}
+
+<!-- ══════════════════ RGPD ══════════════════ -->
+@if (!loading() && section() === 'privacy') {
+  @if (requests().length) {
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Solicitante</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Fecha</th>
+            <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (request of requests(); track request.id) {
+            <tr>
+              <td class="maya-small maya-bold">{{ request.user?.fullName ?? '—' }}</td>
+              <td class="maya-small">{{ requestTypeLabel(request.requestType) }}</td>
+              <td>
+                <span
+                  class="maya-badge"
+                  [class.maya-badge--warning]="request.status === 'pending'"
+                  [class.maya-badge--success]="request.status === 'approved' || request.status === 'completed'"
+                  [class.maya-badge--danger]="request.status === 'rejected'"
+                >
+                  {{ requestStatusLabel(request.status) }}
+                </span>
+              </td>
+              <td class="maya-tiny">{{ request.createdAt | mayaDate: 'short' }}</td>
+              <td>
+                @if (request.status === 'pending') {
+                  <span class="maya-row" style="gap: var(--maya-space-2); justify-content: flex-end">
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--soft maya-btn--sm"
+                      (click)="resolveRequest(request, 'approved')"
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--ghost maya-btn--sm"
+                      (click)="resolveRequest(request, 'rejected')"
+                    >
+                      Rechazar
+                    </button>
+                  </span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="shield"
+      title="Sin solicitudes"
+      description="Aquí aparecerán las peticiones de exportación o eliminación de datos."
+    />
+  }
+}
+
+<!-- ══════════════════ Servicios web ══════════════════ -->
+@if (!loading() && section() === 'services') {
+  @if (freshToken(); as token) {
+    <section class="maya-alert maya-alert--warning" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-stack" style="gap: var(--maya-space-2)">
+        <strong class="maya-small">Copie el token ahora: no volverá a mostrarse.</strong>
+        <code
+          style="
+            display: block;
+            padding: var(--maya-space-3);
+            background: var(--maya-surface);
+            border-radius: var(--maya-radius-md);
+            font-size: var(--maya-text-xs);
+            word-break: break-all;
+          "
+          >{{ token }}</code
+        >
+        <div class="maya-row" style="gap: var(--maya-space-2)">
+          <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="copyToken()">
+            <maya-icon name="copy" [size]="14" /> Copiar
+          </button>
+          <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="freshToken.set(null)">
+            Ya lo he guardado
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <section style="margin-bottom: var(--maya-space-6)">
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-3)">
+      <h2 style="font-size: var(--maya-text-lg); font-weight: 700">Tokens</h2>
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNewToken()">
+        <maya-icon name="plus" [size]="15" /> Nuevo token
+      </button>
+    </div>
+
+    @if (tokens().length) {
+      <div class="maya-stack" style="gap: var(--maya-space-2)">
+        @for (token of tokens(); track token.id) {
+          <article class="maya-card maya-card--flat">
+            <div class="maya-card__body maya-spread">
+              <span style="min-width: 0">
+                <span class="maya-bold maya-small">{{ token.name }}</span>
+                <span
+                  class="maya-tiny maya-subtle"
+                  style="display: block; font-family: var(--maya-font-mono)"
+                >
+                  {{ token.tokenPreview }}
+                </span>
+                <span class="maya-tiny maya-subtle">
+                  {{ token.scopes.join(', ') }}
+                  @if (token.lastUsedAt) {
+                    · último uso {{ token.lastUsedAt | mayaDate: 'short' }}
+                  } @else {
+                    · sin usar
+                  }
+                </span>
+              </span>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Revocar ' + token.name"
+                (click)="revokeToken(token)"
+              >
+                <maya-icon name="trash" [size]="15" />
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="maya-small maya-muted">Sin tokens. Cree uno para integrar otro sistema.</p>
+    }
+  </section>
+
+  <section>
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-3)">
+      <h2 style="font-size: var(--maya-text-lg); font-weight: 700">Webhooks</h2>
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNewWebhook()">
+        <maya-icon name="plus" [size]="15" /> Nuevo webhook
+      </button>
+    </div>
+
+    @if (webhooks().length) {
+      <div class="maya-stack" style="gap: var(--maya-space-2)">
+        @for (webhook of webhooks(); track webhook.id) {
+          <article class="maya-card maya-card--flat">
+            <div class="maya-card__body maya-spread">
+              <span style="min-width: 0">
+                <span class="maya-bold maya-small">{{ webhook.name }}</span>
+                <span class="maya-tiny maya-subtle maya-truncate" style="display: block">
+                  {{ webhook.url }}
+                </span>
+                <span class="maya-tiny maya-subtle">
+                  {{ webhook.events.join(', ') }}
+                  @if (webhook.lastStatus) { · última respuesta {{ webhook.lastStatus }} }
+                </span>
+              </span>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Eliminar ' + webhook.name"
+                (click)="removeWebhook(webhook)"
+              >
+                <maya-icon name="trash" [size]="15" />
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="maya-small maya-muted">Sin webhooks configurados.</p>
+    }
+  </section>
+}
+
+<!-- ══════════════════ Tareas programadas ══════════════════ -->
+@if (!loading() && section() === 'tasks') {
+  @if (tasks().length) {
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Tarea</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Última ejecución</th>
+            <th scope="col">Duración</th>
+            <th scope="col">Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (task of tasks(); track task.id) {
+            <tr>
+              <td>
+                <span class="maya-bold maya-small">{{ task.taskName }}</span>
+                @if (task.description) {
+                  <span class="maya-tiny maya-subtle" style="display: block">
+                    {{ task.description }}
+                  </span>
+                }
+              </td>
+              <td>
+                <span
+                  class="maya-badge"
+                  [class.maya-badge--success]="task.status === 'idle'"
+                  [class.maya-badge--info]="task.status === 'running'"
+                  [class.maya-badge--danger]="task.status === 'failed'"
+                >
+                  {{ taskStatusLabel(task.status) }}
+                </span>
+              </td>
+              <td class="maya-tiny">
+                {{ task.lastRunAt ? (task.lastRunAt | mayaDate: 'datetime') : 'Nunca' }}
+              </td>
+              <td class="maya-small">{{ task.lastDurationMs }} ms</td>
+              <td class="maya-tiny maya-truncate">{{ task.lastError ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="clock"
+      title="Sin tareas registradas"
+      description="Las tareas programadas aparecerán tras su primera ejecución."
+    />
+  }
+}
+
+<!-- ══════════════════ Formulario de campo ══════════════════ -->
+@if (fieldFormOpen()) {
+  <maya-modal title="Nuevo campo personalizado" (dismissed)="fieldFormOpen.set(false)">
+    <form [formGroup]="fieldForm" class="maya-stack">
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 160px">
+          <label class="maya-label" for="cf-scope">Se aplica a</label>
+          <select id="cf-scope" class="maya-select" formControlName="scope">
+            <option value="user">Perfil de usuario</option>
+            <option value="course">Cursos</option>
+            <option value="category">Categorías</option>
+          </select>
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 160px">
+          <label class="maya-label" for="cf-type">Tipo</label>
+          <select id="cf-type" class="maya-select" formControlName="type">
+            <option value="text">Texto</option>
+            <option value="textarea">Texto largo</option>
+            <option value="checkbox">Casilla</option>
+            <option value="select">Lista</option>
+            <option value="date">Fecha</option>
+            <option value="number">Número</option>
+            <option value="url">Enlace</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="cf-name2">Nombre</label>
+        <input id="cf-name2" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cf-short2">Nombre corto</label>
+        <input id="cf-short2" class="maya-input" formControlName="shortName" required />
+        <p class="maya-hint">Sin espacios; se usa como clave del dato.</p>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cf-cat">Categoría</label>
+        <input id="cf-cat" class="maya-input" formControlName="categoryName" />
+      </div>
+
+      @if (fieldForm.controls.type.value === 'select') {
+        <div class="maya-field">
+          <label class="maya-label" for="cf-opts">Opciones</label>
+          <textarea id="cf-opts" class="maya-textarea" rows="4" formControlName="options"></textarea>
+          <p class="maya-hint">Una por línea.</p>
+        </div>
+      }
+
+      <label class="maya-checkbox">
+        <input type="checkbox" formControlName="required" />
+        <span>Obligatorio</span>
+      </label>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="fieldFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveField()">
+        {{ saving() ? 'Guardando…' : 'Crear campo' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Formulario de token ══════════════════ -->
+@if (tokenFormOpen()) {
+  <maya-modal title="Nuevo token de servicio web" (dismissed)="tokenFormOpen.set(false)">
+    <form [formGroup]="tokenForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="tk-name">Nombre</label>
+        <input id="tk-name" class="maya-input" formControlName="name" required />
+        <p class="maya-hint">Identifique para qué integración es.</p>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="tk-scopes">Ámbitos</label>
+        <input id="tk-scopes" class="maya-input" formControlName="scopes" />
+        <p class="maya-hint">Separados por comas, por ejemplo «read, write».</p>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="tk-exp">Caduca el</label>
+        <input id="tk-exp" type="date" class="maya-input" formControlName="expiresAt" />
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="tokenFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveToken()">
+        {{ saving() ? 'Creando…' : 'Crear token' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Formulario de webhook ══════════════════ -->
+@if (webhookFormOpen()) {
+  <maya-modal title="Nuevo webhook" (dismissed)="webhookFormOpen.set(false)">
+    <form [formGroup]="webhookForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="wh-name">Nombre</label>
+        <input id="wh-name" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="wh-url">URL de destino</label>
+        <input id="wh-url" type="url" class="maya-input" formControlName="url" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="wh-events">Eventos</label>
+        <input id="wh-events" class="maya-input" formControlName="events" />
+        <p class="maya-hint">Separados por comas, por ejemplo «course.completed, user.created».</p>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="wh-secret">Secreto</label>
+        <input id="wh-secret" class="maya-input" formControlName="secret" autocomplete="off" />
+        <p class="maya-hint">Se usa para firmar cada envío y que pueda verificarlo.</p>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="webhookFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveWebhook()">
+        {{ saving() ? 'Creando…' : 'Crear webhook' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}

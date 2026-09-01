@@ -1,0 +1,275 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Insignias</h1>
+    <p class="maya-page-header__subtitle">
+      Reconocimientos obtenidos a lo largo de su formación
+    </p>
+  </div>
+  @if (canCreate() && tab() === 'manage') {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openNew()">
+        <maya-icon name="plus" [size]="16" /> Nueva insignia
+      </button>
+    </div>
+  }
+</header>
+
+@if (canCreate() || canAward()) {
+  <div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'mine'"
+      [attr.aria-selected]="tab() === 'mine'"
+      (click)="tab.set('mine')"
+    >
+      Mis insignias
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'manage'"
+      [attr.aria-selected]="tab() === 'manage'"
+      (click)="openManage()"
+    >
+      Gestionar
+    </button>
+  </div>
+}
+
+@if (tab() === 'mine') {
+  @if (loading()) {
+    <div class="maya-cards">
+      @for (item of [1, 2, 3]; track item) {
+        <div class="maya-skeleton" style="height: 220px"></div>
+      }
+    </div>
+  } @else if (badges().length) {
+    <div class="maya-cards">
+      @for (item of badges(); track item.id) {
+        <article class="maya-card" style="text-align: center">
+          <div class="maya-card__body maya-stack" style="align-items: center">
+            <span class="badge-medal">
+              @if (item.badge?.imageUrl) {
+                <img [src]="item.badge!.imageUrl!" [alt]="item.badge!.name" />
+              } @else {
+                <maya-icon name="award" [size]="38" />
+              }
+            </span>
+            <h2 style="font-size: var(--maya-text-md); font-weight: 700">{{ item.badge?.name }}</h2>
+            <p class="maya-small maya-muted">{{ item.badge?.description }}</p>
+            <p class="maya-tiny maya-subtle">Obtenida el {{ item.issuedAt | mayaDate: 'long' }}</p>
+          </div>
+          <div class="maya-card__footer">
+            <a
+              [href]="verifyUrl(item)"
+              target="_blank"
+              rel="noopener"
+              class="maya-btn maya-btn--secondary maya-btn--sm maya-btn--block"
+            >
+              <maya-icon name="shield" [size]="15" /> Verificar
+            </a>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="award"
+      title="Aún sin insignias"
+      description="Complete cursos y actividades para conseguir sus primeros reconocimientos."
+    />
+  }
+}
+
+<!-- ══════════════════ Gestión ══════════════════ -->
+@if (tab() === 'manage') {
+  @if (catalogue().length) {
+    <div class="maya-cards">
+      @for (badge of catalogue(); track badge.id) {
+        <article class="maya-card">
+          <div class="maya-card__body maya-stack">
+            <div class="maya-row" style="gap: var(--maya-space-3); align-items: flex-start">
+              <span class="badge-medal" style="width: 56px; height: 56px; flex: none">
+                @if (badge.imageUrl) {
+                  <img [src]="badge.imageUrl" [alt]="badge.name" />
+                } @else {
+                  <maya-icon name="award" [size]="26" />
+                }
+              </span>
+              <span style="flex: 1; min-width: 0">
+                <span class="maya-bold">{{ badge.name }}</span>
+                <span class="maya-tiny maya-subtle" style="display: block">
+                  {{ criteriaLabel(badge) }}
+                </span>
+              </span>
+              <span
+                class="maya-badge"
+                [class.maya-badge--success]="badge.status === 'active'"
+                [class.maya-badge--warning]="badge.status === 'draft'"
+              >
+                {{ statusLabel(badge.status) }}
+              </span>
+            </div>
+            <p class="maya-small maya-muted">{{ badge.description }}</p>
+            <p class="maya-tiny maya-subtle">
+              Otorgada {{ badge.awardedCount }}
+              {{ badge.awardedCount === 1 ? 'vez' : 'veces' }}
+            </p>
+          </div>
+          <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); flex-wrap: wrap">
+            @if (canAward()) {
+              <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="openAward(badge)">
+                <maya-icon name="send" [size]="14" /> Otorgar
+              </button>
+            }
+            @if (canCreate()) {
+              <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="toggleStatus(badge)">
+                {{ badge.status === 'active' ? 'Desactivar' : 'Activar' }}
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Editar ' + badge.name"
+                (click)="openEdit(badge)"
+              >
+                <maya-icon name="edit" [size]="15" />
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Eliminar ' + badge.name"
+                (click)="remove(badge)"
+              >
+                <maya-icon name="trash" [size]="15" />
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="award"
+      title="Sin insignias definidas"
+      description="Cree insignias para reconocer los logros del alumnado."
+    />
+  }
+}
+
+<!-- ══════════════════ Formulario ══════════════════ -->
+@if (formOpen()) {
+  <maya-modal
+    [title]="editing() ? 'Editar insignia' : 'Nueva insignia'"
+    (dismissed)="formOpen.set(false)"
+  >
+    <form [formGroup]="form" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="b-name">Nombre</label>
+        <input id="b-name" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="b-desc">Descripción</label>
+        <textarea id="b-desc" class="maya-textarea" rows="3" formControlName="description" required></textarea>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="b-img">Imagen (URL)</label>
+        <input id="b-img" class="maya-input" formControlName="imageUrl" />
+        <p class="maya-hint">En blanco se usa el icono por defecto.</p>
+      </div>
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 180px">
+          <label class="maya-label" for="b-type">Ámbito</label>
+          <select id="b-type" class="maya-select" formControlName="type">
+            <option value="site">Toda la empresa</option>
+            <option value="course">De un curso</option>
+          </select>
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 180px">
+          <label class="maya-label" for="b-exp">Caduca el</label>
+          <input id="b-exp" type="date" class="maya-input" formControlName="expiryDate" />
+        </div>
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="b-crit">Criterio</label>
+        <select id="b-crit" class="maya-select" formControlName="criteriaType">
+          @for (option of criteriaTypes; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      @if (form.controls.criteriaType.value === 'grade') {
+        <div class="maya-field">
+          <label class="maya-label" for="b-grade">Calificación mínima (%)</label>
+          <input id="b-grade" type="number" min="0" max="100" class="maya-input" formControlName="minGrade" />
+        </div>
+      }
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="formOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Otorgar ══════════════════ -->
+@if (awarding(); as badge) {
+  <maya-modal [title]="'Otorgar ' + badge.name" (dismissed)="awarding.set(null)">
+    <div class="maya-stack">
+      <div class="maya-row" style="gap: var(--maya-space-2)">
+        <input
+          type="search"
+          class="maya-input"
+          style="flex: 1"
+          placeholder="Buscar por nombre o correo…"
+          aria-label="Buscar a quién otorgar la insignia"
+          [ngModel]="awardSearch()"
+          (ngModelChange)="awardSearch.set($event)"
+          (keyup.enter)="searchCandidates()"
+        />
+        <button type="button" class="maya-btn maya-btn--secondary" (click)="searchCandidates()">
+          <maya-icon name="search" [size]="15" />
+        </button>
+      </div>
+
+      @if (candidates().length) {
+        <ul class="maya-stack" style="gap: var(--maya-space-2); max-height: 320px; overflow-y: auto">
+          @for (user of candidates(); track user.id) {
+            <li class="maya-row-item">
+              <maya-avatar size="sm" [name]="user.fullName" [src]="user.avatarUrl ?? null" />
+              <span style="flex: 1; min-width: 0">
+                <span class="maya-bold maya-small">{{ user.fullName }}</span>
+                <span class="maya-tiny maya-subtle" style="display: block">{{ user.email }}</span>
+              </span>
+              <button
+                type="button"
+                class="maya-btn maya-btn--soft maya-btn--sm"
+                (click)="award(user.id, user.fullName)"
+              >
+                Otorgar
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="maya-small maya-muted">Sin resultados para esa búsqueda.</p>
+      }
+    </div>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--primary" (click)="awarding.set(null)">
+        Listo
+      </button>
+    </ng-container>
+  </maya-modal>
+}

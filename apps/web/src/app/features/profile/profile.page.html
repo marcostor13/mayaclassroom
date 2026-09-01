@@ -132,6 +132,112 @@
 
       <section class="maya-card">
         <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+            Verificación en dos pasos
+          </h2>
+          @if (auth.user()?.twoFactorEnabled) {
+            <span class="maya-badge maya-badge--success">Activa</span>
+          }
+        </div>
+        <div class="maya-card__body maya-stack" style="align-items: flex-start">
+          @if (auth.user()?.twoFactorEnabled) {
+            <p class="maya-small maya-muted">
+              Al acceder se le pedirá un código de su aplicación autenticadora además de la
+              contraseña.
+            </p>
+            <div class="maya-field" style="width: 100%">
+              <label class="maya-label" for="tf-pass">Contraseña actual</label>
+              <input
+                id="tf-pass"
+                type="password"
+                class="maya-input"
+                autocomplete="current-password"
+                [ngModel]="disablePassword()"
+                (ngModelChange)="disablePassword.set($event)"
+              />
+            </div>
+            <button
+              type="button"
+              class="maya-btn maya-btn--danger"
+              [disabled]="twoFactorBusy()"
+              (click)="disableTwoFactor()"
+            >
+              <maya-icon name="shield" [size]="16" /> Desactivar
+            </button>
+          } @else if (twoFactorSetup(); as setup) {
+            <p class="maya-small maya-muted">
+              Añada esta clave en su aplicación autenticadora (Google Authenticator, Aegis, 1Password…)
+              y escriba después el código de seis dígitos que le muestre.
+            </p>
+            <code
+              style="
+                display: block;
+                width: 100%;
+                padding: var(--maya-space-3);
+                background: var(--maya-surface-2);
+                border-radius: var(--maya-radius-md);
+                font-size: var(--maya-text-sm);
+                word-break: break-all;
+              "
+              >{{ setup.secret }}</code
+            >
+            <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="copySecret()">
+              <maya-icon name="copy" [size]="14" /> Copiar la clave
+            </button>
+            <div class="maya-field" style="width: 100%">
+              <label class="maya-label" for="tf-code">Código de verificación</label>
+              <input
+                id="tf-code"
+                class="maya-input"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="one-time-code"
+                placeholder="000000"
+                [ngModel]="twoFactorCode()"
+                (ngModelChange)="twoFactorCode.set($event)"
+              />
+            </div>
+            <button
+              type="button"
+              class="maya-btn maya-btn--primary"
+              [disabled]="twoFactorBusy()"
+              (click)="confirmTwoFactor()"
+            >
+              Activar
+            </button>
+          } @else {
+            <p class="maya-small maya-muted">
+              Añade un segundo factor al acceder: además de la contraseña se pedirá un código de
+              un solo uso.
+            </p>
+            <button
+              type="button"
+              class="maya-btn maya-btn--secondary"
+              [disabled]="twoFactorBusy()"
+              (click)="startTwoFactor()"
+            >
+              <maya-icon name="shield-check" [size]="16" /> Configurar
+            </button>
+          }
+
+          @if (recoveryCodes().length) {
+            <div class="maya-alert maya-alert--warning" style="width: 100%">
+              <strong class="maya-small">Códigos de recuperación</strong>
+              <p class="maya-tiny">
+                Guárdelos ahora: sirven para entrar si pierde el móvil y no volverán a mostrarse.
+              </p>
+              <div class="maya-chips" style="margin-top: var(--maya-space-2)">
+                @for (code of recoveryCodes(); track code) {
+                  <span class="maya-chip" style="font-family: var(--maya-font-mono)">{{ code }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="maya-card">
+        <div class="maya-card__header">
           <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Privacidad</h2>
         </div>
         <div class="maya-card__body maya-stack" style="align-items: flex-start">

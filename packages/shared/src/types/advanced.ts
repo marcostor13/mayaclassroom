@@ -6,6 +6,7 @@ import {
   CustomFieldScope,
   CustomFieldType,
   LearningPlanStatus,
+  ScheduledTaskStatus,
 } from '../enums';
 
 export interface CompetencyFrameworkDto {
@@ -215,4 +216,30 @@ export interface AnalyticsCourseOverview {
   submissionsPending: number;
   atRiskUsers: { id: string; fullName: string; risk: number; reasons: string[] }[];
   activityByDay: { date: string; views: number; posts: number; submissions: number }[];
+}
+
+/** Solicitud de exportación o eliminación de datos personales (RGPD). */
+export interface DataRequestDto {
+  id: string;
+  userId: string;
+  user?: { id: string; fullName: string; email: string };
+  requestType: 'export' | 'delete';
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  comment?: string | null;
+  handledBy?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+}
+
+/** Estado de una tarea programada del cron. */
+export interface ScheduledTaskDto {
+  id: string;
+  taskName: string;
+  description: string;
+  status: ScheduledTaskStatus;
+  lastRunAt?: string | null;
+  nextRunAt?: string | null;
+  lastDurationMs: number;
+  lastError?: string | null;
+  enabled: boolean;
 }

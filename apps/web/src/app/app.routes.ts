@@ -163,13 +163,24 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/profile.page').then((m) => m.ProfilePage),
       },
       {
+        path: 'files',
+        title: 'Mis ficheros · Maya Classroom',
+        loadComponent: () => import('./features/files/files.page').then((m) => m.FilesPage),
+      },
+      {
         path: 'badges',
-        title: 'Mis insignias · Maya Classroom',
+        title: 'Insignias · Maya Classroom',
         loadComponent: () => import('./features/badges/badges.page').then((m) => m.BadgesPage),
       },
       {
+        path: 'certificates',
+        title: 'Certificados · Maya Classroom',
+        loadComponent: () =>
+          import('./features/certificates/certificates.page').then((m) => m.CertificatesPage),
+      },
+      {
         path: 'competencies',
-        title: 'Mis competencias · Maya Classroom',
+        title: 'Competencias · Maya Classroom',
         loadComponent: () =>
           import('./features/competencies/competencies.page').then((m) => m.CompetenciesPage),
       },
@@ -228,6 +239,24 @@ export const routes: Routes = [
         data: { capabilities: [CAP.COHORT_VIEW, CAP.COHORT_MANAGE] },
         loadComponent: () =>
           import('./features/admin/cohorts.page').then((m) => m.AdminCohortsPage),
+      },
+      {
+        path: 'admin/site',
+        title: 'Administración del sitio · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: {
+          capabilities: [
+            CAP.REPORT_VIEW_LOGS,
+            CAP.SITE_VIEW_AUDIT,
+            CAP.BACKUP_COURSE,
+            CAP.TAG_MANAGE,
+            CAP.CUSTOMFIELD_MANAGE,
+            CAP.GDPR_MANAGE_REQUESTS,
+            CAP.TENANT_MANAGE_WEBSERVICES,
+          ],
+        },
+        loadComponent: () =>
+          import('./features/admin/site/site.page').then((m) => m.AdminSitePage),
       },
       {
         path: 'admin/tenants',

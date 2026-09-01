@@ -1,0 +1,100 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Certificados</h1>
+    <p class="maya-page-header__subtitle">
+      Acreditaciones de los cursos que ha completado
+    </p>
+  </div>
+</header>
+
+@if (claimable().length) {
+  <section class="maya-alert maya-alert--success" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-stack" style="gap: var(--maya-space-3)">
+      <p class="maya-small">
+        Ha completado
+        {{ claimable().length === 1 ? 'un curso' : claimable().length + ' cursos' }}
+        sin certificado. Puede solicitarlo ahora.
+      </p>
+      <div class="maya-row" style="flex-wrap: wrap; gap: var(--maya-space-2)">
+        @for (course of claimable(); track course.id) {
+          <button
+            type="button"
+            class="maya-btn maya-btn--primary maya-btn--sm"
+            [disabled]="claiming() === course.id"
+            (click)="claim(course)"
+          >
+            <maya-icon name="award" [size]="15" />
+            {{ claiming() === course.id ? 'Emitiendo…' : course.fullName }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+}
+
+@if (loading()) {
+  <div class="maya-cards">
+    @for (item of [1, 2, 3]; track item) {
+      <div class="maya-skeleton" style="height: 200px"></div>
+    }
+  </div>
+} @else if (certificates().length) {
+  <div class="maya-cards">
+    @for (certificate of certificates(); track certificate.id) {
+      <article class="maya-card">
+        <div class="maya-card__body maya-stack">
+          <div class="maya-row" style="gap: var(--maya-space-3); align-items: flex-start">
+            <span class="maya-icon-tile">
+              <maya-icon name="graduation-cap" [size]="20" />
+            </span>
+            <span style="flex: 1; min-width: 0">
+              <a
+                class="maya-bold"
+                [routerLink]="['/courses', certificate.courseId]"
+                style="display: block"
+              >
+                {{ courseName(certificate.courseId) }}
+              </a>
+              <span class="maya-tiny maya-subtle">
+                Emitido el {{ certificate.issuedAt | mayaDate: 'long' }}
+              </span>
+            </span>
+          </div>
+
+          @if (certificate.grade !== null && certificate.grade !== undefined) {
+            <p class="maya-small maya-muted">Calificación final: {{ certificate.grade }}</p>
+          }
+
+          <p class="maya-tiny maya-subtle" style="font-family: var(--maya-font-mono)">
+            Código: {{ certificate.code }}
+          </p>
+        </div>
+        <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2)">
+          <a
+            [href]="renderUrl(certificate)"
+            target="_blank"
+            rel="noopener"
+            class="maya-btn maya-btn--primary maya-btn--sm"
+            style="flex: 1"
+          >
+            <maya-icon name="download" [size]="15" /> Descargar
+          </a>
+          <a
+            [href]="verifyUrl(certificate)"
+            target="_blank"
+            rel="noopener"
+            class="maya-btn maya-btn--secondary maya-btn--sm"
+          >
+            <maya-icon name="shield-check" [size]="15" /> Verificar
+          </a>
+        </div>
+      </article>
+    }
+  </div>
+} @else {
+  <maya-empty-state
+    icon="graduation-cap"
+    title="Aún sin certificados"
+    description="Complete un curso al 100 % para poder solicitar su certificado."
+  />
+}

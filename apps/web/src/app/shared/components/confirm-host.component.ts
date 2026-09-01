@@ -20,7 +20,18 @@ import { ModalComponent } from './modal.component';
         @if (request.requireText) {
           <div class="maya-field" style="margin-top: var(--maya-space-4)">
             <label class="maya-label" for="maya-confirm-text">
-              Escriba <strong>{{ request.requireText }}</strong> para continuar
+              Escriba
+              <code
+                style="
+                  padding: 2px 6px;
+                  border-radius: var(--maya-radius-xs);
+                  background: var(--maya-surface-3);
+                  font-family: var(--maya-font-mono);
+                  font-weight: 400;
+                "
+                >{{ request.requireText }}</code
+              >
+              para continuar
             </label>
             <input
               id="maya-confirm-text"

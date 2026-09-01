@@ -492,7 +492,8 @@ export class CoursesService {
     if (dto.completionExpected !== undefined) {
       module.completionExpected = dto.completionExpected ? new Date(dto.completionExpected) : null;
     }
-    if (dto.availabilityJson !== undefined) module.availabilityJson = dto.availabilityJson ?? null;
+    // La cadena vacía significa «sin restricciones»; se guarda como null.
+    if (dto.availabilityJson !== undefined) module.availabilityJson = dto.availabilityJson || null;
 
     await module.save();
     await this.contexts.ensureContext({

@@ -1,0 +1,295 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Competencias</h1>
+    <p class="maya-page-header__subtitle">
+      Seguimiento de su desarrollo profesional y planes de aprendizaje
+    </p>
+  </div>
+  @if (canManage() && tab() === 'frameworks') {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openNewFramework()">
+        <maya-icon name="plus" [size]="16" /> Nuevo marco
+      </button>
+    </div>
+  }
+</header>
+
+@if (canManage()) {
+  <div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'mine'"
+      [attr.aria-selected]="tab() === 'mine'"
+      (click)="tab.set('mine')"
+    >
+      Mis competencias
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'frameworks'"
+      [attr.aria-selected]="tab() === 'frameworks'"
+      (click)="openFrameworks()"
+    >
+      Marcos
+    </button>
+  </div>
+}
+
+@if (tab() === 'mine') {
+  <div class="maya-grid" style="grid-template-columns: 1fr; gap: var(--maya-space-6)">
+    <section>
+      <h2 style="font-size: var(--maya-text-lg); margin-bottom: var(--maya-space-4)">
+        Planes de aprendizaje
+      </h2>
+      @if (plans().length) {
+        <div class="maya-cards">
+          @for (plan of plans(); track plan.id) {
+            <article class="maya-card">
+              <div class="maya-card__body maya-stack">
+                <div class="maya-spread">
+                  <h3 style="font-size: var(--maya-text-md); font-weight: 700">{{ plan.name }}</h3>
+                  <span class="maya-badge maya-badge--primary">{{ plan.status }}</span>
+                </div>
+                @if (plan.description) {
+                  <p class="maya-small maya-muted">{{ plan.description }}</p>
+                }
+                <div class="maya-stack" style="gap: 6px">
+                  <div class="maya-spread maya-tiny maya-muted">
+                    <span>Progreso</span>
+                    <strong>{{ plan.progress }} %</strong>
+                  </div>
+                  <maya-progress [value]="plan.progress" size="thin" />
+                </div>
+                @if (plan.dueDate) {
+                  <p class="maya-tiny maya-subtle">
+                    Fecha objetivo: {{ plan.dueDate | mayaDate: 'long' }}
+                  </p>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <maya-empty-state
+          icon="target"
+          title="Sin planes asignados"
+          description="Su responsable de formación puede asignarle un plan de aprendizaje."
+        />
+      }
+    </section>
+
+    <section>
+      <h2 style="font-size: var(--maya-text-lg); margin-bottom: var(--maya-space-4)">
+        Competencias evaluadas
+      </h2>
+      @if (competencies().length) {
+        <div class="maya-table-wrap">
+          <table class="maya-table">
+            <thead>
+              <tr>
+                <th scope="col">Competencia</th>
+                <th scope="col">Nivel</th>
+                <th scope="col">Evidencias</th>
+                <th scope="col">Actualizada</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of competencies(); track item.id) {
+                <tr>
+                  <td class="maya-bold">{{ item.competency?.shortName ?? '—' }}</td>
+                  <td>
+                    <span class="maya-badge" [class]="badgeClass(item)">
+                      {{ label(item.proficiency) }}
+                    </span>
+                  </td>
+                  <td class="maya-small">{{ item.evidenceCount }}</td>
+                  <td class="maya-small">{{ item.updatedAt | mayaDate: 'short' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <maya-empty-state
+          icon="sparkles"
+          title="Sin competencias evaluadas"
+          description="Sus competencias aparecerán aquí cuando el profesorado las evalúe."
+        />
+      }
+    </section>
+  </div>
+}
+
+<!-- ══════════════════ Marcos ══════════════════ -->
+@if (tab() === 'frameworks') {
+  <div class="maya-grid" style="grid-template-columns: 1fr; gap: var(--maya-space-5)">
+    @if (frameworks().length) {
+      <section>
+        <div class="maya-cards">
+          @for (framework of frameworks(); track framework.id) {
+            <article
+              class="maya-card"
+              [class.maya-card--interactive]="openFramework()?.id !== framework.id"
+            >
+              <div class="maya-card__body maya-stack">
+                <div class="maya-spread">
+                  <h2 style="font-size: var(--maya-text-md); font-weight: 700">
+                    {{ framework.name }}
+                  </h2>
+                  <span class="maya-badge maya-badge--primary">
+                    {{ framework.competencyCount }}
+                  </span>
+                </div>
+                <p class="maya-tiny maya-subtle">{{ framework.shortName }}</p>
+                @if (framework.description) {
+                  <p class="maya-small maya-muted">{{ framework.description }}</p>
+                }
+              </div>
+              <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2)">
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--soft maya-btn--sm"
+                  (click)="selectFramework(framework)"
+                >
+                  <maya-icon name="network" [size]="14" /> Ver competencias
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Eliminar ' + framework.name"
+                  (click)="removeFramework(framework)"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    } @else {
+      <maya-empty-state
+        icon="network"
+        title="Sin marcos de competencias"
+        description="Un marco reúne las competencias que se evalúan en su organización."
+      />
+    }
+
+    @if (openFramework(); as framework) {
+      <section class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+            Competencias de {{ framework.name }}
+          </h2>
+          <button
+            type="button"
+            class="maya-btn maya-btn--primary maya-btn--sm"
+            (click)="openNewCompetency()"
+          >
+            <maya-icon name="plus" [size]="15" /> Añadir
+          </button>
+        </div>
+        <div class="maya-card__body">
+          @if (flatTree().length) {
+            <ul class="maya-stack" style="gap: var(--maya-space-2)">
+              @for (entry of flatTree(); track entry.node.id) {
+                <li class="maya-row-item" [style.padding-left.px]="entry.depth * 20">
+                  <span style="flex: 1; min-width: 0">
+                    <span class="maya-bold maya-small">{{ entry.node.shortName }}</span>
+                    @if (entry.node.description) {
+                      <span class="maya-tiny maya-subtle" style="display: block">
+                        {{ entry.node.description }}
+                      </span>
+                    }
+                  </span>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="'Eliminar ' + entry.node.shortName"
+                    (click)="removeCompetency(entry.node)"
+                  >
+                    <maya-icon name="trash" [size]="15" />
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="maya-small maya-muted">
+              El marco está vacío. Añada la primera competencia.
+            </p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+}
+
+<!-- ══════════════════ Formulario de marco ══════════════════ -->
+@if (frameworkFormOpen()) {
+  <maya-modal title="Nuevo marco de competencias" (dismissed)="frameworkFormOpen.set(false)">
+    <form [formGroup]="frameworkForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="cf-name">Nombre</label>
+        <input id="cf-name" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cf-short">Nombre corto</label>
+        <input id="cf-short" class="maya-input" formControlName="shortName" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cf-desc">Descripción</label>
+        <textarea id="cf-desc" class="maya-textarea" rows="3" formControlName="description"></textarea>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cf-id">Código</label>
+        <input id="cf-id" class="maya-input" formControlName="idNumber" />
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="frameworkFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveFramework()">
+        {{ saving() ? 'Guardando…' : 'Crear marco' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Formulario de competencia ══════════════════ -->
+@if (competencyFormOpen()) {
+  <maya-modal title="Nueva competencia" (dismissed)="competencyFormOpen.set(false)">
+    <form [formGroup]="competencyForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="cc-name">Nombre</label>
+        <input id="cc-name" class="maya-input" formControlName="shortName" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cc-desc">Descripción</label>
+        <textarea id="cc-desc" class="maya-textarea" rows="3" formControlName="description"></textarea>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="cc-parent">Competencia superior</label>
+        <select id="cc-parent" class="maya-select" formControlName="parentId">
+          <option value="">Ninguna (primer nivel)</option>
+          @for (entry of flatTree(); track entry.node.id) {
+            <option [value]="entry.node.id">{{ entry.node.shortName }}</option>
+          }
+        </select>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="competencyFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveCompetency()">
+        {{ saving() ? 'Guardando…' : 'Añadir' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}

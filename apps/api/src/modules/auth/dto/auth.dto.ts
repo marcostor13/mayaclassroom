@@ -62,6 +62,13 @@ export class VerifyEmailDto {
   @ApiProperty() @IsString() token!: string;
 }
 
+export class DisableTwoFactorDto {
+  @ApiProperty({ description: 'Contraseña actual, para confirmar la identidad' })
+  @IsString()
+  @MinLength(1)
+  password!: string;
+}
+
 export class TwoFactorSetupDto {
   @ApiProperty({ description: 'Código TOTP generado por la aplicación autenticadora' })
   @IsString()

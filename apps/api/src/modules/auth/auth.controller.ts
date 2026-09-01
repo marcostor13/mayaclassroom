@@ -11,6 +11,7 @@ import {
   RefreshDto,
   RegisterDto,
   ResetPasswordDto,
+  DisableTwoFactorDto,
   TwoFactorSetupDto,
   VerifyEmailDto,
 } from './dto/auth.dto';
@@ -131,8 +132,8 @@ export class AuthController {
 
   @ApiBearerAuth()
   @Post('2fa/disable')
-  async disableTwoFactor(@CurrentUser() user: RequestUser, @Body('password') password: string) {
-    await this.auth.disableTwoFactor(user.id, password);
+  async disableTwoFactor(@CurrentUser() user: RequestUser, @Body() dto: DisableTwoFactorDto) {
+    await this.auth.disableTwoFactor(user.id, dto.password);
     return { disabled: true };
   }
 }

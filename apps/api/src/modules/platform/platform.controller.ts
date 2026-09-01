@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { CAP, ContextLevel, CustomFieldScope, CustomFieldType } from '@maya/shared';
+import { CAP, ContextLevel, CustomFieldScope } from '@maya/shared';
 import { CurrentUser, PlatformAdminOnly, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CustomFieldsService } from './custom-fields.service';
@@ -22,6 +22,19 @@ import { BackupService } from './backup.service';
 import { AnalyticsService } from './analytics.service';
 import { ScheduledTasksService } from './scheduled-tasks.service';
 import { ContextsService } from '../contexts/contexts.service';
+import {
+  AddCommentDto,
+  CreateBackupDto,
+  CreateCustomFieldDto,
+  CreatePrivacyRequestDto,
+  CreateTokenDto,
+  CreateWebhookDto,
+  ImportCourseDto,
+  ResolvePrivacyRequestDto,
+  RestoreBackupDto,
+  SetTagStandardDto,
+  UpdateCustomFieldDto,
+} from './dto/platform.dto';
 
 @ApiTags('Campos personalizados')
 @ApiBearerAuth()
@@ -36,25 +49,13 @@ export class CustomFieldsController {
 
   @Post()
   @RequireCapability(CAP.CUSTOMFIELD_MANAGE, { contextLevel: ContextLevel.Tenant })
-  create(
-    @CurrentUser() user: RequestUser,
-    @Body()
-    dto: {
-      scope: CustomFieldScope;
-      shortName: string;
-      name: string;
-      type: CustomFieldType;
-      categoryName?: string;
-      required?: boolean;
-      options?: string[];
-    },
-  ) {
+  create(@CurrentUser() user: RequestUser, @Body() dto: CreateCustomFieldDto) {
     return this.fields.create(user.tenantId, dto);
   }
 
   @Patch(':id')
   @RequireCapability(CAP.CUSTOMFIELD_MANAGE, { contextLevel: ContextLevel.Tenant })
-  update(@Param('id') id: string, @Body() dto: Record<string, never>) {
+  update(@Param('id') id: string, @Body() dto: UpdateCustomFieldDto) {
     return this.fields.update(id, dto);
   }
 
@@ -82,8 +83,8 @@ export class TagsController {
 
   @Patch(':id/standard')
   @RequireCapability(CAP.TAG_MANAGE, { contextLevel: ContextLevel.Tenant })
-  setStandard(@Param('id') id: string, @Body('isStandard') isStandard: boolean) {
-    return this.tags.setStandard(id, isStandard);
+  setStandard(@Param('id') id: string, @Body() dto: SetTagStandardDto) {
+    return this.tags.setStandard(id, dto.isStandard);
   }
 
   @Delete(':id')
@@ -104,7 +105,7 @@ export class TagsController {
     @CurrentUser() user: RequestUser,
     @Param('component') component: string,
     @Param('itemId') itemId: string,
-    @Body('content') content: string,
+    @Body() dto: AddCommentDto,
   ) {
     const context = await this.contexts.requireByInstance(ContextLevel.Tenant, user.tenantId);
     return this.tags.addComment({
@@ -113,7 +114,7 @@ export class TagsController {
       component,
       itemId,
       userId: user.id,
-      content,
+      content: dto.content,
     });
   }
 
@@ -142,10 +143,7 @@ export class WebServicesController {
   @Post('tokens')
   @RequireCapability(CAP.TENANT_MANAGE_WEBSERVICES, { contextLevel: ContextLevel.Tenant })
   @ApiOperation({ summary: 'Crear un token; el valor solo se muestra una vez' })
-  createToken(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: { name: string; scopes?: string[]; expiresAt?: string },
-  ) {
+  createToken(@CurrentUser() user: RequestUser, @Body() dto: CreateTokenDto) {
     return this.services.createToken(user.tenantId, user.id, dto);
   }
 
@@ -164,10 +162,7 @@ export class WebServicesController {
 
   @Post('webhooks')
   @RequireCapability(CAP.TENANT_MANAGE_WEBSERVICES, { contextLevel: ContextLevel.Tenant })
-  createWebhook(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: { name: string; url: string; events: string[]; secret?: string },
-  ) {
+  createWebhook(@CurrentUser() user: RequestUser, @Body() dto: CreateWebhookDto) {
     return this.services.createWebhook(user.tenantId, dto);
   }
 
@@ -187,10 +182,7 @@ export class GdprController {
 
   @Post('requests')
   @ApiOperation({ summary: 'Solicitar exportación o eliminación de los datos propios' })
-  request(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: { requestType: 'export' | 'delete'; comment?: string },
-  ) {
+  request(@CurrentUser() user: RequestUser, @Body() dto: CreatePrivacyRequestDto) {
     return this.gdpr.request(user.tenantId, user.id, dto.requestType, dto.comment);
   }
 
@@ -210,9 +202,9 @@ export class GdprController {
   resolve(
     @CurrentUser() user: RequestUser,
     @Param('id') id: string,
-    @Body('status') status: 'approved' | 'rejected',
+    @Body() dto: ResolvePrivacyRequestDto,
   ) {
-    return this.gdpr.resolve(id, status, user.id);
+    return this.gdpr.resolve(id, dto.status, user.id);
   }
 
   @Get('export')
@@ -243,13 +235,13 @@ export class BackupController {
   create(
     @CurrentUser() user: RequestUser,
     @Param('courseId') courseId: string,
-    @Body('includeUsers') includeUsers?: boolean,
+    @Body() dto: CreateBackupDto,
   ) {
     return this.backups.create({
       tenantId: user.tenantId,
       courseId,
       userId: user.id,
-      includeUsers,
+      includeUsers: dto.includeUsers,
     });
   }
 
@@ -268,7 +260,7 @@ export class BackupController {
   restore(
     @CurrentUser() user: RequestUser,
     @Param('id') id: string,
-    @Body() dto: { categoryId: string; shortName: string; fullName: string },
+    @Body() dto: RestoreBackupDto,
   ) {
     return this.backups.restore({
       tenantId: user.tenantId,
@@ -281,10 +273,7 @@ export class BackupController {
   @Post('import')
   @RequireCapability(CAP.COURSE_IMPORT, { contextLevel: ContextLevel.Tenant })
   @ApiOperation({ summary: 'Importar el contenido de un curso en otro' })
-  importInto(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: { sourceCourseId: string; targetCourseId: string },
-  ) {
+  importInto(@CurrentUser() user: RequestUser, @Body() dto: ImportCourseDto) {
     return this.backups.importInto({
       tenantId: user.tenantId,
       sourceCourseId: dto.sourceCourseId,

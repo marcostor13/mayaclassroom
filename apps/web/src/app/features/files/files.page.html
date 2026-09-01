@@ -1,0 +1,96 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Mis ficheros</h1>
+    <p class="maya-page-header__subtitle">
+      Su espacio privado: suba aquí lo que quiera tener a mano al entregar tareas
+    </p>
+  </div>
+</header>
+
+<label
+  class="maya-card"
+  style="
+    display: block;
+    padding: var(--maya-space-8) var(--maya-space-5);
+    text-align: center;
+    border-style: dashed;
+    cursor: pointer;
+    margin-bottom: var(--maya-space-5);
+  "
+  [style.border-color]="dragging() ? 'var(--maya-primary)' : 'var(--maya-border)'"
+  [style.background]="dragging() ? 'var(--maya-primary-softer)' : ''"
+  (dragover)="$event.preventDefault(); dragging.set(true)"
+  (dragleave)="dragging.set(false)"
+  (drop)="drop($event)"
+>
+  <input type="file" multiple hidden (change)="pick($event)" />
+  <maya-icon name="upload" [size]="28" />
+  <p class="maya-bold" style="margin-top: var(--maya-space-3)">
+    {{ uploading() ? 'Subiendo…' : 'Arrastre ficheros aquí o pulse para elegirlos' }}
+  </p>
+  <p class="maya-tiny maya-subtle">Se pueden subir hasta 20 ficheros a la vez.</p>
+</label>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 260px"></div>
+} @else if (files().length) {
+  <div class="maya-table-wrap">
+    <table class="maya-table">
+      <thead>
+        <tr>
+          <th scope="col">Fichero</th>
+          <th scope="col">Tamaño</th>
+          <th scope="col">Subido</th>
+          <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (file of files(); track file.id) {
+          <tr>
+            <td>
+              <span class="maya-row" style="gap: var(--maya-space-3)">
+                <maya-icon [name]="icon(file)" [size]="18" />
+                <span style="min-width: 0">
+                  <span class="maya-bold maya-small maya-truncate">{{ file.filename }}</span>
+                  <span class="maya-tiny maya-subtle" style="display: block">
+                    {{ file.mimeType }}
+                  </span>
+                </span>
+              </span>
+            </td>
+            <td class="maya-small">{{ file.size | fileSize }}</td>
+            <td class="maya-tiny">
+              {{ file.createdAt ? (file.createdAt | mayaDate: 'short') : '—' }}
+            </td>
+            <td>
+              <span class="maya-row" style="gap: var(--maya-space-1); justify-content: flex-end">
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Descargar ' + file.filename"
+                  (click)="download(file)"
+                >
+                  <maya-icon name="download" [size]="15" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Eliminar ' + file.filename"
+                  (click)="remove(file)"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <maya-empty-state
+    icon="folder"
+    title="Sin ficheros"
+    description="Todavía no ha subido nada a su espacio privado."
+  />
+}

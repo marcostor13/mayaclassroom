@@ -1,9 +1,15 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CAP, CompetencyProficiency, ContextLevel, LearningPlanStatus } from '@maya/shared';
+import { CAP, CompetencyProficiency, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CompetenciesService } from './competencies.service';
+import {
+  CreateCompetencyDto,
+  CreateFrameworkDto,
+  CreatePlanDto,
+  UpdatePlanDto,
+} from './dto/competency.dto';
 
 @ApiTags('Competencias')
 @ApiBearerAuth()
@@ -19,10 +25,7 @@ export class CompetenciesController {
 
   @Post('frameworks')
   @RequireCapability(CAP.COMPETENCY_MANAGE, { contextLevel: ContextLevel.Tenant })
-  createFramework(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: { shortName: string; name: string; description?: string; idNumber?: string },
-  ) {
+  createFramework(@CurrentUser() user: RequestUser, @Body() dto: CreateFrameworkDto) {
     return this.competencies.createFramework(user.tenantId, dto);
   }
 
@@ -42,18 +45,7 @@ export class CompetenciesController {
 
   @Post()
   @RequireCapability(CAP.COMPETENCY_MANAGE, { contextLevel: ContextLevel.Tenant })
-  create(
-    @CurrentUser() user: RequestUser,
-    @Body()
-    dto: {
-      frameworkId: string;
-      parentId?: string;
-      shortName: string;
-      description?: string;
-      idNumber?: string;
-      ruleType?: string;
-    },
-  ) {
+  create(@CurrentUser() user: RequestUser, @Body() dto: CreateCompetencyDto) {
     return this.competencies.createCompetency(user.tenantId, dto);
   }
 
@@ -139,33 +131,13 @@ export class CompetenciesController {
 
   @Post('plans')
   @RequireCapability(CAP.COMPETENCY_PLAN_MANAGE, { contextLevel: ContextLevel.Tenant })
-  createPlan(
-    @CurrentUser() user: RequestUser,
-    @Body()
-    dto: {
-      userId: string;
-      name: string;
-      description?: string;
-      dueDate?: string;
-      competencyIds?: string[];
-    },
-  ) {
+  createPlan(@CurrentUser() user: RequestUser, @Body() dto: CreatePlanDto) {
     return this.competencies.createPlan(user.tenantId, dto);
   }
 
   @Patch('plans/:id')
   @RequireCapability(CAP.COMPETENCY_PLAN_MANAGE, { contextLevel: ContextLevel.Tenant })
-  updatePlan(
-    @Param('id') id: string,
-    @Body()
-    dto: {
-      name?: string;
-      description?: string;
-      status?: LearningPlanStatus;
-      dueDate?: string;
-      competencyIds?: string[];
-    },
-  ) {
+  updatePlan(@Param('id') id: string, @Body() dto: UpdatePlanDto) {
     return this.competencies.updatePlan(id, dto);
   }
 

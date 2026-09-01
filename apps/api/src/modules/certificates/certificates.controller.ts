@@ -7,6 +7,10 @@ import { CurrentUser, Public, RequireCapability } from '../../common/decorators'
 import type { RequestUser } from '../../common/types/request-context';
 import { CertificatesService } from './certificates.service';
 import { AppConfig } from '../../config';
+import {
+  CreateCertificateTemplateDto,
+  IssueCertificateDto,
+} from './dto/certificate.dto';
 
 @ApiTags('Certificados')
 @Controller('certificates')
@@ -44,7 +48,7 @@ export class CertificatesController {
   @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
   createTemplate(
     @CurrentUser() user: RequestUser,
-    @Body() dto: { name: string; bodyHtml?: string; backgroundUrl?: string },
+    @Body() dto: CreateCertificateTemplateDto,
   ) {
     return this.certificates.createTemplate(user.tenantId, dto);
   }
@@ -63,11 +67,11 @@ export class CertificatesController {
     @CurrentUser() user: RequestUser,
     @Param('courseId') courseId: string,
     @Param('userId') userId: string,
-    @Body('templateId') templateId?: string,
+    @Body() dto: IssueCertificateDto,
   ) {
     return this.certificates.issue({
       tenantId: user.tenantId,
-      templateId,
+      templateId: dto.templateId,
       courseId,
       userId,
     });

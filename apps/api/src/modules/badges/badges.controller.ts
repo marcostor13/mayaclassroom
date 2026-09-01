@@ -1,9 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { BadgeStatus, BadgeType, CAP, ContextLevel } from '@maya/shared';
+import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, Public, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { BadgesService } from './badges.service';
+import {
+  CreateBadgeDto,
+  SetBadgeStatusDto,
+  UpdateBadgeDto,
+} from './dto/badge.dto';
 
 @ApiTags('Insignias')
 @Controller('badges')
@@ -40,22 +45,7 @@ export class BadgesController {
   @ApiBearerAuth()
   @Post()
   @RequireCapability(CAP.BADGE_CREATE, { contextLevel: ContextLevel.Tenant })
-  create(
-    @CurrentUser() user: RequestUser,
-    @Body()
-    dto: {
-      name: string;
-      description: string;
-      imageUrl?: string;
-      type?: BadgeType;
-      courseId?: string;
-      issuerName?: string;
-      issuerEmail?: string;
-      expiryDate?: string;
-      criteria?: unknown[];
-      criteriaAggregation?: 'all' | 'any';
-    },
-  ) {
+  create(@CurrentUser() user: RequestUser, @Body() dto: CreateBadgeDto) {
     return this.badges.create(user.tenantId, {
       ...dto,
       issuerName: dto.issuerName ?? user.fullName,
@@ -66,15 +56,15 @@ export class BadgesController {
   @ApiBearerAuth()
   @Patch(':id')
   @RequireCapability(CAP.BADGE_CREATE, { contextLevel: ContextLevel.Tenant })
-  update(@Param('id') id: string, @Body() dto: Record<string, unknown>) {
+  update(@Param('id') id: string, @Body() dto: UpdateBadgeDto) {
     return this.badges.update(id, dto);
   }
 
   @ApiBearerAuth()
   @Patch(':id/status')
   @RequireCapability(CAP.BADGE_CREATE, { contextLevel: ContextLevel.Tenant })
-  setStatus(@Param('id') id: string, @Body('status') status: BadgeStatus) {
-    return this.badges.setStatus(id, status);
+  setStatus(@Param('id') id: string, @Body() dto: SetBadgeStatusDto) {
+    return this.badges.setStatus(id, dto.status);
   }
 
   @ApiBearerAuth()

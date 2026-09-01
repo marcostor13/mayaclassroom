@@ -16,6 +16,7 @@ import { CompletionService } from '../completion/completion.service';
 import { GradesService } from '../grades/grades.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { toObjectId } from '../../common/utils';
+import type { UpdateBadgeDto } from './dto/badge.dto';
 
 @Injectable()
 export class BadgesService {
@@ -76,10 +77,12 @@ export class BadgesService {
     return this.toDto(badge);
   }
 
-  async update(id: string | Types.ObjectId, dto: Record<string, unknown>): Promise<BadgeDto> {
+  async update(id: string | Types.ObjectId, dto: UpdateBadgeDto): Promise<BadgeDto> {
     const badge = await this.findById(id);
-    Object.assign(badge, dto);
-    if (dto.expiryDate) badge.expiryDate = new Date(String(dto.expiryDate));
+    const { expiryDate, courseId, ...rest } = dto;
+    Object.assign(badge, rest);
+    if (expiryDate !== undefined) badge.expiryDate = expiryDate ? new Date(expiryDate) : null;
+    if (courseId !== undefined) badge.course = courseId ? toObjectId(courseId) : null;
     await badge.save();
     return this.toDto(badge);
   }

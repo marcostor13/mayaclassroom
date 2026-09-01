@@ -82,7 +82,24 @@ if (!chromium) {
 }
 await mkdir(salida, { recursive: true });
 
-const browser = await chromium.launch();
+/**
+ * La imagen trae un Chromium preinstalado cuya versión no siempre coincide con
+ * la que resuelve el Playwright del proyecto. Cuando no coinciden, `launch()`
+ * falla buscando una compilación que no existe; en ese caso se recurre al
+ * binario que sí está instalado.
+ */
+async function abrirNavegador() {
+  try {
+    return await chromium.launch();
+  } catch (error) {
+    const alternativo = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? '/opt/pw-browsers/chromium';
+    if (!existsSync(alternativo)) throw error;
+    console.warn(`Chromium de Playwright no disponible; se usa ${alternativo}.`);
+    return chromium.launch({ executablePath: alternativo });
+  }
+}
+
+const browser = await abrirNavegador();
 let fallos = 0;
 
 for (const nombre of lista.split(',').map((s) => s.trim()).filter(Boolean)) {

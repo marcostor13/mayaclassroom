@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import {
   AnalyticsCourseOverview,
   BadgeDto,
+  BadgeStatus,
   CapabilityDefinition,
   CohortDto,
   IssuedBadgeDto,
@@ -160,6 +161,34 @@ export class AdminService {
 
   badges(courseId?: string): Observable<BadgeDto[]> {
     return this.api.get<BadgeDto[]>('/badges', { courseId });
+  }
+
+  createBadge(payload: Record<string, unknown>): Observable<BadgeDto> {
+    return this.api.post<BadgeDto>('/badges', payload);
+  }
+
+  updateBadge(id: string, payload: Record<string, unknown>): Observable<BadgeDto> {
+    return this.api.patch<BadgeDto>(`/badges/${id}`, payload);
+  }
+
+  setBadgeStatus(id: string, status: BadgeStatus): Observable<BadgeDto> {
+    return this.api.patch<BadgeDto>(`/badges/${id}/status`, { status });
+  }
+
+  deleteBadge(id: string): Observable<{ deleted: boolean }> {
+    return this.api.delete<{ deleted: boolean }>(`/badges/${id}`);
+  }
+
+  awardBadge(id: string, userId: string): Observable<IssuedBadgeDto> {
+    return this.api.post<IssuedBadgeDto>(`/badges/${id}/award/${userId}`);
+  }
+
+  revokeBadge(id: string, userId: string): Observable<{ revoked: boolean }> {
+    return this.api.delete<{ revoked: boolean }>(`/badges/${id}/award/${userId}`);
+  }
+
+  badgesOfUser(userId: string): Observable<IssuedBadgeDto[]> {
+    return this.api.get<IssuedBadgeDto[]>(`/badges/users/${userId}`);
   }
 
   myBadges(): Observable<IssuedBadgeDto[]> {

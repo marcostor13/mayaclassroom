@@ -1,17 +1,29 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CategoryNode, CourseDetail, CourseFormat, SectionDto } from '@maya/shared';
+import {
+  AvailabilityCondition,
+  AvailabilityConditionType,
+  AvailabilityOperator,
+  AvailabilityTree,
+  CategoryNode,
+  CompletionTracking,
+  CourseDetail,
+  CourseFormat,
+  CourseModuleDto,
+  GroupDto,
+  SectionDto,
+} from '@maya/shared';
 import { ActivityType, CoursesService } from '../../core/services/courses.service';
 import { ToastService } from '../../core/services/toast.service';
-import { IconComponent } from '../../shared';
+import { IconComponent, ModalComponent } from '../../shared';
 import { ConfirmService } from '../../core/services/confirm.service';
 
 /** Creación y edición de cursos, con gestión de secciones y actividades. */
 @Component({
   selector: 'maya-course-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, IconComponent],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, IconComponent, ModalComponent],
   templateUrl: './course-editor.page.html',
 })
 export class CourseEditorPage {
@@ -34,6 +46,7 @@ export class CourseEditorPage {
   readonly addingTo = signal<string | null>(null);
   readonly activityType = signal('page');
   readonly activityName = signal('');
+  readonly groups = signal<GroupDto[]>([]);
 
   readonly form = this.fb.nonNullable.group({
     shortName: ['', [Validators.required]],
@@ -89,6 +102,103 @@ export class CourseEditorPage {
       { node, depth },
       ...this.flatten(node.children ?? [], depth + 1),
     ]);
+  }
+
+  /* ------------------- Ajustes de finalización y acceso ------------------ */
+
+  /** Actividad cuyos ajustes se están editando. */
+  readonly settingsFor = signal<CourseModuleDto | null>(null);
+  readonly savingSettings = signal(false);
+
+  readonly completionTracking = signal<CompletionTracking>(CompletionTracking.None);
+  readonly completionExpected = signal('');
+  readonly restrictionOperator = signal<AvailabilityOperator>(AvailabilityOperator.And);
+  readonly restrictions = signal<AvailabilityCondition[]>([]);
+
+  /** Actividades del curso, para la condición «al completar otra actividad». */
+  readonly allModules = computed(() =>
+    this.sections().flatMap((section) => section.modules ?? []),
+  );
+
+  readonly conditionTypes = [
+    { value: AvailabilityConditionType.Date, label: 'Fecha' },
+    { value: AvailabilityConditionType.Completion, label: 'Finalización de otra actividad' },
+    { value: AvailabilityConditionType.Grade, label: 'Calificación' },
+    { value: AvailabilityConditionType.Group, label: 'Pertenencia a un grupo' },
+  ];
+
+  openSettings(module: CourseModuleDto): void {
+    this.settingsFor.set(module);
+    this.completionTracking.set(module.completionTracking ?? CompletionTracking.None);
+    this.completionExpected.set(
+      module.completionExpected ? module.completionExpected.slice(0, 10) : '',
+    );
+
+    // El árbol se guarda serializado; aquí se edita como lista plana, que es
+    // lo que cubre la práctica totalidad de los casos reales.
+    const parsed = parseAvailability(module.availabilityJson);
+    this.restrictionOperator.set(parsed.op);
+    this.restrictions.set(parsed.conditions);
+
+    if (!this.groups().length) {
+      this.courses.groups(this.courseId() ?? '').subscribe({
+        next: (groups) => this.groups.set(groups),
+      });
+    }
+  }
+
+  addRestriction(type: AvailabilityConditionType): void {
+    if (!type) return;
+    const base: Record<AvailabilityConditionType, AvailabilityCondition> = {
+      [AvailabilityConditionType.Date]: { type, d: '>=', t: new Date().toISOString() },
+      [AvailabilityConditionType.Completion]: { type, cm: '', e: 1 },
+      [AvailabilityConditionType.Grade]: { type, id: '', min: 50 },
+      [AvailabilityConditionType.Group]: { type, id: '' },
+      [AvailabilityConditionType.Grouping]: { type, id: '' },
+      [AvailabilityConditionType.Profile]: { type, sf: 'country', op: 'isequalto', v: '' },
+      [AvailabilityConditionType.Role]: { type, id: '' },
+    };
+    this.restrictions.update((list) => [...list, { ...base[type] }]);
+  }
+
+  updateRestriction(index: number, key: string, value: unknown): void {
+    this.restrictions.update((list) =>
+      list.map((item, i) => (i === index ? { ...item, [key]: value } : item)),
+    );
+  }
+
+  removeRestriction(index: number): void {
+    this.restrictions.update((list) => list.filter((_, i) => i !== index));
+  }
+
+  saveSettings(): void {
+    const module = this.settingsFor();
+    const courseId = this.courseId();
+    if (!module || !courseId) return;
+
+    const conditions = this.restrictions();
+    const tree: AvailabilityTree = { op: this.restrictionOperator(), c: conditions, show: true };
+
+    this.savingSettings.set(true);
+    this.courses
+      .updateModule(courseId, module.id, {
+        completionTracking: this.completionTracking(),
+        // Cadena vacía = quitar la fecha; `undefined` no llegaría al servidor.
+        completionExpected: this.completionExpected()
+          ? new Date(this.completionExpected()).toISOString()
+          : '',
+        // Sin condiciones no se guarda un árbol vacío: se limpia la restricción.
+        availabilityJson: conditions.length ? JSON.stringify(tree) : '',
+      })
+      .subscribe({
+        next: () => {
+          this.savingSettings.set(false);
+          this.toast.success('Ajustes guardados');
+          this.settingsFor.set(null);
+          this.loadSections(courseId);
+        },
+        error: () => this.savingSettings.set(false),
+      });
   }
 
   save(): void {
@@ -183,5 +293,26 @@ export class CourseEditorPage {
 
   sectionTitle(section: SectionDto): string {
     return section.name ?? (section.sectionNumber === 0 ? 'General' : `Tema ${section.sectionNumber}`);
+  }
+}
+
+/** Lee el árbol serializado y lo devuelve como lista plana de condiciones. */
+function parseAvailability(json: string | null | undefined): {
+  op: AvailabilityOperator;
+  conditions: AvailabilityCondition[];
+} {
+  if (!json) return { op: AvailabilityOperator.And, conditions: [] };
+  try {
+    const tree = JSON.parse(json) as AvailabilityTree;
+    return {
+      op: tree.op ?? AvailabilityOperator.And,
+      // Los subárboles anidados se crean fuera de esta pantalla; aquí se
+      // conservan tal cual sólo las condiciones simples.
+      conditions: (tree.c ?? []).filter(
+        (node): node is AvailabilityCondition => !('op' in node),
+      ),
+    };
+  } catch {
+    return { op: AvailabilityOperator.And, conditions: [] };
   }
 }

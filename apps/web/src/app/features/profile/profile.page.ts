@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { UserDto } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ApiService } from '../../core/services/api.service';
@@ -11,7 +11,7 @@ import { AvatarComponent, FormatDatePipe, IconComponent } from '../../shared';
 @Component({
   selector: 'maya-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconComponent, AvatarComponent, FormatDatePipe],
+  imports: [ReactiveFormsModule, FormsModule, IconComponent, AvatarComponent, FormatDatePipe],
   templateUrl: './profile.page.html',
 })
 export class ProfilePage {
@@ -41,6 +41,83 @@ export class ProfilePage {
     currentPassword: [''],
     newPassword: [''],
   });
+
+  /* ------------------------- Verificación en dos pasos ------------------- */
+
+  /** Datos de la configuración en curso; null si no se ha iniciado. */
+  readonly twoFactorSetup = signal<{ secret: string; otpauthUrl: string } | null>(null);
+  readonly recoveryCodes = signal<string[]>([]);
+  readonly twoFactorCode = signal('');
+  readonly disablePassword = signal('');
+  readonly twoFactorBusy = signal(false);
+
+  startTwoFactor(): void {
+    this.twoFactorBusy.set(true);
+    this.recoveryCodes.set([]);
+    this.api.post<{ secret: string; otpauthUrl: string }>('/auth/2fa/setup').subscribe({
+      next: (setup) => {
+        this.twoFactorSetup.set(setup);
+        this.twoFactorBusy.set(false);
+      },
+      error: () => this.twoFactorBusy.set(false),
+    });
+  }
+
+  confirmTwoFactor(): void {
+    const code = this.twoFactorCode().trim();
+    if (code.length !== 6) {
+      this.toast.warning('Código incompleto', 'Escriba los seis dígitos de la aplicación.');
+      return;
+    }
+    this.twoFactorBusy.set(true);
+    this.api.post<{ recoveryCodes: string[] }>('/auth/2fa/confirm', { code }).subscribe({
+      next: (result) => {
+        this.twoFactorBusy.set(false);
+        this.twoFactorSetup.set(null);
+        this.twoFactorCode.set('');
+        this.recoveryCodes.set(result.recoveryCodes);
+        this.auth.patchUser({ twoFactorEnabled: true });
+        this.toast.success(
+          'Verificación en dos pasos activada',
+          'Guarde los códigos de recuperación en un lugar seguro.',
+        );
+      },
+      error: () => this.twoFactorBusy.set(false),
+    });
+  }
+
+  disableTwoFactor(): void {
+    const password = this.disablePassword();
+    if (!password) {
+      this.toast.warning('Falta la contraseña', 'Confirme su identidad para desactivarlo.');
+      return;
+    }
+    this.twoFactorBusy.set(true);
+    this.api.post<{ disabled: boolean }>('/auth/2fa/disable', { password }).subscribe({
+      next: () => {
+        this.twoFactorBusy.set(false);
+        this.disablePassword.set('');
+        this.recoveryCodes.set([]);
+        this.auth.patchUser({ twoFactorEnabled: false });
+        this.toast.success('Verificación en dos pasos desactivada');
+      },
+      error: () => this.twoFactorBusy.set(false),
+    });
+  }
+
+  /**
+   * Enlace `otpauth://` en un QR generado por la propia aplicación
+   * autenticadora no es posible sin librería; se ofrece el secreto para
+   * introducirlo a mano, que es el mecanismo estándar de respaldo.
+   */
+  copySecret(): void {
+    const secret = this.twoFactorSetup()?.secret;
+    if (!secret) return;
+    void navigator.clipboard?.writeText(secret).then(
+      () => this.toast.success('Clave copiada'),
+      () => this.toast.warning('No se pudo copiar', 'Selecciónela y cópiela a mano.'),
+    );
+  }
 
   constructor() {
     this.api.get<UserDto>('/users/me').subscribe({

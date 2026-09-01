@@ -209,3 +209,24 @@ resuelve permisos y tiene su lenguaje visual completo.
 | Fase 3 | ✅ Implementada (base funcional de cada capacidad) |
 
 Ver `docs/ARCHITECTURE.md` y `docs/API.md` para el detalle técnico.
+
+### Lo que queda pendiente
+
+La API cubre las tres fases; el cliente cubre ya todo el ciclo de uso real.
+Lo que sigue sin interfaz propia, por orden de utilidad:
+
+- **Actividades avanzadas con pantalla propia**: lección, taller (evaluación
+  entre pares), glosario, wiki, base de datos, chat, SCORM, LTI y H5P se
+  crean y se consultan a través de la pantalla genérica `/mod/advanced`, sin
+  la interacción específica de cada una.
+- **Rúbricas y guías de evaluación** (advanced grading): el modelo existe,
+  la calificación se hace con nota simple y retroalimentación.
+- **Restauración e importación de cursos**: los endpoints existen y la copia
+  se crea y se descarga desde «Administración del sitio», pero restaurar o
+  importar se hace todavía por API.
+- **Constructor de informes** y exportación programada de analíticas.
+- **i18n (es/en)** y modo de lectura sin conexión: la interfaz está sólo en
+  español y la PWA no cachea contenido.
+- **Árboles de restricción anidados**: el editor por actividad admite una
+  lista de condiciones con un operador; los árboles con subgrupos se
+  conservan al guardar pero se editan por API.

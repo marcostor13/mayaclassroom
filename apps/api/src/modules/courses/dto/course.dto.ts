@@ -15,6 +15,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { CourseFormat, CourseVisibility, GroupMode, ModuleType } from '@maya/shared';
 import { PaginationQueryDto } from '../../../common/dto';
@@ -152,8 +153,16 @@ export class CreateModuleDto {
   @ApiPropertyOptional() @IsEnum(GroupMode) @IsOptional() groupMode?: GroupMode;
   @ApiPropertyOptional() @IsInt() @IsOptional() completionTracking?: number;
   @ApiPropertyOptional() @IsObject() @IsOptional() completionRules?: Record<string, unknown>;
-  @ApiPropertyOptional() @IsDateString() @IsOptional() completionExpected?: string;
-  @ApiPropertyOptional() @IsString() @IsOptional() availabilityJson?: string;
+  @ApiPropertyOptional({ description: 'Cadena vacía para quitar la fecha' })
+  @ValidateIf((_, value) => value !== '')
+  @IsDateString()
+  @IsOptional()
+  completionExpected?: string;
+
+  @ApiPropertyOptional({ description: 'Árbol de restricción serializado; vacío para quitarlo' })
+  @IsString()
+  @IsOptional()
+  availabilityJson?: string;
 }
 
 export class UpdateModuleDto extends PartialType(CreateModuleDto) {}

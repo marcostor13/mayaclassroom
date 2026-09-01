@@ -66,8 +66,9 @@
               <p class="maya-small maya-muted">{{ group.description }}</p>
             }
             @if (group.enrolmentKey) {
-              <p class="maya-tiny maya-subtle">
-                <maya-icon name="key" [size]="12" /> Clave: {{ group.enrolmentKey }}
+              <p class="maya-tiny maya-subtle maya-row" style="gap: var(--maya-space-1)">
+                <maya-icon name="key" [size]="12" />
+                <span>Clave: {{ group.enrolmentKey }}</span>
               </p>
             }
             @if (group.groupingIds.length) {
@@ -79,7 +80,7 @@
             }
             @if (group.members?.length) {
               <div class="maya-avatar-group">
-                @for (member of (group.members ?? []).slice(0, 6); track member.id) {
+                @for (member of group.members.slice(0, 4); track member.id) {
                   <maya-avatar
                     size="xs"
                     [name]="member.fullName"
@@ -87,8 +88,8 @@
                     [title]="member.fullName"
                   />
                 }
-                @if (group.memberCount > 6) {
-                  <span class="maya-tiny maya-subtle">+{{ group.memberCount - 6 }}</span>
+                @if (group.memberCount > 4) {
+                  <span class="maya-tiny maya-subtle">+{{ group.memberCount - 4 }}</span>
                 }
               </div>
             }
@@ -178,7 +179,7 @@
         <h3 class="maya-label">En el grupo ({{ group.memberCount }})</h3>
         @if (group.members?.length) {
           <ul class="maya-stack" style="gap: var(--maya-space-2); margin-top: var(--maya-space-2)">
-            @for (member of group.members ?? []; track member.id) {
+            @for (member of group.members; track member.id) {
               <li class="maya-row-item">
                 <maya-avatar size="sm" [name]="member.fullName" [src]="member.avatarUrl" />
                 <span style="flex: 1; min-width: 0">

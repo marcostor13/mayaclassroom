@@ -29,8 +29,10 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Calendario', shortLabel: 'Agenda', icon: 'calendar', route: '/calendar', group: 'principal', mobile: true },
   { label: 'Mensajes', shortLabel: 'Chats', icon: 'message-square', route: '/messages', group: 'principal', mobile: true },
   { label: 'Notificaciones', shortLabel: 'Avisos', icon: 'bell', route: '/notifications', group: 'principal' },
-  { label: 'Mis insignias', shortLabel: 'Logros', icon: 'award', route: '/badges', group: 'principal' },
+  { label: 'Insignias', shortLabel: 'Logros', icon: 'award', route: '/badges', group: 'principal' },
   { label: 'Competencias', shortLabel: 'Metas', icon: 'target', route: '/competencies', group: 'principal' },
+  { label: 'Certificados', shortLabel: 'Títulos', icon: 'graduation-cap', route: '/certificates', group: 'principal' },
+  { label: 'Mis ficheros', shortLabel: 'Ficheros', icon: 'folder', route: '/files', group: 'principal' },
 
   {
     label: 'Catálogo de cursos',
@@ -90,6 +92,21 @@ export const NAV_ITEMS: NavItem[] = [
     route: '/admin/tenant',
     group: 'administración',
     capabilities: [CAP.TENANT_UPDATE, CAP.TENANT_MANAGE_BRANDING],
+  },
+  {
+    label: 'Sitio',
+    icon: 'sliders',
+    route: '/admin/site',
+    group: 'administración',
+    capabilities: [
+      CAP.REPORT_VIEW_LOGS,
+      CAP.SITE_VIEW_AUDIT,
+      CAP.BACKUP_COURSE,
+      CAP.TAG_MANAGE,
+      CAP.CUSTOMFIELD_MANAGE,
+      CAP.GDPR_MANAGE_REQUESTS,
+      CAP.TENANT_MANAGE_WEBSERVICES,
+    ],
   },
   {
     label: 'Empresas',
