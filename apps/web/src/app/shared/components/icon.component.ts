@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 /** Grosor de trazo por defecto de los iconos de contorno. */
 const STROKE = 1.8;
@@ -48,16 +49,46 @@ export class IconComponent {
     () => this.variant() === 'solid' && this.name() in SOLID_ICONS,
   );
 
-  path(): string {
-    const name = this.name();
-    if (this.variant() === 'solid' && name in SOLID_ICONS) return SOLID_ICONS[name];
-    return ICONS[name] ?? ICONS['circle'];
-  }
+  private readonly sanitizer = inject(DomSanitizer);
+
+  /**
+   * El sanitizador de Angular no admite elementos SVG en `[innerHTML]`: borra
+   * `<path>`, `<circle>` y compañía, y el icono queda vacío. Aquí el marcado
+   * son literales constantes de este mismo fichero —`name` sólo elige una
+   * clave de un mapa cerrado, nunca se interpola nada de fuera— así que
+   * marcarlo como confiable es seguro y es la única forma de pintarlo.
+   */
+  readonly path = computed<SafeHtml>(() => trusted(this.sanitizer, this.name(), this.variant()));
 }
 
 /** ¿Existe versión rellena para este icono? */
 export function hasSolidIcon(name: string): boolean {
   return name in SOLID_ICONS;
+}
+
+/**
+ * Marcado confiable de cada icono, memorizado: en una pantalla se repite el
+ * mismo icono decenas de veces y el objeto debe ser estable, o `[innerHTML]`
+ * vuelve a escribir en el DOM en cada detección de cambios.
+ */
+const TRUSTED = new Map<string, SafeHtml>();
+
+function trusted(
+  sanitizer: DomSanitizer,
+  name: string,
+  variant: 'outline' | 'solid',
+): SafeHtml {
+  const solid = variant === 'solid' && name in SOLID_ICONS;
+  const key = `${solid ? 'solid' : 'outline'}:${name}`;
+
+  let markup = TRUSTED.get(key);
+  if (!markup) {
+    markup = sanitizer.bypassSecurityTrustHtml(
+      solid ? SOLID_ICONS[name] : (ICONS[name] ?? ICONS['circle']),
+    );
+    TRUSTED.set(key, markup);
+  }
+  return markup;
 }
 
 /* Cada entrada contiene solo el contenido interno del `<svg>`. */

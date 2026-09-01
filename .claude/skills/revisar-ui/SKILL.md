@@ -64,6 +64,13 @@ El banco reproduce el CSS con fidelidad, no el comportamiento: los estados que
 dependen de señales (cajón abierto, hoja «Más», pestaña activa) se representan
 escribiendo a mano la clase correspondiente (`sidebar--open`, `is-active`).
 
+Tampoco pasa por Angular, así que **no detecta lo que rompe el propio marco**:
+un `[innerHTML]` saneado, una tubería que devuelve vacío o un enlace que no
+resuelve se ven perfectos en el banco y en blanco en la aplicación. Para eso
+hace falta el camino A, aunque sea sirviendo `dist/web/browser` con
+`python3 -m http.server` y mirando la pantalla de acceso, que no necesita
+base de datos.
+
 ## Qué mirar
 
 Las anchuras no son decorativas; cada una responde a una pregunta distinta:
