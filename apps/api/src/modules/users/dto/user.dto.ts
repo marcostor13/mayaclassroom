@@ -61,6 +61,13 @@ export class CreateUserDto {
   @IsOptional()
   status?: UserStatus;
 
+  @ApiPropertyOptional({
+    description: 'Obliga a cambiar la contraseña en el primer acceso',
+  })
+  @IsBoolean()
+  @IsOptional()
+  mustChangePassword?: boolean;
+
   @ApiPropertyOptional({ description: 'Rol inicial en la empresa (nombre corto)' })
   @IsString()
   @IsOptional()

@@ -303,6 +303,20 @@ export class RolesService {
    * Crea (o actualiza) los roles arquetípicos para una empresa. Se ejecuta al
    * crear el tenant y desde el `seed`.
    */
+  /**
+   * Borra los roles de una empresa y todo lo que cuelga de ellos. Solo se usa
+   * al deshacer un alta fallida: la baja normal es lógica y conserva el rastro.
+   */
+  async purgeTenantRoles(tenantId: string | Types.ObjectId): Promise<void> {
+    const tenant = toObjectId(tenantId);
+    const roles = await this.roleModel.find({ tenant }).select('_id').exec();
+    const roleIds = roles.map((role) => role._id);
+
+    await this.assignmentModel.deleteMany({ tenant }).exec();
+    if (roleIds.length) await this.capabilityModel.deleteMany({ role: { $in: roleIds } }).exec();
+    await this.roleModel.deleteMany({ tenant }).exec();
+  }
+
   async provisionPresetRoles(tenantId: string | Types.ObjectId | null): Promise<RoleDocument[]> {
     const tenant = tenantId ? toObjectId(tenantId) : null;
     const roles: RoleDocument[] = [];

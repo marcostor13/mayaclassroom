@@ -342,6 +342,7 @@ export class AuthService {
       timezone: user.timezone,
       isPlatformAdmin: user.isPlatformAdmin,
       twoFactorEnabled: user.twoFactorEnabled,
+      mustChangePassword: user.mustChangePassword,
       roles,
       capabilities,
     };
@@ -388,9 +389,15 @@ export class AuthService {
     const valid = await this.users.verifyPassword(user.passwordHash, dto.currentPassword);
     if (!valid) throw new BadRequestException('La contraseña actual no es correcta.');
 
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException('La nueva contraseña debe ser distinta de la actual.');
+    }
+
     const tenant = await this.tenants.findById(user.tenant);
     this.assertPasswordPolicy(dto.newPassword, tenant.settings.passwordPolicy);
     await this.users.setPassword(user._id, dto.newPassword);
+    // `setPassword` levanta la marca de contraseña temporal; al revocar las
+    // sesiones, el siguiente acceso ya entra sin restricciones.
     await this.logoutAll(user._id);
   }
 

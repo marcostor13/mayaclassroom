@@ -107,6 +107,37 @@ export class MailService {
     });
   }
 
+  /**
+   * Alta de la persona que administrará una empresa recién creada. Incluye la
+   * contraseña temporal porque es la única vía de entrada: al usarla, la
+   * plataforma obliga a sustituirla antes de dejar hacer nada más.
+   */
+  sendTenantAdminWelcome(params: {
+    to: string;
+    name: string;
+    tenantName: string;
+    tenantSlug: string;
+    username: string;
+    temporaryPassword: string;
+  }): Promise<void> {
+    return this.send({
+      to: params.to,
+      subject: `Su cuenta de administración de ${params.tenantName} · Maya Classroom`,
+      title: `Bienvenido a ${params.tenantName}`,
+      greeting: `Hola, ${params.name}`,
+      body:
+        `Se ha creado el aula virtual de <strong>${params.tenantName}</strong> y usted es su ` +
+        'administrador. Estos son sus datos de acceso:<br><br>' +
+        `<strong>Empresa:</strong> ${params.tenantSlug}<br>` +
+        `<strong>Usuario:</strong> ${params.username}<br>` +
+        `<strong>Contraseña temporal:</strong> ${params.temporaryPassword}`,
+      ctaLabel: 'Entrar y cambiar mi contraseña',
+      ctaUrl: `${this.app.webUrl}/auth/login?tenant=${params.tenantSlug}`,
+      footnote:
+        'Por seguridad, la plataforma le pedirá una contraseña nueva la primera vez que entre.',
+    });
+  }
+
   sendInvitation(to: string, name: string, tenantName: string, link: string): Promise<void> {
     return this.send({
       to,

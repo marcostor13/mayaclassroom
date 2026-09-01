@@ -33,6 +33,8 @@ export interface AuthenticatedUser {
   timezone: string;
   isPlatformAdmin: boolean;
   twoFactorEnabled: boolean;
+  /** Obliga a cambiar la contraseña temporal antes de usar la plataforma. */
+  mustChangePassword: boolean;
   roles: SessionRoleAssignment[];
   /** Capacidades efectivas en el contexto del tenant, precalculadas. */
   capabilities: string[];

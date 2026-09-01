@@ -154,6 +154,15 @@
 
 .maya-card--flat { box-shadow: none; }
 
+/**
+ * Tarjeta que reclama atención sin ser un error: un aviso que hay que leer y
+ * atender antes de seguir, como las credenciales de un alta recién hecha.
+ */
+.maya-card--accent {
+  background: var(--maya-primary-softer);
+  border-color: var(--maya-primary-soft);
+}
+
 .maya-card--interactive {
   transition:
     transform var(--maya-duration) var(--maya-ease-out),

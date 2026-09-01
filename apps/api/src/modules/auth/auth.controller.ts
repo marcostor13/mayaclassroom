@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { CurrentUser, Public } from '../../common/decorators';
+import { AllowPasswordChangePending, CurrentUser, Public } from '../../common/decorators';
 import type { MayaRequest, RequestUser } from '../../common/types/request-context';
 import { AuthService } from './auth.service';
 import {
@@ -59,6 +59,7 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
+  @AllowPasswordChangePending()
   @Post('logout-all')
   @ApiOperation({ summary: 'Cerrar la sesión en todos los dispositivos' })
   async logoutAll(@CurrentUser() user: RequestUser) {
@@ -67,6 +68,7 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
+  @AllowPasswordChangePending()
   @Get('me')
   @ApiOperation({ summary: 'Sesión actual con roles y capacidades' })
   me(@CurrentUser() user: RequestUser) {
@@ -104,6 +106,7 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
+  @AllowPasswordChangePending()
   @Post('change-password')
   async changePassword(@CurrentUser() user: RequestUser, @Body() dto: ChangePasswordDto) {
     await this.auth.changePassword(user.id, dto);

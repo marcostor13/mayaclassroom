@@ -4,11 +4,75 @@
     <p class="maya-page-header__subtitle">{{ total() }} empresas en la plataforma</p>
   </div>
   <div class="maya-page-header__actions">
-    <button type="button" class="maya-btn maya-btn--primary" (click)="creating.set(!creating())">
-      <maya-icon name="plus" [size]="16" /> Nueva empresa
-    </button>
+    @if (creating()) {
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="cancel()">
+        Cancelar
+      </button>
+    } @else {
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openForm()">
+        <maya-icon name="plus" [size]="16" /> Nueva empresa
+      </button>
+    }
   </div>
 </header>
+
+@if (credentials(); as created) {
+  <section
+    class="maya-card maya-card--accent"
+    style="margin-bottom: var(--maya-space-5)"
+    aria-labelledby="cred-title"
+  >
+    <div class="maya-card__header maya-spread">
+      <h2 id="cred-title" class="maya-card__title" style="font-size: var(--maya-text-md)">
+        Acceso de administración de «{{ created.tenant }}»
+      </h2>
+      <button
+        type="button"
+        class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+        (click)="dismissCredentials()"
+        aria-label="Cerrar el aviso de credenciales"
+      >
+        <maya-icon name="x" [size]="16" />
+      </button>
+    </div>
+    <div class="maya-card__body maya-stack">
+      <p class="maya-small">
+        La contraseña temporal <strong>solo se muestra ahora</strong>. Entréguela a la persona
+        responsable: al entrar, la plataforma le obligará a cambiarla.
+      </p>
+      <dl class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+        <div>
+          <dt class="maya-tiny maya-subtle">Correo</dt>
+          <dd class="maya-small maya-bold">{{ created.admin.email }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Usuario</dt>
+          <dd class="maya-small maya-bold">{{ created.admin.username }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Contraseña temporal</dt>
+          <dd class="maya-row" style="gap: var(--maya-space-2)">
+            <code class="maya-small maya-bold">{{ created.admin.temporaryPassword }}</code>
+            <button
+              type="button"
+              class="maya-btn maya-btn--ghost maya-btn--sm"
+              (click)="copyPassword()"
+            >
+              <maya-icon [name]="passwordCopied() ? 'check' : 'copy'" [size]="15" />
+              {{ passwordCopied() ? 'Copiada' : 'Copiar' }}
+            </button>
+          </dd>
+        </div>
+      </dl>
+      @if (!created.admin.emailSent) {
+        <p class="maya-error">
+          <maya-icon name="alert" [size]="14" />
+          No se pudo enviar el correo de bienvenida: entregue estos datos por otra vía.
+        </p>
+      }
+    </div>
+  </section>
+}
 
 @if (creating()) {
   <form [formGroup]="form" (ngSubmit)="create()" class="maya-card" style="margin-bottom: var(--maya-space-5)">
@@ -17,17 +81,51 @@
     </div>
     <div class="maya-card__body maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
       <div class="maya-field">
-        <label class="maya-label" for="t-slug">Identificador</label>
-        <input id="t-slug" class="maya-input" formControlName="slug" autocomplete="off" />
-        <span class="maya-hint">Se usa para entrar. Minúsculas, números y guiones.</span>
+        <label class="maya-label" for="t-name">Nombre <span class="maya-required">*</span></label>
+        <input
+          id="t-name"
+          class="maya-input"
+          formControlName="name"
+          [class.is-invalid]="invalid('name')"
+          (blur)="suggestSlug()"
+        />
+        @if (invalid('name')) {
+          <span class="maya-error"><maya-icon name="alert" [size]="14" /> {{ error('name') }}</span>
+        }
       </div>
       <div class="maya-field">
-        <label class="maya-label" for="t-name">Nombre</label>
-        <input id="t-name" class="maya-input" formControlName="name" />
+        <label class="maya-label" for="t-slug">
+          Identificador <span class="maya-required">*</span>
+        </label>
+        <input
+          id="t-slug"
+          class="maya-input"
+          formControlName="slug"
+          autocomplete="off"
+          [class.is-invalid]="invalid('slug')"
+        />
+        @if (invalid('slug')) {
+          <span class="maya-error"><maya-icon name="alert" [size]="14" /> {{ error('slug') }}</span>
+        } @else {
+          <span class="maya-hint">Se usa para entrar. Minúsculas, números y guiones.</span>
+        }
       </div>
       <div class="maya-field">
-        <label class="maya-label" for="t-email">Correo de contacto</label>
-        <input id="t-email" type="email" class="maya-input" formControlName="contactEmail" />
+        <label class="maya-label" for="t-email">
+          Correo de contacto <span class="maya-required">*</span>
+        </label>
+        <input
+          id="t-email"
+          type="email"
+          class="maya-input"
+          formControlName="contactEmail"
+          [class.is-invalid]="invalid('contactEmail')"
+        />
+        @if (invalid('contactEmail')) {
+          <span class="maya-error">
+            <maya-icon name="alert" [size]="14" /> {{ error('contactEmail') }}
+          </span>
+        }
       </div>
       <div class="maya-field">
         <label class="maya-label" for="t-legal">Razón social</label>
@@ -61,11 +159,46 @@
         </select>
       </div>
     </div>
+
+    <div class="maya-card__body maya-stack" style="padding-top: 0">
+      <h3 class="maya-small maya-bold">Cuenta de administración</h3>
+      <p class="maya-tiny maya-subtle">
+        Se crea junto con la empresa, con una contraseña temporal que su titular deberá cambiar al
+        entrar. Si deja los campos en blanco se usa el correo de contacto.
+      </p>
+      <div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+        <div class="maya-field">
+          <label class="maya-label" for="t-admin-email">Correo del administrador</label>
+          <input
+            id="t-admin-email"
+            type="email"
+            class="maya-input"
+            formControlName="adminEmail"
+            [placeholder]="form.controls.contactEmail.value || 'admin@empresa.com'"
+            [class.is-invalid]="invalid('adminEmail')"
+          />
+          @if (invalid('adminEmail')) {
+            <span class="maya-error">
+              <maya-icon name="alert" [size]="14" /> {{ error('adminEmail') }}
+            </span>
+          }
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="t-admin-first">Nombre</label>
+          <input id="t-admin-first" class="maya-input" formControlName="adminFirstName" />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="t-admin-last">Apellidos</label>
+          <input id="t-admin-last" class="maya-input" formControlName="adminLastName" />
+        </div>
+      </div>
+    </div>
+
     <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); justify-content: flex-end">
-      <button type="button" class="maya-btn maya-btn--ghost" (click)="creating.set(false)">
-        Cancelar
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="cancel()">Cancelar</button>
+      <button type="submit" class="maya-btn maya-btn--primary" [disabled]="submitting()">
+        {{ submitting() ? 'Creando…' : 'Crear empresa' }}
       </button>
-      <button type="submit" class="maya-btn maya-btn--primary">Crear empresa</button>
     </div>
   </form>
 }

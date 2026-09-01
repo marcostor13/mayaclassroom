@@ -7,15 +7,18 @@ import {
   Public,
   RequireCapability,
 } from '../../common/decorators';
-import { PaginationQueryDto } from '../../common/dto';
 import type { RequestUser } from '../../common/types/request-context';
 import { TenantsService } from './tenants.service';
-import { CreateTenantDto, UpdateTenantDto } from './dto/tenant.dto';
+import { TenantProvisioningService } from './tenant-provisioning.service';
+import { CreateTenantDto, TenantQueryDto, UpdateTenantDto } from './dto/tenant.dto';
 
 @ApiTags('Empresas')
 @Controller('tenants')
 export class TenantsController {
-  constructor(private readonly tenants: TenantsService) {}
+  constructor(
+    private readonly tenants: TenantsService,
+    private readonly provisioning: TenantProvisioningService,
+  ) {}
 
   @Public()
   @Get('public/:slug')
@@ -28,7 +31,7 @@ export class TenantsController {
   @ApiBearerAuth()
   @PlatformAdminOnly()
   @ApiOperation({ summary: 'Listar empresas (administración de plataforma)' })
-  list(@Query() query: PaginationQueryDto) {
+  list(@Query() query: TenantQueryDto) {
     return this.tenants.paginate(query);
   }
 
@@ -49,9 +52,15 @@ export class TenantsController {
   @Post()
   @ApiBearerAuth()
   @PlatformAdminOnly()
-  @ApiOperation({ summary: 'Crear una empresa' })
+  @ApiOperation({
+    summary: 'Crear una empresa junto con su cuenta de administración',
+    description:
+      'Devuelve la empresa y las credenciales del administrador. La contraseña temporal ' +
+      'solo se entrega en esta respuesta y en el correo de bienvenida: al usarla, la ' +
+      'plataforma obliga a sustituirla.',
+  })
   create(@Body() dto: CreateTenantDto) {
-    return this.tenants.create(dto);
+    return this.provisioning.createTenantWithAdmin(dto);
   }
 
   @Patch('me')

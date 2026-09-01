@@ -8,6 +8,7 @@ import {
   CohortDto,
   IssuedBadgeDto,
   Paginated,
+  TenantCreatedDto,
   TenantDto,
   TenantStatus,
   UserDto,
@@ -102,8 +103,12 @@ export class AdminService {
     return this.api.get<Paginated<TenantDto>>('/tenants', query);
   }
 
-  createTenant(payload: Record<string, unknown>): Observable<TenantDto> {
-    return this.api.post<TenantDto>('/tenants', payload);
+  /**
+   * Alta de empresa. La respuesta trae también las credenciales del
+   * administrador que se crea con ella; la contraseña temporal solo viaja aquí.
+   */
+  createTenant(payload: Record<string, unknown>): Observable<TenantCreatedDto> {
+    return this.api.post<TenantCreatedDto>('/tenants', payload);
   }
 
   updateTenant(id: string, payload: Record<string, unknown>): Observable<TenantDto> {

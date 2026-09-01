@@ -306,6 +306,7 @@ export class UsersService {
           $set: {
             passwordHash: hash,
             passwordChangedAt: new Date(),
+            mustChangePassword: false,
             failedLoginAttempts: 0,
             lockedUntil: null,
           },

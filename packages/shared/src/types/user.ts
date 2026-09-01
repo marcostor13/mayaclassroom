@@ -23,6 +23,7 @@ export interface UserDto {
   provider: AuthProvider;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
+  mustChangePassword: boolean;
   isPlatformAdmin: boolean;
   lastLoginAt?: string | null;
   lastAccessAt?: string | null;

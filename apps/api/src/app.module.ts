@@ -10,6 +10,7 @@ import { CommonModule } from './common/common.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { CapabilityGuard } from './common/guards/capability.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
+import { PasswordChangeGuard } from './common/guards/password-change.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 // Fase 1 — núcleo
@@ -112,6 +113,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: PasswordChangeGuard },
     { provide: APP_GUARD, useClass: CapabilityGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

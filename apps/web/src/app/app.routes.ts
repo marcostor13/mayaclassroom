@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { CAP } from '@maya/shared';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard, passwordChangeGuard } from './core/guards/auth.guard';
 import { capabilityGuard, platformAdminGuard } from './core/guards/capability.guard';
 
 export const routes: Routes = [
@@ -39,10 +39,26 @@ export const routes: Routes = [
     ],
   },
 
+  /* ─────────────────── Cambio de contraseña obligatorio ──────────────── */
+  {
+    path: 'password-change',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/auth/auth-layout.component').then((m) => m.AuthLayoutComponent),
+    children: [
+      {
+        path: '',
+        title: 'Cambiar contraseña · Maya Classroom',
+        loadComponent: () =>
+          import('./features/auth/change-password.page').then((m) => m.ChangePasswordPage),
+      },
+    ],
+  },
+
   /* ──────────────────────── Aplicación autenticada ───────────────────── */
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [authGuard, passwordChangeGuard],
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     children: [
       {
