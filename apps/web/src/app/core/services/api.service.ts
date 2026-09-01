@@ -61,6 +61,16 @@ export class ApiService {
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * DELETE con cuerpo. Algunos endpoints (bajas de varios integrantes a la vez)
+   * lo necesitan, y `HttpClient.delete` no admite `body` en su firma corta.
+   */
+  deleteWithBody<T>(path: string, body: unknown): Observable<T> {
+    return this.http
+      .request<ApiEnvelope<T>>('delete', `${this.baseUrl}${path}`, { body })
+      .pipe(map((response) => response.data));
+  }
+
   /** Subida de ficheros mediante `multipart/form-data`. */
   upload<T>(path: string, formData: FormData, query?: Record<string, QueryValue>): Observable<T> {
     return this.http

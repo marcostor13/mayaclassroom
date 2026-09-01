@@ -7,9 +7,12 @@
     <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="today()">
       Hoy
     </button>
-    <a href="/api/v1/calendar/export.ics" class="maya-btn maya-btn--secondary maya-btn--sm">
+    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="exportIcs()">
       <maya-icon name="download" [size]="15" /> Exportar
-    </a>
+    </button>
+    <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNew()">
+      <maya-icon name="plus" [size]="15" /> Nuevo evento
+    </button>
   </div>
 </header>
 
@@ -99,6 +102,16 @@
                   <a [routerLink]="event.actionUrl" class="maya-tiny">Ir a la actividad</a>
                 }
               </div>
+              @if (isEditable(event)) {
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Editar ' + event.name"
+                  (click)="openEdit(event)"
+                >
+                  <maya-icon name="edit" [size]="15" />
+                </button>
+              }
             </li>
           }
         </ul>
@@ -108,7 +121,97 @@
           title="Sin eventos"
           description="No hay nada programado para este día."
         />
+        <button
+          type="button"
+          class="maya-btn maya-btn--soft maya-btn--block"
+          style="margin-top: var(--maya-space-3)"
+          (click)="openNew()"
+        >
+          <maya-icon name="plus" [size]="15" /> Añadir evento
+        </button>
       }
     </div>
   </aside>
 </div>
+
+@if (formOpen()) {
+  <maya-modal [title]="editing() ? 'Editar evento' : 'Nuevo evento'" (dismissed)="close()">
+    <form [formGroup]="form" class="maya-stack" (ngSubmit)="save()">
+      <div class="maya-field">
+        <label class="maya-label" for="ev-name">Nombre</label>
+        <input id="ev-name" class="maya-input" formControlName="name" required />
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="ev-desc">Descripción</label>
+        <textarea id="ev-desc" class="maya-textarea" rows="3" formControlName="description"></textarea>
+      </div>
+
+      @if (canManageCourse()) {
+        <div class="maya-field">
+          <label class="maya-label" for="ev-scope">Ámbito</label>
+          <select id="ev-scope" class="maya-select" formControlName="eventType">
+            <option value="user">Personal</option>
+            <option value="course">De un curso</option>
+          </select>
+        </div>
+
+        @if (form.controls.eventType.value === 'course') {
+          <div class="maya-field">
+            <label class="maya-label" for="ev-course">Curso</label>
+            <select id="ev-course" class="maya-select" formControlName="courseId">
+              <option value="">Elija un curso…</option>
+              @for (course of myCourses(); track course.id) {
+                <option [value]="course.id">{{ course.fullName }}</option>
+              }
+            </select>
+          </div>
+        }
+      }
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 200px">
+          <label class="maya-label" for="ev-start">Comienza</label>
+          <input id="ev-start" type="datetime-local" class="maya-input" formControlName="startAt" required />
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 200px">
+          <label class="maya-label" for="ev-end">Termina</label>
+          <input id="ev-end" type="datetime-local" class="maya-input" formControlName="endAt" />
+        </div>
+      </div>
+
+      <label class="maya-checkbox">
+        <input type="checkbox" formControlName="allDay" />
+        <span>Todo el día</span>
+      </label>
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 200px">
+          <label class="maya-label" for="ev-place">Lugar</label>
+          <input id="ev-place" class="maya-input" formControlName="location" />
+        </div>
+        <div class="maya-field" style="width: 120px">
+          <label class="maya-label" for="ev-color">Color</label>
+          <input id="ev-color" type="color" class="maya-input" formControlName="color" />
+        </div>
+      </div>
+    </form>
+
+    <ng-container footer>
+      @if (editing(); as current) {
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--danger"
+          style="margin-right: auto"
+          (click)="remove(current)"
+        >
+          <maya-icon name="trash" [size]="15" /> Eliminar
+        </button>
+      }
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}

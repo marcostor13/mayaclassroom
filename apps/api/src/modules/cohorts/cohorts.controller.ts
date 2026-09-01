@@ -5,6 +5,12 @@ import { CurrentUser, RequireCapability } from '../../common/decorators';
 import { PaginationQueryDto } from '../../common/dto';
 import type { RequestUser } from '../../common/types/request-context';
 import { CohortsService } from './cohorts.service';
+import {
+  CohortMembersDto,
+  CreateCohortDto,
+  SyncCohortDto,
+  UpdateCohortDto,
+} from './dto/cohort.dto';
 
 @ApiTags('Cohortes')
 @ApiBearerAuth()
@@ -20,19 +26,13 @@ export class CohortsController {
 
   @Post()
   @RequireCapability(CAP.COHORT_MANAGE, { contextLevel: ContextLevel.Tenant })
-  create(
-    @CurrentUser() user: RequestUser,
-    @Body() dto: { name: string; idNumber?: string; description?: string; visible?: boolean },
-  ) {
+  create(@CurrentUser() user: RequestUser, @Body() dto: CreateCohortDto) {
     return this.cohorts.create(user.tenantId, dto);
   }
 
   @Patch(':id')
   @RequireCapability(CAP.COHORT_MANAGE, { contextLevel: ContextLevel.Tenant })
-  update(
-    @Param('id') id: string,
-    @Body() dto: { name?: string; idNumber?: string; description?: string; visible?: boolean },
-  ) {
+  update(@Param('id') id: string, @Body() dto: UpdateCohortDto) {
     return this.cohorts.update(id, dto);
   }
 
@@ -51,14 +51,14 @@ export class CohortsController {
 
   @Post(':id/members')
   @RequireCapability(CAP.COHORT_ASSIGN, { contextLevel: ContextLevel.Tenant })
-  addMembers(@Param('id') id: string, @Body('userIds') userIds: string[]) {
-    return this.cohorts.addMembers(id, userIds);
+  addMembers(@Param('id') id: string, @Body() dto: CohortMembersDto) {
+    return this.cohorts.addMembers(id, dto.userIds);
   }
 
   @Delete(':id/members')
   @RequireCapability(CAP.COHORT_ASSIGN, { contextLevel: ContextLevel.Tenant })
-  removeMembers(@Param('id') id: string, @Body('userIds') userIds: string[]) {
-    return this.cohorts.removeMembers(id, userIds);
+  removeMembers(@Param('id') id: string, @Body() dto: CohortMembersDto) {
+    return this.cohorts.removeMembers(id, dto.userIds);
   }
 
   @Post(':id/sync/:courseId')
@@ -70,8 +70,8 @@ export class CohortsController {
   sync(
     @Param('id') id: string,
     @Param('courseId') courseId: string,
-    @Body('roleShortName') roleShortName?: string,
+    @Body() dto: SyncCohortDto,
   ) {
-    return this.cohorts.syncToCourse(id, courseId, roleShortName ?? 'student');
+    return this.cohorts.syncToCourse(id, courseId, dto.roleShortName ?? 'student');
   }
 }

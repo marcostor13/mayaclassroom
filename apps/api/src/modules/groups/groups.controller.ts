@@ -24,9 +24,9 @@ export class GroupsController {
 
   @Get()
   @RequireCapability(CAP.COURSE_VIEW, { contextLevel: ContextLevel.Course, param: 'courseId' })
-  @ApiOperation({ summary: 'Grupos del curso' })
+  @ApiOperation({ summary: 'Grupos del curso con sus integrantes' })
   list(@Param('courseId') courseId: string) {
-    return this.groups.list(courseId);
+    return this.groups.listWithMembers(courseId);
   }
 
   @Post()

@@ -14,6 +14,7 @@ import {
   LogAction,
   fullName,
 } from '@maya/shared';
+import type { EnrolmentMethodDto } from '@maya/shared';
 import { Enrolment, EnrolmentDocument } from './schemas/enrolment.schema';
 import {
   EnrolmentMethodConfig,
@@ -405,11 +406,33 @@ export class EnrolmentsService {
 
   /* --------------------- Métodos de matriculación ------------------------ */
 
-  async listMethods(courseId: string | Types.ObjectId): Promise<EnrolmentMethodDocument[]> {
-    return this.methodModel
+  async listMethods(courseId: string | Types.ObjectId): Promise<EnrolmentMethodDto[]> {
+    const methods = await this.methodModel
       .find({ course: toObjectId(courseId) })
       .sort({ sortOrder: 1 })
       .exec();
+    return methods.map((method) => this.methodToDto(method));
+  }
+
+  /** Documento a contrato compartido: el cliente espera `courseId`, no `course`. */
+  methodToDto(method: EnrolmentMethodDocument): EnrolmentMethodDto {
+    return {
+      id: String(method._id),
+      courseId: String(method.course),
+      method: method.method,
+      name: method.name,
+      enabled: method.enabled,
+      roleId: method.role ? String(method.role) : null,
+      enrolmentKey: method.enrolmentKey,
+      startDate: method.startDate ? method.startDate.toISOString() : null,
+      endDate: method.endDate ? method.endDate.toISOString() : null,
+      enrolPeriodDays: method.enrolPeriodDays,
+      maxEnrolled: method.maxEnrolled,
+      cohortId: method.cohort ? String(method.cohort) : null,
+      sendWelcomeMessage: method.sendWelcomeMessage,
+      welcomeMessage: method.welcomeMessage,
+      sortOrder: method.sortOrder,
+    };
   }
 
   async createMethod(

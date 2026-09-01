@@ -69,6 +69,28 @@ export class QuestionsService {
     });
   }
 
+  /**
+   * Categoría raíz de la empresa, creándola si aún no existe. Sin ella una
+   * empresa recién creada no tendría dónde guardar su primera pregunta: las
+   * categorías de curso sólo nacen al abrir el banco desde un curso.
+   */
+  async defaultCategoryForTenant(
+    tenantId: string | Types.ObjectId,
+  ): Promise<QuestionCategoryDocument> {
+    const context = await this.contexts.requireByInstance(ContextLevel.Tenant, tenantId);
+    const existing = await this.categoryModel
+      .findOne({ tenant: toObjectId(tenantId), context: context._id, parent: null })
+      .exec();
+    if (existing) return existing;
+    return this.categoryModel.create({
+      tenant: toObjectId(tenantId),
+      name: 'Banco general',
+      description: 'Preguntas compartidas por todos los cursos de la empresa.',
+      context: context._id,
+      parent: null,
+    });
+  }
+
   /* ------------------------------ Preguntas ------------------------------ */
 
   async paginate(
@@ -291,7 +313,17 @@ export class QuestionsService {
     let imported = 0;
 
     if (dto.format === 'json') {
-      const parsed = JSON.parse(dto.content) as CreateQuestionDto[];
+      // Un JSON mal formado es un error de quien importa, no del servidor:
+      // sin este control `JSON.parse` sube como 500.
+      let parsed: CreateQuestionDto[];
+      try {
+        parsed = JSON.parse(dto.content) as CreateQuestionDto[];
+      } catch (error) {
+        throw new BadRequestException(`El JSON no es válido: ${(error as Error).message}`);
+      }
+      if (!Array.isArray(parsed)) {
+        throw new BadRequestException('El JSON debe ser una lista de preguntas.');
+      }
       for (const item of parsed) {
         try {
           await this.create(tenantId, { ...item, categoryId: dto.categoryId });

@@ -35,3 +35,25 @@ export interface QueryParams {
   sort?: string;
   order?: 'asc' | 'desc';
 }
+
+/** Naturaleza de un resultado de la búsqueda global. */
+export type SearchResultKind = 'course' | 'activity' | 'user' | 'category';
+
+export interface SearchResult {
+  kind: SearchResultKind;
+  id: string;
+  title: string;
+  /** Segunda línea: categoría del curso, nombre del curso, correo… */
+  subtitle?: string;
+  /** Fragmento de texto donde ha casado el término. */
+  excerpt?: string;
+  /** Ruta del cliente a la que lleva el resultado. */
+  route: string;
+  icon: string;
+}
+
+export interface SearchResults {
+  term: string;
+  total: number;
+  groups: { kind: SearchResultKind; label: string; items: SearchResult[] }[];
+}

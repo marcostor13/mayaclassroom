@@ -29,6 +29,12 @@ export class QuestionsController {
     return this.questions.createCategory(user.tenantId, dto);
   }
 
+  @Get('categories/default')
+  @ApiOperation({ summary: 'Categoría raíz de la empresa, creándola si hace falta' })
+  defaultTenantCategory(@CurrentUser() user: RequestUser) {
+    return this.questions.defaultCategoryForTenant(user.tenantId);
+  }
+
   @Get('categories/course/:courseId/default')
   @ApiOperation({ summary: 'Categoría de preguntas por defecto del curso' })
   defaultCategory(@CurrentUser() user: RequestUser, @Param('courseId') courseId: string) {

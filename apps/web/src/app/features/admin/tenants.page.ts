@@ -4,6 +4,7 @@ import { TenantDto, TenantPlan, TenantStatus } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ToastService } from '../../core/services/toast.service';
 import { EmptyStateComponent, FormatDatePipe, IconComponent } from '../../shared';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 /**
  * Alta y gobierno de las empresas de la plataforma. Es la única pantalla de
@@ -20,6 +21,7 @@ import { EmptyStateComponent, FormatDatePipe, IconComponent } from '../../shared
 export class AdminTenantsPage {
   private readonly admin = inject(AdminService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
 
   readonly TenantStatus = TenantStatus;
@@ -101,13 +103,23 @@ export class AdminTenantsPage {
   }
 
   remove(tenant: TenantDto): void {
-    this.admin.deleteTenant(tenant.id).subscribe({
-      next: () => {
-        this.tenants.update((list) => list.filter((item) => item.id !== tenant.id));
-        this.total.update((n) => Math.max(0, n - 1));
-        this.toast.success('Empresa dada de baja');
-      },
-    });
+    this.confirm
+      .ask({
+        title: 'Dar de baja la empresa',
+        message: `Se dará de baja «${tenant.name}» con todos sus cursos, usuarios y calificaciones. Esta acción no se puede deshacer.`,
+        confirmLabel: 'Dar de baja',
+        requireText: tenant.slug,
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.admin.deleteTenant(tenant.id).subscribe({
+          next: () => {
+            this.tenants.update((list) => list.filter((item) => item.id !== tenant.id));
+            this.total.update((n) => Math.max(0, n - 1));
+            this.toast.success('Empresa dada de baja');
+          },
+        });
+      });
   }
 
   statusLabel(status: TenantStatus): string {

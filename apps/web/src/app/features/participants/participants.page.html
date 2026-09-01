@@ -11,13 +11,18 @@
     <h1 class="maya-page-header__title">Participantes</h1>
     <p class="maya-page-header__subtitle">{{ visible().length }} personas en este curso</p>
   </div>
-  @if (canEnrol()) {
-    <div class="maya-page-header__actions">
+  <div class="maya-page-header__actions">
+    @if (canConfigureEnrolment()) {
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="openMethods()">
+        <maya-icon name="key" [size]="16" /> Métodos de matriculación
+      </button>
+    }
+    @if (canEnrol()) {
       <button type="button" class="maya-btn maya-btn--primary" (click)="openEnrol()">
         <maya-icon name="plus" [size]="16" /> Matricular usuarios
       </button>
-    </div>
-  }
+    }
+  </div>
 </header>
 
 <div class="maya-field" style="max-width: 380px; margin-bottom: var(--maya-space-4)">
@@ -171,4 +176,124 @@
     title="Sin participantes"
     description="Todavía no hay nadie matriculado en este curso."
   />
+}
+
+<!-- ════════════════ Métodos de matriculación ════════════════ -->
+@if (methodsOpen()) {
+  <maya-modal title="Métodos de matriculación" (dismissed)="methodsOpen.set(false)">
+    <div class="maya-stack">
+      @if (methods().length) {
+        @for (method of methods(); track method.id) {
+          <section class="maya-card maya-card--flat">
+            <div class="maya-card__body maya-stack">
+              <div class="maya-spread">
+                <strong class="maya-small">{{ methodLabel(method.method) }}</strong>
+                <span class="maya-row" style="gap: var(--maya-space-2)">
+                  <label class="maya-switch">
+                    <input
+                      type="checkbox"
+                      [checked]="method.enabled"
+                      [attr.aria-label]="'Activar ' + methodLabel(method.method)"
+                      (change)="patchMethod(method, { enabled: $any($event.target).checked })"
+                    />
+                    <span></span>
+                  </label>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="'Quitar ' + methodLabel(method.method)"
+                    (click)="removeMethod(method)"
+                  >
+                    <maya-icon name="trash" [size]="15" />
+                  </button>
+                </span>
+              </div>
+
+              @if (method.method === 'self') {
+                <div class="maya-field">
+                  <label class="maya-label" [attr.for]="'key-' + method.id">
+                    Clave de matriculación
+                  </label>
+                  <input
+                    [id]="'key-' + method.id"
+                    class="maya-input"
+                    autocomplete="off"
+                    [value]="method.enrolmentKey ?? ''"
+                    (change)="patchMethod(method, { enrolmentKey: $any($event.target).value })"
+                  />
+                  <p class="maya-hint">
+                    Compártala con quien deba matricularse por su cuenta. En blanco, cualquiera
+                    puede entrar sin clave.
+                  </p>
+                </div>
+
+                <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+                  <div class="maya-field" style="flex: 1; min-width: 160px">
+                    <label class="maya-label" [attr.for]="'days-' + method.id">
+                      Duración (días)
+                    </label>
+                    <input
+                      [id]="'days-' + method.id"
+                      type="number"
+                      min="0"
+                      class="maya-input"
+                      [value]="method.enrolPeriodDays"
+                      (change)="patchMethod(method, { enrolPeriodDays: +$any($event.target).value })"
+                    />
+                    <p class="maya-hint">0 = sin caducidad.</p>
+                  </div>
+                  <div class="maya-field" style="flex: 1; min-width: 160px">
+                    <label class="maya-label" [attr.for]="'max-' + method.id">Plazas</label>
+                    <input
+                      [id]="'max-' + method.id"
+                      type="number"
+                      min="0"
+                      class="maya-input"
+                      [value]="method.maxEnrolled"
+                      (change)="patchMethod(method, { maxEnrolled: +$any($event.target).value })"
+                    />
+                    <p class="maya-hint">0 = sin tope.</p>
+                  </div>
+                </div>
+              }
+
+              @if (method.method === 'guest') {
+                <p class="maya-small maya-muted">
+                  Permite consultar el curso sin matricularse. Quien entre como invitado no puede
+                  entregar tareas ni ser calificado.
+                </p>
+              }
+            </div>
+          </section>
+        }
+      } @else {
+        <p class="maya-small maya-muted">
+          El curso no tiene ningún método configurado: sólo se puede matricular a mano.
+        </p>
+      }
+
+      @if (availableMethods().length) {
+        <div class="maya-field">
+          <label class="maya-label" for="new-method">Añadir método</label>
+          <select
+            id="new-method"
+            class="maya-select"
+            [disabled]="savingMethod()"
+            (change)="addMethod($any($event.target).value); $any($event.target).value = ''"
+          >
+            <option value="">Elija un método…</option>
+            @for (option of availableMethods(); track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--primary" (click)="methodsOpen.set(false)">
+        Listo
+      </button>
+    </ng-container>
+  </maya-modal>
 }

@@ -60,41 +60,11 @@
     &:hover { text-decoration: none; }
   }
 
+  /* El aspecto de la caja vive en `maya-global-search`; aquí solo su hueco. */
   &__search {
     flex: 1;
     max-width: 460px;
     margin-left: var(--maya-space-4);
-    display: flex;
-    align-items: center;
-    gap: var(--maya-space-2);
-    padding: 0 var(--maya-space-4);
-    height: 44px;
-    border-radius: var(--maya-radius-pill);
-    background: var(--maya-surface-3);
-    border: 1.5px solid transparent;
-    color: var(--maya-text-subtle);
-    transition:
-      border-color var(--maya-duration) var(--maya-ease),
-      background-color var(--maya-duration) var(--maya-ease),
-      box-shadow var(--maya-duration) var(--maya-ease);
-
-    &:focus-within {
-      border-color: var(--maya-primary);
-      background: var(--maya-surface);
-      box-shadow: 0 0 0 4px var(--maya-focus);
-    }
-  }
-
-  &__search-input {
-    flex: 1;
-    min-width: 0;
-    border: none;
-    background: none;
-    outline: none;
-    font-size: var(--maya-text-sm);
-    color: var(--maya-text);
-
-    &::placeholder { color: var(--maya-text-subtle); }
   }
 
   &__actions {

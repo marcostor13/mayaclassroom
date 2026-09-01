@@ -6,7 +6,9 @@ import {
   CourseModuleDto,
   CourseSummary,
   EnrolmentDto,
+  EnrolmentMethodDto,
   GroupDto,
+  GroupingDto,
   Paginated,
   SectionDto,
 } from '../models';
@@ -151,6 +153,85 @@ export class CoursesService {
 
   groups(courseId: string): Observable<GroupDto[]> {
     return this.api.get<GroupDto[]>(`/courses/${courseId}/groups`);
+  }
+
+  createGroup(courseId: string, payload: { name: string; description?: string; enrolmentKey?: string }) {
+    return this.api.post<GroupDto>(`/courses/${courseId}/groups`, payload);
+  }
+
+  updateGroup(courseId: string, groupId: string, payload: Record<string, unknown>) {
+    return this.api.patch<GroupDto>(`/courses/${courseId}/groups/${groupId}`, payload);
+  }
+
+  removeGroup(courseId: string, groupId: string) {
+    return this.api.delete<{ deleted: boolean }>(`/courses/${courseId}/groups/${groupId}`);
+  }
+
+  addGroupMembers(courseId: string, groupId: string, userIds: string[]) {
+    return this.api.post<GroupDto>(`/courses/${courseId}/groups/${groupId}/members`, { userIds });
+  }
+
+  /**
+   * La baja de integrantes viaja en el cuerpo, no en la ruta: la API acepta
+   * varias personas de una vez.
+   */
+  removeGroupMembers(courseId: string, groupId: string, userIds: string[]) {
+    return this.api.deleteWithBody<GroupDto>(
+      `/courses/${courseId}/groups/${groupId}/members`,
+      { userIds },
+    );
+  }
+
+  autoCreateGroups(
+    courseId: string,
+    payload: {
+      mode: 'numberOfGroups' | 'membersPerGroup';
+      value: number;
+      namingScheme?: string;
+      allocation?: 'random' | 'alphabetical';
+      groupingId?: string;
+    },
+  ) {
+    return this.api.post<GroupDto[]>(`/courses/${courseId}/groups/auto-create`, payload);
+  }
+
+  /* ------------------------- Métodos de matrícula ------------------------ */
+
+  enrolmentMethods(courseId: string): Observable<EnrolmentMethodDto[]> {
+    return this.api.get<EnrolmentMethodDto[]>(`/courses/${courseId}/enrolments/methods`);
+  }
+
+  createEnrolmentMethod(courseId: string, payload: Record<string, unknown>) {
+    return this.api.post<EnrolmentMethodDto>(`/courses/${courseId}/enrolments/methods`, payload);
+  }
+
+  updateEnrolmentMethod(courseId: string, methodId: string, payload: Record<string, unknown>) {
+    return this.api.patch<EnrolmentMethodDto>(
+      `/courses/${courseId}/enrolments/methods/${methodId}`,
+      payload,
+    );
+  }
+
+  removeEnrolmentMethod(courseId: string, methodId: string) {
+    return this.api.delete<{ deleted: boolean }>(
+      `/courses/${courseId}/enrolments/methods/${methodId}`,
+    );
+  }
+
+  groupings(courseId: string): Observable<GroupingDto[]> {
+    return this.api.get<GroupingDto[]>(`/courses/${courseId}/groupings`);
+  }
+
+  createGrouping(courseId: string, payload: { name: string; description?: string; groupIds?: string[] }) {
+    return this.api.post<GroupingDto>(`/courses/${courseId}/groupings`, payload);
+  }
+
+  updateGrouping(courseId: string, groupingId: string, payload: Record<string, unknown>) {
+    return this.api.patch<GroupingDto>(`/courses/${courseId}/groupings/${groupingId}`, payload);
+  }
+
+  removeGrouping(courseId: string, groupingId: string) {
+    return this.api.delete<{ deleted: boolean }>(`/courses/${courseId}/groupings/${groupingId}`);
   }
 
   /* ------------------------------ Categorías ----------------------------- */

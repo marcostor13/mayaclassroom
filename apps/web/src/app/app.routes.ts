@@ -52,6 +52,12 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
       },
 
+      {
+        path: 'search',
+        title: 'Resultados · Maya Classroom',
+        loadComponent: () => import('./features/search/search.page').then((m) => m.SearchPage),
+      },
+
       /* Cursos */
       {
         path: 'courses',
@@ -82,6 +88,11 @@ export const routes: Routes = [
         path: 'courses/:id/participants',
         loadComponent: () =>
           import('./features/participants/participants.page').then((m) => m.ParticipantsPage),
+      },
+      {
+        path: 'courses/:id/groups',
+        title: 'Grupos · Maya Classroom',
+        loadComponent: () => import('./features/groups/groups.page').then((m) => m.GroupsPage),
       },
       {
         path: 'courses/:id/grades',

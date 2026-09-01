@@ -18,15 +18,7 @@
       <maya-logo class="logo--mark-only-mobile" [size]="36" />
     </a>
 
-    <div class="topbar__search maya-hide-mobile">
-      <maya-icon name="search" [size]="18" />
-      <input
-        type="search"
-        class="topbar__search-input"
-        placeholder="Buscar cursos, actividades o personas…"
-        aria-label="Buscar en la plataforma"
-      />
-    </div>
+    <maya-global-search class="topbar__search maya-hide-mobile" />
 
     <div class="topbar__actions">
       <button
@@ -39,6 +31,14 @@
       >
         <maya-icon [name]="themeIcon()" [size]="20" />
       </button>
+
+      <a
+        routerLink="/search"
+        class="maya-btn maya-btn--ghost maya-btn--icon maya-hide-desktop"
+        aria-label="Buscar en la plataforma"
+      >
+        <maya-icon name="search" [size]="20" />
+      </a>
 
       <a
         routerLink="/messages"
@@ -262,3 +262,4 @@
 </div>
 
 <maya-toasts />
+<maya-confirm-host />

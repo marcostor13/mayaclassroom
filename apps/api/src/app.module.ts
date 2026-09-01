@@ -38,6 +38,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SearchModule } from './modules/search/search.module';
 
 // Fase 3 — avanzado
 import { CohortsModule } from './modules/cohorts/cohorts.module';
@@ -98,6 +99,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     MessagingModule,
     ActivitiesModule,
     DashboardModule,
+    SearchModule,
 
     // Fase 3
     CohortsModule,

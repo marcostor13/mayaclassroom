@@ -174,7 +174,7 @@
               <button
                 type="button"
                 class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="removeModule(module.id)"
+                (click)="removeModule(module.id, module.name)"
                 [attr.aria-label]="'Eliminar ' + module.name"
               >
                 <maya-icon name="trash" [size]="16" />

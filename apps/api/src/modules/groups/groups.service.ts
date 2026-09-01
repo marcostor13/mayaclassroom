@@ -3,7 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Group, GroupDocument } from './schemas/group.schema';
 import { Grouping, GroupingDocument } from './schemas/grouping.schema';
-import { toObjectId } from '../../common/utils';
+import { fullName } from '@maya/shared';
+import { isSameId, toObjectId } from '../../common/utils';
 import {
   AutoCreateGroupsDto,
   CreateGroupDto,
@@ -11,6 +12,28 @@ import {
   UpdateGroupDto,
   UpdateGroupingDto,
 } from './dto/group.dto';
+
+/** Proyección de los integrantes que devuelve `listWithMembers`. */
+interface MemberProjection {
+  _id: Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatarUrl: string | null;
+}
+
+export interface GroupWithMembers {
+  id: string;
+  courseId: string;
+  name: string;
+  description: string | null;
+  idNumber: string | null;
+  enrolmentKey: string | null;
+  pictureUrl: string | null;
+  memberCount: number;
+  members: { id: string; fullName: string; email: string; avatarUrl: string | null }[];
+  groupingIds: string[];
+}
 
 @Injectable()
 export class GroupsService {
@@ -23,6 +46,45 @@ export class GroupsService {
 
   async list(courseId: string | Types.ObjectId): Promise<GroupDocument[]> {
     return this.groupModel.find({ course: toObjectId(courseId) }).sort({ name: 1 }).exec();
+  }
+
+  /**
+   * Grupos con sus integrantes resueltos. La pantalla de grupos necesita el
+   * nombre de cada persona; devolver solo identificadores obligaría al cliente
+   * a una petición por grupo.
+   */
+  async listWithMembers(courseId: string | Types.ObjectId): Promise<GroupWithMembers[]> {
+    const [groups, groupings] = await Promise.all([
+      this.groupModel
+        .find({ course: toObjectId(courseId) })
+        .populate('members', 'firstName lastName email avatarUrl')
+        .sort({ name: 1 })
+        .exec(),
+      this.groupingModel.find({ course: toObjectId(courseId) }).select('groups').lean().exec(),
+    ]);
+
+    return groups.map((group) => {
+      const members = group.members as unknown as MemberProjection[];
+      return {
+        id: String(group._id),
+        courseId: String(group.course),
+        name: group.name,
+        description: group.description,
+        idNumber: group.idNumber,
+        enrolmentKey: group.enrolmentKey,
+        pictureUrl: group.pictureUrl,
+        memberCount: members.length,
+        members: members.map((member) => ({
+          id: String(member._id),
+          fullName: fullName(member.firstName, member.lastName),
+          email: member.email,
+          avatarUrl: member.avatarUrl ?? null,
+        })),
+        groupingIds: groupings
+          .filter((grouping) => grouping.groups.some((id) => isSameId(id, group._id)))
+          .map((grouping) => String(grouping._id)),
+      };
+    });
   }
 
   async findById(id: string | Types.ObjectId): Promise<GroupDocument> {

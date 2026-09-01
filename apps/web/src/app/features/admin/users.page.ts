@@ -3,6 +3,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { UserDto, UserStatus } from '@maya/shared';
 import { AdminService, RoleSummary } from '../../core/services/admin.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import {
   AvatarComponent,
   EmptyStateComponent,
@@ -26,6 +27,7 @@ import {
 export class AdminUsersPage {
   private readonly admin = inject(AdminService);
   private readonly fb = inject(FormBuilder);
+  private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
 
   readonly UserStatus = UserStatus;
@@ -91,12 +93,21 @@ export class AdminUsersPage {
   }
 
   remove(user: UserDto): void {
-    this.admin.deleteUser(user.id).subscribe({
-      next: () => {
-        this.users.update((list) => list.filter((item) => item.id !== user.id));
-        this.toast.success('Usuario eliminado');
-      },
-    });
+    this.confirm
+      .ask({
+        title: 'Eliminar usuario',
+        message: `Se eliminará a ${user.fullName} y perderá el acceso a la plataforma. Sus calificaciones y entregas se conservan.`,
+        confirmLabel: 'Eliminar',
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.admin.deleteUser(user.id).subscribe({
+          next: () => {
+            this.users.update((list) => list.filter((item) => item.id !== user.id));
+            this.toast.success('Usuario eliminado');
+          },
+        });
+      });
   }
 
   statusLabel(status: UserStatus): string {

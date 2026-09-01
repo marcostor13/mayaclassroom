@@ -86,6 +86,16 @@
     >
       Mis calificaciones
     </a>
+    @if (canEdit()) {
+      <a
+        class="maya-tabs__tab"
+        [routerLink]="['/courses', courseId, 'groups']"
+        role="tab"
+        aria-selected="false"
+      >
+        Grupos
+      </a>
+    }
   </div>
 
   <!-- Contenido del curso -->

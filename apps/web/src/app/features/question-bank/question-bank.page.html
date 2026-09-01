@@ -1,0 +1,334 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Banco de preguntas</h1>
+    <p class="maya-page-header__subtitle">Preguntas reutilizables en todos sus cuestionarios</p>
+  </div>
+  @if (canEdit()) {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="importOpen.set(true)">
+        <maya-icon name="upload" [size]="16" /> Importar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openNew()">
+        <maya-icon name="plus" [size]="16" /> Nueva pregunta
+      </button>
+    </div>
+  }
+</header>
+
+<div class="maya-row" style="flex-wrap: wrap; margin-bottom: var(--maya-space-4)">
+  <input
+    type="search"
+    class="maya-input"
+    style="max-width: 320px"
+    placeholder="Buscar preguntas…"
+    [ngModel]="search()"
+    (ngModelChange)="search.set($event)"
+    (keyup.enter)="load()"
+    aria-label="Buscar preguntas"
+  />
+  <select
+    class="maya-select"
+    style="max-width: 220px"
+    [ngModel]="type()"
+    (ngModelChange)="type.set($event); load()"
+    aria-label="Filtrar por tipo"
+  >
+    <option value="">Todos los tipos</option>
+    @for (option of types; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+    }
+  </select>
+  @if (categories().length) {
+    <select
+      class="maya-select"
+      style="max-width: 240px"
+      [ngModel]="categoryId()"
+      (ngModelChange)="categoryId.set($event); load()"
+      aria-label="Filtrar por categoría"
+    >
+      <option value="">Todas las categorías</option>
+      @for (category of categories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+  }
+  <button type="button" class="maya-btn maya-btn--secondary" (click)="load()">
+    <maya-icon name="search" [size]="16" /> Buscar
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (items().length) {
+  <div class="maya-stack" style="gap: var(--maya-space-3)">
+    @for (question of items(); track question.id) {
+      <article class="maya-card">
+        <div class="maya-card__body">
+          <div class="maya-spread" style="margin-bottom: var(--maya-space-2); gap: var(--maya-space-2)">
+            <strong class="maya-small">{{ question.name }}</strong>
+            <span class="maya-row" style="gap: var(--maya-space-2)">
+              <span class="maya-badge maya-badge--primary">{{ typeLabel(question.type) }}</span>
+              @if (canEdit()) {
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Editar ' + question.name"
+                  (click)="openEdit(question)"
+                >
+                  <maya-icon name="edit" [size]="15" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Duplicar ' + question.name"
+                  (click)="duplicate(question)"
+                >
+                  <maya-icon name="copy" [size]="15" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Eliminar ' + question.name"
+                  (click)="remove(question)"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              }
+            </span>
+          </div>
+          <div
+            class="maya-rich maya-small maya-clamp-2"
+            [innerHTML]="question.questionText | safeHtml"
+          ></div>
+          <p class="maya-tiny maya-subtle" style="margin-top: var(--maya-space-2)">
+            {{ categoryName(question.categoryId) }} · {{ question.answers.length }} respuestas ·
+            {{ question.defaultMark }} puntos
+          </p>
+        </div>
+      </article>
+    }
+  </div>
+} @else {
+  <maya-empty-state
+    icon="help-circle"
+    title="Banco vacío"
+    description="Cree preguntas nuevas o impórtelas en formato GIFT desde otro Moodle."
+  />
+}
+
+<!-- ══════════════════ Formulario de pregunta ══════════════════ -->
+@if (formOpen()) {
+  <maya-modal [title]="editing() ? 'Editar pregunta' : 'Nueva pregunta'" (dismissed)="close()">
+    <form [formGroup]="form" class="maya-stack">
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 200px">
+          <label class="maya-label" for="q-type">Tipo</label>
+          <select
+            id="q-type"
+            class="maya-select"
+            [value]="selectedType()"
+            (change)="changeType($any($event.target).value)"
+          >
+            @for (option of types; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 200px">
+          <label class="maya-label" for="q-cat">Categoría</label>
+          <select id="q-cat" class="maya-select" formControlName="categoryId">
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="q-name">Nombre</label>
+        <input id="q-name" class="maya-input" formControlName="name" required />
+        <p class="maya-hint">Sólo lo ve el profesorado, para localizarla en el banco.</p>
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="q-text">Enunciado</label>
+        <textarea id="q-text" class="maya-textarea" rows="4" formControlName="questionText" required></textarea>
+      </div>
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 140px">
+          <label class="maya-label" for="q-mark">Puntuación</label>
+          <input id="q-mark" type="number" step="0.1" class="maya-input" formControlName="defaultMark" />
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 140px">
+          <label class="maya-label" for="q-pen">Penalización</label>
+          <input id="q-pen" type="number" step="0.1" min="0" max="1" class="maya-input" formControlName="penalty" />
+        </div>
+        @if (isNumerical()) {
+          <div class="maya-field" style="flex: 1; min-width: 140px">
+            <label class="maya-label" for="q-tol">Tolerancia</label>
+            <input id="q-tol" type="number" step="0.01" class="maya-input" formControlName="tolerance" />
+          </div>
+        }
+      </div>
+
+      @if (isMultiChoice()) {
+        <div class="maya-row" style="gap: var(--maya-space-4); flex-wrap: wrap">
+          <label class="maya-checkbox">
+            <input type="checkbox" formControlName="shuffleAnswers" />
+            <span>Barajar las respuestas</span>
+          </label>
+          <label class="maya-checkbox">
+            <input type="checkbox" formControlName="single" />
+            <span>Una sola respuesta correcta</span>
+          </label>
+        </div>
+      }
+
+      <!-- Respuestas -->
+      @if (usesAnswers() || selectedType() === 'truefalse') {
+        <fieldset class="maya-field">
+          <legend class="maya-label">Respuestas</legend>
+          <p class="maya-hint" style="margin-bottom: var(--maya-space-2)">
+            La fracción es la parte de la puntuación que otorga: 1 correcta, 0 incorrecta.
+          </p>
+          <div class="maya-stack" style="gap: var(--maya-space-2)" formArrayName="answers">
+            @for (control of answers.controls; track $index; let i = $index) {
+              <div class="maya-row" [formGroupName]="i" style="gap: var(--maya-space-2); align-items: flex-start">
+                <input
+                  class="maya-input"
+                  style="flex: 2; min-width: 0"
+                  formControlName="text"
+                  [attr.aria-label]="'Texto de la respuesta ' + (i + 1)"
+                  placeholder="Texto de la respuesta"
+                />
+                <input
+                  type="number"
+                  step="0.25"
+                  class="maya-input"
+                  style="width: 92px"
+                  formControlName="fraction"
+                  [attr.aria-label]="'Fracción de la respuesta ' + (i + 1)"
+                />
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  [disabled]="answers.length <= 2"
+                  [attr.aria-label]="'Quitar la respuesta ' + (i + 1)"
+                  (click)="removeAnswer(i)"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </div>
+            }
+          </div>
+          @if (usesAnswers()) {
+            <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" style="margin-top: var(--maya-space-2)" (click)="addAnswer()">
+              <maya-icon name="plus" [size]="14" /> Añadir respuesta
+            </button>
+          }
+        </fieldset>
+      }
+
+      <!-- Emparejamiento -->
+      @if (usesSubquestions()) {
+        <fieldset class="maya-field">
+          <legend class="maya-label">Pares a emparejar</legend>
+          <div class="maya-stack" style="gap: var(--maya-space-2)" formArrayName="subquestions">
+            @for (control of subquestions.controls; track $index; let i = $index) {
+              <div class="maya-row" [formGroupName]="i" style="gap: var(--maya-space-2)">
+                <input
+                  class="maya-input"
+                  style="flex: 1; min-width: 0"
+                  formControlName="text"
+                  placeholder="Enunciado"
+                  [attr.aria-label]="'Enunciado del par ' + (i + 1)"
+                />
+                <input
+                  class="maya-input"
+                  style="flex: 1; min-width: 0"
+                  formControlName="answer"
+                  placeholder="Pareja correcta"
+                  [attr.aria-label]="'Pareja del par ' + (i + 1)"
+                />
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  [disabled]="subquestions.length <= 2"
+                  [attr.aria-label]="'Quitar el par ' + (i + 1)"
+                  (click)="removeSubquestion(i)"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </div>
+            }
+          </div>
+          <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" style="margin-top: var(--maya-space-2)" (click)="addSubquestion()">
+            <maya-icon name="plus" [size]="14" /> Añadir par
+          </button>
+        </fieldset>
+      }
+
+      <div class="maya-field">
+        <label class="maya-label" for="q-fb">Retroalimentación general</label>
+        <textarea id="q-fb" class="maya-textarea" rows="2" formControlName="generalFeedback"></textarea>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="close()">Cancelar</button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Importación ══════════════════ -->
+@if (importOpen()) {
+  <maya-modal title="Importar preguntas" (dismissed)="importOpen.set(false)">
+    <form [formGroup]="importForm" class="maya-stack">
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 160px">
+          <label class="maya-label" for="i-format">Formato</label>
+          <select id="i-format" class="maya-select" formControlName="format">
+            <option value="gift">GIFT (Moodle)</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 200px">
+          <label class="maya-label" for="i-cat">Categoría de destino</label>
+          <select id="i-cat" class="maya-select" formControlName="categoryId">
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="i-content">Contenido</label>
+        <textarea
+          id="i-content"
+          class="maya-textarea"
+          rows="10"
+          formControlName="content"
+          placeholder="::Nombre:: ¿Capital de Francia? {=París ~Madrid ~Roma}"
+          style="font-family: var(--maya-font-mono); font-size: var(--maya-text-xs)"
+        ></textarea>
+        <p class="maya-hint">
+          Pegue aquí el fichero exportado. En GIFT cada pregunta va separada por una línea en blanco.
+        </p>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="importOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="runImport()">
+        {{ saving() ? 'Importando…' : 'Importar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}

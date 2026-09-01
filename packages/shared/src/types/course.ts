@@ -109,6 +109,28 @@ export interface EnrolmentDto {
   createdAt: string;
 }
 
+/** Instancia de un método de matriculación configurado en un curso. */
+export interface EnrolmentMethodDto {
+  id: string;
+  courseId: string;
+  method: EnrolmentMethod;
+  name: string;
+  enabled: boolean;
+  roleId?: string | null;
+  /** Clave que se pide al automatricularse; nunca se expone a estudiantes. */
+  enrolmentKey?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  /** Duración de la matrícula en días; 0 significa ilimitada. */
+  enrolPeriodDays: number;
+  /** Tope de matriculados; 0 significa sin tope. */
+  maxEnrolled: number;
+  cohortId?: string | null;
+  sendWelcomeMessage: boolean;
+  welcomeMessage?: string | null;
+  sortOrder: number;
+}
+
 export interface GroupDto {
   id: string;
   courseId: string;
@@ -118,6 +140,8 @@ export interface GroupDto {
   enrolmentKey?: string | null;
   pictureUrl?: string | null;
   memberCount: number;
+  /** Integrantes resueltos; los devuelve el listado de grupos del curso. */
+  members?: { id: string; fullName: string; email: string; avatarUrl: string | null }[];
   groupingIds: string[];
 }
 

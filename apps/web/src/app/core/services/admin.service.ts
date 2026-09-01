@@ -22,6 +22,15 @@ export interface RoleSummary {
   isSystem: boolean;
 }
 
+export interface CohortMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  avatarUrl: string | null;
+  status: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private readonly api = inject(ApiService);
@@ -116,6 +125,37 @@ export class AdminService {
 
   createCohort(payload: { name: string; description?: string }) {
     return this.api.post<CohortDto>('/cohorts', payload);
+  }
+
+  updateCohort(id: string, payload: Record<string, unknown>): Observable<CohortDto> {
+    return this.api.patch<CohortDto>(`/cohorts/${id}`, payload);
+  }
+
+  deleteCohort(id: string): Observable<{ deleted: boolean }> {
+    return this.api.delete<{ deleted: boolean }>(`/cohorts/${id}`);
+  }
+
+  cohortMembers(id: string): Observable<CohortMember[]> {
+    return this.api.get<CohortMember[]>(`/cohorts/${id}/members`);
+  }
+
+  addCohortMembers(id: string, userIds: string[]): Observable<CohortDto> {
+    return this.api.post<CohortDto>(`/cohorts/${id}/members`, { userIds });
+  }
+
+  removeCohortMembers(id: string, userIds: string[]): Observable<CohortDto> {
+    return this.api.deleteWithBody<CohortDto>(`/cohorts/${id}/members`, { userIds });
+  }
+
+  /** Matricula de una vez a toda la cohorte en un curso. */
+  syncCohortToCourse(
+    id: string,
+    courseId: string,
+    roleShortName = 'student',
+  ): Observable<{ enrolled: number }> {
+    return this.api.post<{ enrolled: number }>(`/cohorts/${id}/sync/${courseId}`, {
+      roleShortName,
+    });
   }
 
   badges(courseId?: string): Observable<BadgeDto[]> {

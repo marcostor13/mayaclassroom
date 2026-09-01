@@ -1,0 +1,370 @@
+<header class="maya-page-header">
+  <div>
+    <a [routerLink]="['/courses', courseId]" class="maya-small">
+      <maya-icon name="arrow-left" [size]="14" /> Volver al curso
+    </a>
+    <h1 class="maya-page-header__title">Grupos</h1>
+    <p class="maya-page-header__subtitle">
+      Reparta a los participantes en grupos y reúna grupos en agrupamientos
+    </p>
+  </div>
+  @if (canManage() && tab() === 'groups') {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="autoOpen.set(true)">
+        <maya-icon name="sparkles" [size]="16" /> Crear automáticamente
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openNewGroup()">
+        <maya-icon name="plus" [size]="16" /> Nuevo grupo
+      </button>
+    </div>
+  }
+  @if (canManage() && tab() === 'groupings') {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--primary" (click)="openNewGrouping()">
+        <maya-icon name="plus" [size]="16" /> Nuevo agrupamiento
+      </button>
+    </div>
+  }
+</header>
+
+<div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'groups'"
+    [attr.aria-selected]="tab() === 'groups'"
+    (click)="tab.set('groups')"
+  >
+    Grupos ({{ groups().length }})
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'groupings'"
+    [attr.aria-selected]="tab() === 'groupings'"
+    (click)="tab.set('groupings')"
+  >
+    Agrupamientos ({{ groupings().length }})
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (tab() === 'groups') {
+  @if (groups().length) {
+    <div class="maya-cards">
+      @for (group of groups(); track group.id) {
+        <article class="maya-card">
+          <div class="maya-card__body maya-stack">
+            <div class="maya-spread">
+              <h2 style="font-size: var(--maya-text-md); font-weight: 700">{{ group.name }}</h2>
+              <span class="maya-badge maya-badge--primary">{{ group.memberCount }}</span>
+            </div>
+            @if (group.description) {
+              <p class="maya-small maya-muted">{{ group.description }}</p>
+            }
+            @if (group.enrolmentKey) {
+              <p class="maya-tiny maya-subtle">
+                <maya-icon name="key" [size]="12" /> Clave: {{ group.enrolmentKey }}
+              </p>
+            }
+            @if (group.groupingIds.length) {
+              <div class="maya-chips">
+                @for (id of group.groupingIds; track id) {
+                  <span class="maya-chip">{{ groupingName(id) }}</span>
+                }
+              </div>
+            }
+            @if (group.members?.length) {
+              <div class="maya-avatar-group">
+                @for (member of (group.members ?? []).slice(0, 6); track member.id) {
+                  <maya-avatar
+                    size="xs"
+                    [name]="member.fullName"
+                    [src]="member.avatarUrl"
+                    [title]="member.fullName"
+                  />
+                }
+                @if (group.memberCount > 6) {
+                  <span class="maya-tiny maya-subtle">+{{ group.memberCount - 6 }}</span>
+                }
+              </div>
+            }
+          </div>
+          @if (canManage()) {
+            <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2)">
+              <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="manage(group)">
+                <maya-icon name="users" [size]="14" /> Integrantes
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Editar ' + group.name"
+                (click)="openEditGroup(group)"
+              >
+                <maya-icon name="edit" [size]="15" />
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Eliminar ' + group.name"
+                (click)="removeGroup(group)"
+              >
+                <maya-icon name="trash" [size]="15" />
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="users-round"
+      title="Sin grupos"
+      description="Cree grupos para trabajar por equipos o repártalos automáticamente entre los participantes."
+    />
+  }
+} @else {
+  @if (groupings().length) {
+    <div class="maya-cards">
+      @for (grouping of groupings(); track grouping.id) {
+        <article class="maya-card">
+          <div class="maya-card__body maya-stack">
+            <div class="maya-spread">
+              <h2 style="font-size: var(--maya-text-md); font-weight: 700">{{ grouping.name }}</h2>
+              <span class="maya-badge maya-badge--primary">{{ grouping.groupIds.length }}</span>
+            </div>
+            @if (grouping.description) {
+              <p class="maya-small maya-muted">{{ grouping.description }}</p>
+            }
+            <p class="maya-tiny maya-subtle">
+              {{ grouping.groupIds.length === 1 ? 'Un grupo' : grouping.groupIds.length + ' grupos' }}
+            </p>
+          </div>
+          @if (canManage()) {
+            <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2)">
+              <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="openEditGrouping(grouping)">
+                <maya-icon name="edit" [size]="14" /> Editar
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                [attr.aria-label]="'Eliminar ' + grouping.name"
+                (click)="removeGrouping(grouping)"
+              >
+                <maya-icon name="trash" [size]="15" />
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  } @else {
+    <maya-empty-state
+      icon="layers"
+      title="Sin agrupamientos"
+      description="Un agrupamiento reúne varios grupos para restringir a quién se dirige una actividad."
+    />
+  }
+}
+
+<!-- ════════════════ Integrantes del grupo ════════════════ -->
+@if (managing(); as group) {
+  <maya-modal [title]="'Integrantes de ' + group.name" (dismissed)="managing.set(null)">
+    <div class="maya-stack">
+      <div>
+        <h3 class="maya-label">En el grupo ({{ group.memberCount }})</h3>
+        @if (group.members?.length) {
+          <ul class="maya-stack" style="gap: var(--maya-space-2); margin-top: var(--maya-space-2)">
+            @for (member of group.members ?? []; track member.id) {
+              <li class="maya-row-item">
+                <maya-avatar size="sm" [name]="member.fullName" [src]="member.avatarUrl" />
+                <span style="flex: 1; min-width: 0">
+                  <span class="maya-bold maya-small">{{ member.fullName }}</span>
+                  <span class="maya-tiny maya-subtle" style="display: block">{{ member.email }}</span>
+                </span>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Sacar a ' + member.fullName + ' del grupo'"
+                  (click)="removeMember(member.id)"
+                >
+                  <maya-icon name="minus" [size]="15" />
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="maya-small maya-muted" style="margin-top: var(--maya-space-2)">
+            El grupo está vacío.
+          </p>
+        }
+      </div>
+
+      <div>
+        <h3 class="maya-label">Añadir del curso</h3>
+        <input
+          type="search"
+          class="maya-input"
+          style="margin: var(--maya-space-2) 0"
+          placeholder="Buscar participante…"
+          aria-label="Buscar participante para añadir al grupo"
+          [ngModel]="memberSearch()"
+          (ngModelChange)="memberSearch.set($event)"
+        />
+        @if (candidates().length) {
+          <ul class="maya-stack" style="gap: var(--maya-space-2); max-height: 240px; overflow-y: auto">
+            @for (item of candidates(); track item.id) {
+              <li class="maya-row-item">
+                <maya-avatar size="sm" [name]="item.user?.fullName ?? ''" [src]="item.user?.avatarUrl ?? null" />
+                <span style="flex: 1; min-width: 0">
+                  <span class="maya-bold maya-small">{{ item.user?.fullName }}</span>
+                </span>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--soft maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Añadir a ' + item.user?.fullName + ' al grupo'"
+                  (click)="addMember(item.user!.id)"
+                >
+                  <maya-icon name="plus" [size]="15" />
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="maya-small maya-muted">No quedan participantes por añadir.</p>
+        }
+      </div>
+    </div>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--primary" (click)="managing.set(null)">
+        Listo
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ════════════════ Formulario de grupo ════════════════ -->
+@if (groupFormOpen()) {
+  <maya-modal
+    [title]="editing() ? 'Editar grupo' : 'Nuevo grupo'"
+    (dismissed)="groupFormOpen.set(false)"
+  >
+    <form [formGroup]="groupForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="g-name">Nombre</label>
+        <input id="g-name" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="g-desc">Descripción</label>
+        <textarea id="g-desc" class="maya-textarea" rows="3" formControlName="description"></textarea>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="g-key">Clave de matriculación</label>
+        <input id="g-key" class="maya-input" formControlName="enrolmentKey" autocomplete="off" />
+        <p class="maya-hint">
+          Quien se automatricule con esta clave entra directamente en el grupo.
+        </p>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="groupFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveGroup()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ════════════════ Creación automática ════════════════ -->
+@if (autoOpen()) {
+  <maya-modal title="Crear grupos automáticamente" (dismissed)="autoOpen.set(false)">
+    <form [formGroup]="autoForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="a-mode">Repartir por</label>
+        <select id="a-mode" class="maya-select" formControlName="mode">
+          <option value="numberOfGroups">Número de grupos</option>
+          <option value="membersPerGroup">Integrantes por grupo</option>
+        </select>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="a-value">Cantidad</label>
+        <input id="a-value" type="number" min="1" class="maya-input" formControlName="value" />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="a-name">Nomenclatura</label>
+        <input id="a-name" class="maya-input" formControlName="namingScheme" />
+        <p class="maya-hint">La @ se sustituye por A, B, C… y la # por 1, 2, 3…</p>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="a-alloc">Asignación</label>
+        <select id="a-alloc" class="maya-select" formControlName="allocation">
+          <option value="random">Al azar</option>
+          <option value="alphabetical">Por orden alfabético</option>
+        </select>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="autoOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="autoCreate()">
+        {{ saving() ? 'Creando…' : 'Crear grupos' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ════════════════ Formulario de agrupamiento ════════════════ -->
+@if (groupingFormOpen()) {
+  <maya-modal
+    [title]="groupingEditing() ? 'Editar agrupamiento' : 'Nuevo agrupamiento'"
+    (dismissed)="groupingFormOpen.set(false)"
+  >
+    <form [formGroup]="groupingForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="gr-name">Nombre</label>
+        <input id="gr-name" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="gr-desc">Descripción</label>
+        <textarea id="gr-desc" class="maya-textarea" rows="2" formControlName="description"></textarea>
+      </div>
+      <fieldset class="maya-field">
+        <legend class="maya-label">Grupos incluidos</legend>
+        @if (groups().length) {
+          <div class="maya-stack" style="gap: var(--maya-space-2)">
+            @for (group of groups(); track group.id) {
+              <label class="maya-checkbox">
+                <input
+                  type="checkbox"
+                  [checked]="isInGrouping(group.id)"
+                  (change)="toggleGroupInGrouping(group.id, $any($event.target).checked)"
+                />
+                <span>{{ group.name }} ({{ group.memberCount }})</span>
+              </label>
+            }
+          </div>
+        } @else {
+          <p class="maya-hint">Cree primero algún grupo.</p>
+        }
+      </fieldset>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="groupingFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveGrouping()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}

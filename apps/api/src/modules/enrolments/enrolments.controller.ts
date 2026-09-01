@@ -88,14 +88,14 @@ export class EnrolmentsController {
 
   @Post('methods')
   @RequireCapability(CAP.ENROL_CONFIG, { contextLevel: ContextLevel.Course, param: 'courseId' })
-  createMethod(@Param('courseId') courseId: string, @Body() dto: CreateEnrolmentMethodDto) {
-    return this.enrolments.createMethod(courseId, dto);
+  async createMethod(@Param('courseId') courseId: string, @Body() dto: CreateEnrolmentMethodDto) {
+    return this.enrolments.methodToDto(await this.enrolments.createMethod(courseId, dto));
   }
 
   @Patch('methods/:methodId')
   @RequireCapability(CAP.ENROL_CONFIG, { contextLevel: ContextLevel.Course, param: 'courseId' })
-  updateMethod(@Param('methodId') methodId: string, @Body() dto: UpdateEnrolmentMethodDto) {
-    return this.enrolments.updateMethod(methodId, dto);
+  async updateMethod(@Param('methodId') methodId: string, @Body() dto: UpdateEnrolmentMethodDto) {
+    return this.enrolments.methodToDto(await this.enrolments.updateMethod(methodId, dto));
   }
 
   @Delete('methods/:methodId')

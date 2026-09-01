@@ -5,6 +5,7 @@ import { CategoryNode, CourseDetail, CourseFormat, SectionDto } from '@maya/shar
 import { ActivityType, CoursesService } from '../../core/services/courses.service';
 import { ToastService } from '../../core/services/toast.service';
 import { IconComponent } from '../../shared';
+import { ConfirmService } from '../../core/services/confirm.service';
 
 /** Creación y edición de cursos, con gestión de secciones y actividades. */
 @Component({
@@ -18,6 +19,7 @@ export class CourseEditorPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly courses = inject(CoursesService);
+  private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
 
   readonly courseId = signal<string | null>(this.route.snapshot.paramMap.get('id'));
@@ -151,15 +153,24 @@ export class CourseEditorPage {
       });
   }
 
-  removeModule(moduleId: string): void {
+  removeModule(moduleId: string, name: string): void {
     const id = this.courseId();
     if (!id) return;
-    this.courses.removeModule(id, moduleId).subscribe({
-      next: () => {
-        this.loadSections(id);
-        this.toast.success('Actividad eliminada');
-      },
-    });
+    this.confirm
+      .ask({
+        title: 'Eliminar actividad',
+        message: `Se eliminará «${name}» junto con las entregas y calificaciones asociadas.`,
+        confirmLabel: 'Eliminar',
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.courses.removeModule(id, moduleId).subscribe({
+          next: () => {
+            this.loadSections(id);
+            this.toast.success('Actividad eliminada');
+          },
+        });
+      });
   }
 
   toggleVisibility(moduleId: string, visible: boolean): void {

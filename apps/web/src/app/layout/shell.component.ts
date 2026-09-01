@@ -12,7 +12,14 @@ import { AuthService } from '../core/services/auth.service';
 import { CommunicationService } from '../core/services/communication.service';
 import { LayoutService } from '../core/services/layout.service';
 import { ThemeService } from '../core/services/theme.service';
-import { AvatarComponent, IconComponent, LogoComponent, ToastContainerComponent } from '../shared';
+import {
+  AvatarComponent,
+  ConfirmHostComponent,
+  GlobalSearchComponent,
+  IconComponent,
+  LogoComponent,
+  ToastContainerComponent,
+} from '../shared';
 import { NAV_GROUPS, NAV_ITEMS, NavItem } from './nav-items';
 
 /** Ranuras de la barra inferior reservadas a rutas; la quinta es «Más». */
@@ -37,7 +44,9 @@ const BOTTOM_NAV_SLOTS = 4;
     IconComponent,
     LogoComponent,
     AvatarComponent,
+    GlobalSearchComponent,
     ToastContainerComponent,
+    ConfirmHostComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',

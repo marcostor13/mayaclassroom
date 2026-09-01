@@ -20,6 +20,43 @@
   </div>
 </header>
 
+<div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'grades'"
+    [attr.aria-selected]="tab() === 'grades'"
+    (click)="tab.set('grades')"
+  >
+    Calificaciones
+  </button>
+  @if (canManage()) {
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'setup'"
+      [attr.aria-selected]="tab() === 'setup'"
+      (click)="openSetup()"
+    >
+      Configuración
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'letters'"
+      [attr.aria-selected]="tab() === 'letters'"
+      (click)="openLetters()"
+    >
+      Letras
+    </button>
+  }
+</div>
+
+@if (tab() === 'grades') {
+
 @if (loading()) {
   <div class="maya-skeleton" style="height: 360px"></div>
 } @else if (report(); as data) {
@@ -83,4 +120,397 @@
       description="Matricule alumnado para empezar a calificar."
     />
   }
+}
+}
+
+<!-- ══════════════════ Configuración ══════════════════ -->
+@if (tab() === 'setup') {
+  <section style="margin-bottom: var(--maya-space-6)">
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-3)">
+      <h2 style="font-size: var(--maya-text-lg); font-weight: 700">Ítems de calificación</h2>
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNewItem()">
+        <maya-icon name="plus" [size]="15" /> Nuevo ítem
+      </button>
+    </div>
+
+    @if (gradableItems().length) {
+      <div class="maya-table-wrap">
+        <table class="maya-table">
+          <thead>
+            <tr>
+              <th scope="col">Ítem</th>
+              <th scope="col">Categoría</th>
+              <th scope="col">Rango</th>
+              <th scope="col">Peso</th>
+              <th scope="col">Aprobado</th>
+              <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of gradableItems(); track item.id) {
+              <tr>
+                <td>
+                  <span class="maya-bold maya-small">{{ item.name }}</span>
+                  @if (item.hidden) {
+                    <span class="maya-badge maya-badge--warning" style="margin-left: var(--maya-space-2)">
+                      Oculto
+                    </span>
+                  }
+                </td>
+                <td class="maya-small">{{ categoryName(item.categoryId) }}</td>
+                <td class="maya-small">{{ item.grademin }} – {{ item.grademax }}</td>
+                <td class="maya-small">{{ item.weight }}</td>
+                <td class="maya-small">{{ item.gradepass ?? '—' }}</td>
+                <td>
+                  <span class="maya-row" style="gap: var(--maya-space-1); justify-content: flex-end">
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                      [attr.aria-label]="'Editar ' + item.name"
+                      (click)="openEditItem(item)"
+                    >
+                      <maya-icon name="edit" [size]="15" />
+                    </button>
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                      [attr.aria-label]="'Eliminar ' + item.name"
+                      (click)="removeItem(item)"
+                    >
+                      <maya-icon name="trash" [size]="15" />
+                    </button>
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="maya-small maya-muted">
+        Aún no hay ítems. Las actividades calificables crean el suyo al añadirse al curso.
+      </p>
+    }
+  </section>
+
+  <section style="margin-bottom: var(--maya-space-6)">
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-3)">
+      <h2 style="font-size: var(--maya-text-lg); font-weight: 700">Categorías</h2>
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNewCategory()">
+        <maya-icon name="plus" [size]="15" /> Nueva categoría
+      </button>
+    </div>
+
+    @if (categories().length) {
+      <div class="maya-stack" style="gap: var(--maya-space-2)">
+        @for (category of categories(); track category.id) {
+          <article class="maya-card maya-card--flat">
+            <div class="maya-card__body maya-spread">
+              <span style="min-width: 0">
+                <span class="maya-bold maya-small" [style.padding-left.px]="category.depth * 16">
+                  {{ category.name }}
+                </span>
+                <span class="maya-tiny maya-subtle" style="display: block">
+                  {{ aggregationLabel(category.aggregation) }}
+                  @if (category.dropLowest) { · descarta {{ category.dropLowest }} más bajas }
+                  @if (category.keepHighest) { · conserva {{ category.keepHighest }} más altas }
+                </span>
+              </span>
+              <span class="maya-row" style="gap: var(--maya-space-1)">
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Editar ' + category.name"
+                  (click)="openEditCategory(category)"
+                >
+                  <maya-icon name="edit" [size]="15" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Eliminar ' + category.name"
+                  (click)="removeCategory(category)"
+                >
+                  <maya-icon name="trash" [size]="15" />
+                </button>
+              </span>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="maya-small maya-muted">Sin categorías: todo cuelga directamente del curso.</p>
+    }
+  </section>
+
+  <section>
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-3)">
+      <h2 style="font-size: var(--maya-text-lg); font-weight: 700">Escalas</h2>
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNewScale()">
+        <maya-icon name="plus" [size]="15" /> Nueva escala
+      </button>
+    </div>
+
+    @if (scales().length) {
+      <div class="maya-stack" style="gap: var(--maya-space-2)">
+        @for (scale of scales(); track scale.id) {
+          <article class="maya-card maya-card--flat">
+            <div class="maya-card__body">
+              <span class="maya-bold maya-small">{{ scale.name }}</span>
+              <div class="maya-chips" style="margin-top: var(--maya-space-2)">
+                @for (level of scale.items; track level) {
+                  <span class="maya-chip">{{ level }}</span>
+                }
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="maya-small maya-muted">
+        Sin escalas propias. Cree una para calificar con etiquetas en lugar de números.
+      </p>
+    }
+  </section>
+}
+
+<!-- ══════════════════ Letras ══════════════════ -->
+@if (tab() === 'letters') {
+  <section class="maya-card">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+        Letras de calificación
+      </h2>
+    </div>
+    <div class="maya-card__body maya-stack">
+      <p class="maya-small maya-muted">
+        Cada letra se aplica a partir del porcentaje indicado. Ordene de mayor a menor.
+      </p>
+
+      @for (letter of letterDraft(); track $index; let i = $index) {
+        <div class="maya-row" style="gap: var(--maya-space-2)">
+          <input
+            class="maya-input"
+            style="width: 100px"
+            [value]="letter.letter"
+            [attr.aria-label]="'Letra ' + (i + 1)"
+            (change)="updateLetter(i, 'letter', $any($event.target).value)"
+          />
+          <input
+            type="number"
+            min="0"
+            max="100"
+            class="maya-input"
+            style="width: 120px"
+            [value]="letter.lowerBoundary"
+            [attr.aria-label]="'Porcentaje mínimo de la letra ' + (i + 1)"
+            (change)="updateLetter(i, 'lowerBoundary', $any($event.target).value)"
+          />
+          <span class="maya-small maya-muted" style="align-self: center">% o más</span>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+            [attr.aria-label]="'Quitar la letra ' + (i + 1)"
+            (click)="removeLetter(i)"
+          >
+            <maya-icon name="trash" [size]="15" />
+          </button>
+        </div>
+      }
+
+      <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="addLetter()">
+        <maya-icon name="plus" [size]="14" /> Añadir letra
+      </button>
+    </div>
+    <div class="maya-card__footer" style="display: flex; justify-content: flex-end">
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveLetters()">
+        {{ saving() ? 'Guardando…' : 'Guardar letras' }}
+      </button>
+    </div>
+  </section>
+}
+
+<!-- ══════════════════ Formulario de ítem ══════════════════ -->
+@if (itemFormOpen()) {
+  <maya-modal
+    [title]="editingItem() ? 'Editar ítem' : 'Nuevo ítem de calificación'"
+    (dismissed)="itemFormOpen.set(false)"
+  >
+    <form [formGroup]="itemForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="gi-name">Nombre</label>
+        <input id="gi-name" class="maya-input" formControlName="name" required />
+      </div>
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 180px">
+          <label class="maya-label" for="gi-type">Tipo de calificación</label>
+          <select id="gi-type" class="maya-select" formControlName="gradeType">
+            <option value="value">Valor numérico</option>
+            <option value="scale">Escala</option>
+            <option value="text">Sólo retroalimentación</option>
+            <option value="none">Ninguna</option>
+          </select>
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 180px">
+          <label class="maya-label" for="gi-cat">Categoría</label>
+          <select id="gi-cat" class="maya-select" formControlName="categoryId">
+            <option value="">Sin categoría</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (itemForm.controls.gradeType.value === 'scale') {
+        <div class="maya-field">
+          <label class="maya-label" for="gi-scale">Escala</label>
+          <select id="gi-scale" class="maya-select" formControlName="scaleId">
+            <option value="">Elija una escala…</option>
+            @for (scale of scales(); track scale.id) {
+              <option [value]="scale.id">{{ scale.name }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+          <div class="maya-field" style="flex: 1; min-width: 120px">
+            <label class="maya-label" for="gi-min">Mínimo</label>
+            <input id="gi-min" type="number" class="maya-input" formControlName="grademin" />
+          </div>
+          <div class="maya-field" style="flex: 1; min-width: 120px">
+            <label class="maya-label" for="gi-max">Máximo</label>
+            <input id="gi-max" type="number" class="maya-input" formControlName="grademax" />
+          </div>
+          <div class="maya-field" style="flex: 1; min-width: 120px">
+            <label class="maya-label" for="gi-pass">Para aprobar</label>
+            <input id="gi-pass" type="number" class="maya-input" formControlName="gradepass" />
+          </div>
+        </div>
+      }
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 120px">
+          <label class="maya-label" for="gi-weight">Peso</label>
+          <input id="gi-weight" type="number" step="0.1" class="maya-input" formControlName="weight" />
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 120px">
+          <label class="maya-label" for="gi-dec">Decimales</label>
+          <input id="gi-dec" type="number" min="0" max="5" class="maya-input" formControlName="decimals" />
+        </div>
+      </div>
+
+      <label class="maya-checkbox">
+        <input type="checkbox" formControlName="hidden" />
+        <span>Oculto para el alumnado</span>
+      </label>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="itemFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveItem()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Formulario de categoría ══════════════════ -->
+@if (categoryFormOpen()) {
+  <maya-modal
+    [title]="editingCategory() ? 'Editar categoría' : 'Nueva categoría'"
+    (dismissed)="categoryFormOpen.set(false)"
+  >
+    <form [formGroup]="categoryForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="gc-name">Nombre</label>
+        <input id="gc-name" class="maya-input" formControlName="name" required />
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="gc-parent">Categoría superior</label>
+        <select id="gc-parent" class="maya-select" formControlName="parentId">
+          <option value="">Directamente en el curso</option>
+          @for (category of categories(); track category.id) {
+            @if (category.id !== editingCategory()?.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          }
+        </select>
+      </div>
+
+      <div class="maya-field">
+        <label class="maya-label" for="gc-agg">Agregación</label>
+        <select id="gc-agg" class="maya-select" formControlName="aggregation">
+          @for (option of aggregations; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="maya-row" style="gap: var(--maya-space-3); flex-wrap: wrap">
+        <div class="maya-field" style="flex: 1; min-width: 150px">
+          <label class="maya-label" for="gc-drop">Descartar las más bajas</label>
+          <input id="gc-drop" type="number" min="0" class="maya-input" formControlName="dropLowest" />
+        </div>
+        <div class="maya-field" style="flex: 1; min-width: 150px">
+          <label class="maya-label" for="gc-keep">Conservar las más altas</label>
+          <input id="gc-keep" type="number" min="0" class="maya-input" formControlName="keepHighest" />
+        </div>
+      </div>
+
+      <label class="maya-checkbox">
+        <input type="checkbox" formControlName="aggregateOnlyGraded" />
+        <span>Agregar sólo las actividades ya calificadas</span>
+      </label>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="categoryFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveCategory()">
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </maya-modal>
+}
+
+<!-- ══════════════════ Formulario de escala ══════════════════ -->
+@if (scaleFormOpen()) {
+  <maya-modal title="Nueva escala" (dismissed)="scaleFormOpen.set(false)">
+    <form [formGroup]="scaleForm" class="maya-stack">
+      <div class="maya-field">
+        <label class="maya-label" for="gs-name">Nombre</label>
+        <input id="gs-name" class="maya-input" formControlName="name" required />
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="gs-items">Niveles</label>
+        <textarea
+          id="gs-items"
+          class="maya-textarea"
+          rows="6"
+          formControlName="items"
+          placeholder="Insuficiente&#10;Suficiente&#10;Bien&#10;Notable&#10;Sobresaliente"
+        ></textarea>
+        <p class="maya-hint">Uno por línea, del más bajo al más alto.</p>
+      </div>
+      <div class="maya-field">
+        <label class="maya-label" for="gs-desc">Descripción</label>
+        <textarea id="gs-desc" class="maya-textarea" rows="2" formControlName="description"></textarea>
+      </div>
+    </form>
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="scaleFormOpen.set(false)">
+        Cancelar
+      </button>
+      <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="saveScale()">
+        {{ saving() ? 'Guardando…' : 'Crear escala' }}
+      </button>
+    </ng-container>
+  </maya-modal>
 }

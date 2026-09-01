@@ -1,89 +1,53 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Paginated, QuestionDto, QuestionType } from '@maya/shared';
-import { ApiService } from '../../core/services/api.service';
-import { EmptyStateComponent, IconComponent, SafeHtmlPipe } from '../../shared';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormArray, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CAP, QuestionCategoryDto, QuestionDto, QuestionType } from '@maya/shared';
+import { AuthService } from '../../core/services/auth.service';
+import { ConfirmService } from '../../core/services/confirm.service';
+import { QuestionsService } from '../../core/services/questions.service';
+import { ToastService } from '../../core/services/toast.service';
+import { EmptyStateComponent, IconComponent, ModalComponent, SafeHtmlPipe } from '../../shared';
+
+/** Tipos con lista de respuestas editable. */
+const CON_RESPUESTAS: QuestionType[] = [
+  QuestionType.MultiChoice,
+  QuestionType.ShortAnswer,
+  QuestionType.Numerical,
+];
 
 @Component({
   selector: 'maya-question-bank',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, IconComponent, EmptyStateComponent, SafeHtmlPipe],
-  template: `
-    <header class="maya-page-header">
-      <div>
-        <h1 class="maya-page-header__title">Banco de preguntas</h1>
-        <p class="maya-page-header__subtitle">
-          Preguntas reutilizables en todos sus cuestionarios
-        </p>
-      </div>
-    </header>
-
-    <div class="maya-row" style="flex-wrap: wrap; margin-bottom: var(--maya-space-4)">
-      <input
-        type="search"
-        class="maya-input"
-        style="max-width: 320px"
-        placeholder="Buscar preguntas…"
-        [ngModel]="search()"
-        (ngModelChange)="search.set($event)"
-        (keyup.enter)="load()"
-        aria-label="Buscar preguntas"
-      />
-      <select
-        class="maya-select"
-        style="max-width: 220px"
-        [ngModel]="type()"
-        (ngModelChange)="type.set($event); load()"
-        aria-label="Filtrar por tipo"
-      >
-        <option value="">Todos los tipos</option>
-        @for (option of types; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-      <button type="button" class="maya-btn maya-btn--primary" (click)="load()">
-        <maya-icon name="search" [size]="16" /> Buscar
-      </button>
-    </div>
-
-    @if (loading()) {
-      <div class="maya-skeleton" style="height: 320px"></div>
-    } @else if (questions().length) {
-      <div class="maya-stack" style="gap: var(--maya-space-3)">
-        @for (question of questions(); track question.id) {
-          <article class="maya-card">
-            <div class="maya-card__body">
-              <div class="maya-spread" style="margin-bottom: var(--maya-space-2)">
-                <strong class="maya-small">{{ question.name }}</strong>
-                <span class="maya-badge maya-badge--primary">{{ typeLabel(question.type) }}</span>
-              </div>
-              <div
-                class="maya-rich maya-small maya-clamp-2"
-                [innerHTML]="question.questionText | safeHtml"
-              ></div>
-              <p class="maya-tiny maya-subtle" style="margin-top: var(--maya-space-2)">
-                {{ question.answers.length }} respuestas · {{ question.defaultMark }} puntos
-              </p>
-            </div>
-          </article>
-        }
-      </div>
-    } @else {
-      <maya-empty-state
-        icon="help-circle"
-        title="Banco vacío"
-        description="Cree preguntas desde el editor de cuestionarios o impórtelas en formato GIFT."
-      />
-    }
-  `,
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    IconComponent,
+    EmptyStateComponent,
+    SafeHtmlPipe,
+    ModalComponent,
+  ],
+  templateUrl: './question-bank.page.html',
 })
 export class QuestionBankPage {
-  private readonly api = inject(ApiService);
+  private readonly questions = inject(QuestionsService);
+  private readonly toast = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly auth = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
 
-  readonly questions = signal<QuestionDto[]>([]);
+  readonly items = signal<QuestionDto[]>([]);
+  readonly categories = signal<QuestionCategoryDto[]>([]);
   readonly loading = signal(true);
+  readonly saving = signal(false);
   readonly search = signal('');
   readonly type = signal('');
+  readonly categoryId = signal('');
+
+  /** Pregunta en edición; `null` significa «pregunta nueva». */
+  readonly editing = signal<QuestionDto | null>(null);
+  readonly formOpen = signal(false);
+  readonly importOpen = signal(false);
+
+  readonly canEdit = computed(() => this.auth.canAny([CAP.QUESTION_ADD, CAP.QUESTION_EDIT_ALL]));
 
   readonly types = [
     { value: QuestionType.MultiChoice, label: 'Opción múltiple' },
@@ -94,21 +58,77 @@ export class QuestionBankPage {
     { value: QuestionType.Essay, label: 'Ensayo' },
   ];
 
+  readonly form = this.fb.nonNullable.group({
+    type: [QuestionType.MultiChoice as QuestionType, [Validators.required]],
+    name: ['', [Validators.required]],
+    questionText: ['', [Validators.required]],
+    categoryId: ['', [Validators.required]],
+    generalFeedback: [''],
+    defaultMark: [1],
+    penalty: [0],
+    shuffleAnswers: [true],
+    single: [true],
+    tolerance: [0],
+    answers: this.fb.array<ReturnType<QuestionBankPage['answerGroup']>>([]),
+    subquestions: this.fb.array<ReturnType<QuestionBankPage['subquestionGroup']>>([]),
+  });
+
+  readonly importForm = this.fb.nonNullable.group({
+    format: ['gift' as 'gift' | 'json'],
+    categoryId: ['', [Validators.required]],
+    content: ['', [Validators.required]],
+  });
+
+  /** El tipo elegido decide qué campos del formulario tienen sentido. */
+  readonly selectedType = signal<QuestionType>(QuestionType.MultiChoice);
+  readonly usesAnswers = computed(() => CON_RESPUESTAS.includes(this.selectedType()));
+  readonly usesSubquestions = computed(() => this.selectedType() === QuestionType.Matching);
+  readonly isNumerical = computed(() => this.selectedType() === QuestionType.Numerical);
+  readonly isMultiChoice = computed(() => this.selectedType() === QuestionType.MultiChoice);
+
+  get answers(): FormArray {
+    return this.form.controls.answers as unknown as FormArray;
+  }
+
+  get subquestions(): FormArray {
+    return this.form.controls.subquestions as unknown as FormArray;
+  }
+
   constructor() {
     this.load();
+    this.questions.categories().subscribe({
+      next: (list) => {
+        if (list.length) {
+          this.applyCategories(list);
+          return;
+        }
+        // Una empresa sin cursos con banco propio no tiene ninguna categoría;
+        // sin ella no se podría crear la primera pregunta.
+        this.questions.defaultCategory().subscribe({
+          next: (category) => this.applyCategories([category]),
+        });
+      },
+    });
+  }
+
+  private applyCategories(list: QuestionCategoryDto[]): void {
+    this.categories.set(list);
+    this.form.controls.categoryId.setValue(list[0].id);
+    this.importForm.controls.categoryId.setValue(list[0].id);
   }
 
   load(): void {
     this.loading.set(true);
-    this.api
-      .get<Paginated<QuestionDto>>('/questions', {
+    this.questions
+      .list({
         limit: 50,
         search: this.search() || undefined,
         type: this.type() || undefined,
+        categoryId: this.categoryId() || undefined,
       })
       .subscribe({
         next: (result) => {
-          this.questions.set(result.items);
+          this.items.set(result.items);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
@@ -117,5 +137,224 @@ export class QuestionBankPage {
 
   typeLabel(type: QuestionType): string {
     return this.types.find((item) => item.value === type)?.label ?? type;
+  }
+
+  categoryName(id: string): string {
+    return this.categories().find((item) => item.id === id)?.name ?? 'Sin categoría';
+  }
+
+  /* ------------------------------ Edición ------------------------------- */
+
+  private answerGroup(text = '', fraction = 0, feedback = '') {
+    return this.fb.nonNullable.group({
+      text: [text, [Validators.required]],
+      fraction: [fraction],
+      feedback: [feedback],
+    });
+  }
+
+  private subquestionGroup(text = '', answer = '') {
+    return this.fb.nonNullable.group({
+      text: [text, [Validators.required]],
+      answer: [answer, [Validators.required]],
+    });
+  }
+
+  openNew(): void {
+    this.editing.set(null);
+    this.selectedType.set(QuestionType.MultiChoice);
+    this.answers.clear();
+    this.subquestions.clear();
+    this.form.reset({
+      type: QuestionType.MultiChoice,
+      name: '',
+      questionText: '',
+      categoryId: this.categories()[0]?.id ?? '',
+      generalFeedback: '',
+      defaultMark: 1,
+      penalty: 0,
+      shuffleAnswers: true,
+      single: true,
+      tolerance: 0,
+    });
+    // Dos opciones en blanco: el mínimo que acepta la API.
+    this.answers.push(this.answerGroup('', 1));
+    this.answers.push(this.answerGroup('', 0));
+    this.formOpen.set(true);
+  }
+
+  openEdit(question: QuestionDto): void {
+    this.questions.detail(question.id).subscribe({
+      next: (full) => {
+        this.editing.set(full);
+        this.selectedType.set(full.type);
+        this.answers.clear();
+        this.subquestions.clear();
+        for (const answer of full.answers) {
+          this.answers.push(this.answerGroup(answer.text, answer.fraction, answer.feedback ?? ''));
+        }
+        for (const sub of full.subquestions ?? []) {
+          this.subquestions.push(this.subquestionGroup(sub.text, sub.answer));
+        }
+        this.form.patchValue({
+          type: full.type,
+          name: full.name,
+          questionText: full.questionText,
+          categoryId: full.categoryId,
+          generalFeedback: full.generalFeedback ?? '',
+          defaultMark: full.defaultMark,
+          penalty: full.penalty,
+          shuffleAnswers: full.shuffleAnswers,
+          single: full.single,
+          tolerance: full.tolerance ?? 0,
+        });
+        this.formOpen.set(true);
+      },
+    });
+  }
+
+  changeType(type: QuestionType): void {
+    this.selectedType.set(type);
+    this.form.controls.type.setValue(type);
+
+    if (type === QuestionType.TrueFalse) {
+      this.answers.clear();
+      this.answers.push(this.answerGroup('Verdadero', 1));
+      this.answers.push(this.answerGroup('Falso', 0));
+      return;
+    }
+    if (type === QuestionType.Matching) {
+      this.answers.clear();
+      if (!this.subquestions.length) {
+        this.addSubquestion();
+        this.addSubquestion();
+      }
+      return;
+    }
+    if (type === QuestionType.Essay) {
+      this.answers.clear();
+      this.subquestions.clear();
+      return;
+    }
+    this.subquestions.clear();
+    if (!this.answers.length) {
+      this.answers.push(this.answerGroup('', 1));
+      this.answers.push(this.answerGroup('', 0));
+    }
+  }
+
+  addAnswer(): void {
+    this.answers.push(this.answerGroup());
+  }
+
+  removeAnswer(index: number): void {
+    this.answers.removeAt(index);
+  }
+
+  addSubquestion(): void {
+    this.subquestions.push(this.subquestionGroup());
+  }
+
+  removeSubquestion(index: number): void {
+    this.subquestions.removeAt(index);
+  }
+
+  close(): void {
+    this.formOpen.set(false);
+    this.editing.set(null);
+  }
+
+  save(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.toast.warning('Faltan datos', 'Revise los campos marcados en rojo.');
+      return;
+    }
+    const value = this.form.getRawValue();
+    const payload = {
+      type: value.type,
+      name: value.name.trim(),
+      questionText: value.questionText.trim(),
+      categoryId: value.categoryId,
+      generalFeedback: value.generalFeedback.trim() || undefined,
+      defaultMark: Number(value.defaultMark),
+      penalty: Number(value.penalty),
+      shuffleAnswers: value.shuffleAnswers,
+      single: value.single,
+      ...(this.isNumerical() ? { tolerance: Number(value.tolerance) } : {}),
+      ...(this.usesSubquestions()
+        ? { subquestions: value.subquestions, answers: [] }
+        : { answers: value.answers }),
+    };
+
+    const current = this.editing();
+    const request = current
+      ? this.questions.update(current.id, payload)
+      : this.questions.create(payload);
+
+    this.saving.set(true);
+    request.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.toast.success(current ? 'Pregunta actualizada' : 'Pregunta creada');
+        this.close();
+        this.load();
+      },
+      error: () => this.saving.set(false),
+    });
+  }
+
+  duplicate(question: QuestionDto): void {
+    this.questions.duplicate(question.id).subscribe({
+      next: () => {
+        this.toast.success('Pregunta duplicada');
+        this.load();
+      },
+    });
+  }
+
+  remove(question: QuestionDto): void {
+    this.confirm
+      .ask({
+        title: 'Eliminar pregunta',
+        message: `Se eliminará «${question.name}» del banco. Los cuestionarios que ya la usen conservan los intentos realizados.`,
+        confirmLabel: 'Eliminar',
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this.questions.remove(question.id).subscribe({
+          next: () => {
+            this.items.update((list) => list.filter((item) => item.id !== question.id));
+            this.toast.success('Pregunta eliminada');
+          },
+        });
+      });
+  }
+
+  /* ---------------------------- Importación ----------------------------- */
+
+  runImport(): void {
+    if (this.importForm.invalid) {
+      this.importForm.markAllAsTouched();
+      return;
+    }
+    this.saving.set(true);
+    this.questions.import(this.importForm.getRawValue()).subscribe({
+      next: (result) => {
+        this.saving.set(false);
+        if (result.errors.length) {
+          this.toast.warning(
+            `${result.imported} preguntas importadas`,
+            `${result.errors.length} no se pudieron leer: ${result.errors[0]}`,
+          );
+        } else {
+          this.toast.success(`${result.imported} preguntas importadas`);
+        }
+        this.importOpen.set(false);
+        this.importForm.controls.content.setValue('');
+        this.load();
+      },
+      error: () => this.saving.set(false),
+    });
   }
 }
