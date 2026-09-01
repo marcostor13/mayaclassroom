@@ -37,6 +37,7 @@ La referencia completa e interactiva está en **`/api/docs`** (OpenAPI 3).
 | `GET` | `/auth/me` | Sesión con roles y capacidades efectivas |
 | `GET`/`DELETE` | `/auth/sessions[/:id]` | Dispositivos con sesión abierta |
 | `POST` | `/auth/forgot-password` · `/auth/reset-password` | Recuperación |
+| `POST` | `/auth/change-password` | Cambiar la propia contraseña |
 | `POST` | `/auth/2fa/setup` · `/2fa/confirm` · `/2fa/disable` | Segundo factor |
 
 ## Empresas y usuarios
@@ -49,6 +50,27 @@ La referencia completa e interactiva está en **`/api/docs`** (OpenAPI 3).
 | `GET`/`POST` | `/users` | `maya/tenant:manageusers`, `moodle/user:create` |
 | `GET`/`PATCH` | `/users/me[/preferences]` | autenticado |
 | `PATCH`/`DELETE` | `/users/:id[/status]` | `moodle/user:update`, `:delete` |
+
+### Alta de empresa
+
+`POST /tenants` da de alta la empresa **y** la cuenta con la que se
+administrará: un usuario con rol `manager` y una contraseña temporal. La
+respuesta es `{ tenant, admin }`; la contraseña en claro viaja solo ahí y en el
+correo de bienvenida, no se almacena ni se puede recuperar después. Los campos
+`adminEmail`, `adminUsername`, `adminFirstName` y `adminLastName` son
+opcionales: sin ellos se usa el correo de contacto de la empresa.
+
+Si la cuenta de administración no se puede crear, el alta se deshace por
+completo: una empresa sin nadie que pueda entrar dejaría su identificador
+ocupado para siempre.
+
+### Contraseñas temporales
+
+Una cuenta creada así lleva `mustChangePassword`. Mientras esté activa, la API
+responde `403` con `error: "PasswordChangeRequired"` a **todo** salvo
+`GET /auth/me`, `POST /auth/change-password` y `POST /auth/logout[-all]`. El
+cambio de contraseña levanta la marca y revoca todas las sesiones abiertas, de
+modo que el siguiente acceso ya usa la contraseña propia.
 
 ## Roles y permisos
 

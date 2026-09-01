@@ -9,6 +9,13 @@ export const API_VERSION = 'v1';
 /** Cabecera usada para resolver la empresa (tenant) activa. */
 export const TENANT_HEADER = 'x-maya-tenant';
 
+/**
+ * Código de error con el que la API rechaza cualquier petición de un usuario
+ * que arrastra una contraseña temporal. El cliente lo reconoce para llevarlo a
+ * la pantalla de cambio de contraseña en lugar de mostrar un error genérico.
+ */
+export const PASSWORD_CHANGE_REQUIRED = 'PasswordChangeRequired';
+
 /** Identificador del tenant reservado para la administración de plataforma. */
 export const SYSTEM_TENANT_SLUG = 'system';
 

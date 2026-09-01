@@ -74,6 +74,14 @@ export class LoginPage {
           );
           return;
         }
+        if (response.user.mustChangePassword) {
+          this.toast.info(
+            'Contraseña temporal',
+            'Elija una contraseña propia para empezar a usar la plataforma.',
+          );
+          void this.router.navigate(['/password-change']);
+          return;
+        }
         this.toast.success(`Hola de nuevo, ${response.user.firstName}`);
         const redirect = this.route.snapshot.queryParamMap.get('redirect') ?? '/dashboard';
         void this.router.navigateByUrl(redirect);

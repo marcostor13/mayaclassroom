@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -16,6 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { TenantPlan, TenantStatus } from '@maya/shared';
+import { PaginationQueryDto } from '../../../common/dto';
 
 export class PasswordPolicyDto {
   @IsInt() @Min(6) @IsOptional() minLength?: number;
@@ -94,6 +95,67 @@ export class CreateTenantDto {
 
   @ValidateNested() @Type(() => TenantBrandingDto) @IsOptional() branding?: TenantBrandingDto;
   @ValidateNested() @Type(() => TenantSettingsDto) @IsOptional() settings?: TenantSettingsDto;
+
+  /* ------------------ Cuenta de administración de la empresa -------------- */
+
+  @ApiPropertyOptional({
+    description: 'Correo de la persona que administrará la empresa. Por omisión, el de contacto.',
+    example: 'admin@acme.com',
+  })
+  @IsEmail({}, { message: 'El correo del administrador no es válido.' })
+  @IsOptional()
+  adminEmail?: string;
+
+  @ApiPropertyOptional({
+    description: 'Nombre de usuario del administrador. Por omisión se deriva del correo.',
+    example: 'admin.acme',
+  })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(60)
+  @Matches(/^[a-z0-9._-]+$/, {
+    message: 'El nombre de usuario solo admite minúsculas, números, punto, guion y guion bajo.',
+  })
+  @IsOptional()
+  adminUsername?: string;
+
+  @ApiPropertyOptional({ example: 'Ana' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  @IsOptional()
+  adminFirstName?: string;
+
+  @ApiPropertyOptional({ example: 'Pérez' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  @IsOptional()
+  adminLastName?: string;
 }
 
-export class UpdateTenantDto extends PartialType(CreateTenantDto) {}
+/**
+ * Los campos de la cuenta de administración solo tienen sentido en el alta:
+ * una vez creada la empresa, su administración se gestiona desde usuarios.
+ */
+export class UpdateTenantDto extends PartialType(
+  OmitType(CreateTenantDto, [
+    'adminEmail',
+    'adminUsername',
+    'adminFirstName',
+    'adminLastName',
+  ] as const),
+) {}
+
+/** Filtros del listado de empresas (administración de plataforma). */
+export class TenantQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: TenantStatus })
+  @IsEnum(TenantStatus)
+  @IsOptional()
+  status?: TenantStatus;
+
+  @ApiPropertyOptional({ enum: TenantPlan })
+  @IsEnum(TenantPlan)
+  @IsOptional()
+  plan?: TenantPlan;
+}

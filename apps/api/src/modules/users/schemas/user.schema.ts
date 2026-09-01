@@ -29,6 +29,14 @@ export class User extends TenantScopedDocument {
   @Prop({ type: Date, default: null })
   passwordChangedAt!: Date | null;
 
+  /**
+   * Contraseña provisional pendiente de sustituir. Mientras sea cierto,
+   * `PasswordChangeGuard` bloquea toda la API salvo el propio cambio de
+   * contraseña, la sesión actual y el cierre de sesión.
+   */
+  @Prop({ default: false })
+  mustChangePassword!: boolean;
+
   @Prop({ required: true, trim: true }) firstName!: string;
   @Prop({ required: true, trim: true }) lastName!: string;
 

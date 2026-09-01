@@ -47,3 +47,24 @@ export interface TenantLimits {
   maxStorageBytes: number;
   usedStorageBytes: number;
 }
+
+/**
+ * Credenciales de la cuenta de administración creada junto con la empresa.
+ * La contraseña temporal solo viaja en la respuesta de alta: no se almacena en
+ * claro ni vuelve a mostrarse, de modo que quien crea la empresa debe
+ * entregarla en ese momento (además del correo automático).
+ */
+export interface TenantAdminCredentials {
+  userId: string;
+  email: string;
+  username: string;
+  temporaryPassword: string;
+  /** `false` si el correo de bienvenida no se pudo entregar. */
+  emailSent: boolean;
+}
+
+/** Respuesta del alta de empresa: la empresa y su administrador inicial. */
+export interface TenantCreatedDto {
+  tenant: TenantDto;
+  admin: TenantAdminCredentials;
+}

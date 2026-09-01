@@ -5,9 +5,13 @@ import { ContextLevel, SYSTEM_TENANT_SLUG, TenantStatus } from '@maya/shared';
 import { Tenant, TenantDocument } from './schemas/tenant.schema';
 import { ContextsService } from '../contexts/contexts.service';
 import { RolesService } from '../rbac/roles.service';
-import { PaginatedResult, PaginationQueryDto } from '../../common/dto';
+import { PaginatedResult } from '../../common/dto';
 import { notDeleted, searchRegex, toObjectId } from '../../common/utils';
-import { CreateTenantDto, UpdateTenantDto } from './dto/tenant.dto';
+import { User, UserDocument } from '../users/schemas/user.schema';
+import { CreateTenantDto, TenantQueryDto, UpdateTenantDto } from './dto/tenant.dto';
+
+/** Empresa serializada con el número de usuarios que tiene dados de alta. */
+export type TenantListItem = Record<string, unknown> & { userCount: number };
 
 @Injectable()
 export class TenantsService {
@@ -15,12 +19,15 @@ export class TenantsService {
 
   constructor(
     @InjectModel(Tenant.name) private readonly model: Model<TenantDocument>,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly contexts: ContextsService,
     private readonly roles: RolesService,
   ) {}
 
-  async paginate(query: PaginationQueryDto): Promise<PaginatedResult<TenantDocument>> {
+  async paginate(query: TenantQueryDto): Promise<PaginatedResult<TenantListItem>> {
     const filter: Record<string, unknown> = { ...notDeleted };
+    if (query.status) filter.status = query.status;
+    if (query.plan) filter.plan = query.plan;
     if (query.search) {
       filter.$or = [
         { name: searchRegex(query.search) },
@@ -32,7 +39,25 @@ export class TenantsService {
       this.model.find(filter).sort(query.sortObject).skip(query.skip).limit(query.limit).exec(),
       this.model.countDocuments(filter).exec(),
     ]);
-    return PaginatedResult.of(items, total, query.page, query.limit);
+
+    const counts = await this.userCounts(items.map((tenant) => tenant._id));
+    const rows = items.map((tenant) => ({
+      ...(tenant.toJSON() as Record<string, unknown>),
+      userCount: counts.get(tenant._id.toString()) ?? 0,
+    }));
+    return PaginatedResult.of(rows, total, query.page, query.limit);
+  }
+
+  /** Usuarios vivos por empresa, en una sola consulta para toda la página. */
+  private async userCounts(ids: Types.ObjectId[]): Promise<Map<string, number>> {
+    if (!ids.length) return new Map();
+    const rows = await this.userModel
+      .aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: { tenant: { $in: ids }, deletedAt: null } },
+        { $group: { _id: '$tenant', count: { $sum: 1 } } },
+      ])
+      .exec();
+    return new Map(rows.map((row) => [row._id.toString(), row.count]));
   }
 
   async findById(id: string | Types.ObjectId): Promise<TenantDocument> {
@@ -73,14 +98,32 @@ export class TenantsService {
   }
 
   async create(dto: CreateTenantDto): Promise<TenantDocument> {
-    const existing = await this.model.findOne({ slug: dto.slug.toLowerCase() }).exec();
+    const slug = dto.slug.toLowerCase().trim();
+    // Incluye las dadas de baja: el identificador sigue ocupado (el índice
+    // único de `slug` no distingue entre activas y archivadas).
+    const existing = await this.model.findOne({ slug }).exec();
     if (existing) throw new ConflictException(`El identificador «${dto.slug}» ya está en uso.`);
 
+    if (dto.domain) {
+      const clash = await this.model.findOne({ domain: dto.domain.toLowerCase() }).exec();
+      if (clash) throw new ConflictException(`El dominio «${dto.domain}» ya está en uso.`);
+    }
+
+    // Los datos del administrador no forman parte del documento de la empresa:
+    // los consume `TenantProvisioningService` para crear su cuenta.
+    const {
+      adminEmail: _adminEmail,
+      adminUsername: _adminUsername,
+      adminFirstName: _adminFirstName,
+      adminLastName: _adminLastName,
+      ...tenantFields
+    } = dto;
+
     const tenant = await this.model.create({
-      ...dto,
-      slug: dto.slug.toLowerCase(),
+      ...tenantFields,
+      slug,
       status: dto.status ?? TenantStatus.Trial,
-      isSystem: dto.slug.toLowerCase() === SYSTEM_TENANT_SLUG,
+      isSystem: slug === SYSTEM_TENANT_SLUG,
     });
 
     await this.provision(tenant);
@@ -140,6 +183,20 @@ export class TenantsService {
     tenant.deletedAt = new Date();
     tenant.status = TenantStatus.Archived;
     await tenant.save();
+  }
+
+  /**
+   * Borrado físico de una empresa recién creada. Es la compensación del alta
+   * cuando esta falla a medias (`TenantProvisioningService`): deja la base
+   * como estaba, sin identificadores ocupados ni roles huérfanos. La baja que
+   * pide la interfaz es `softDelete`, que conserva el histórico.
+   */
+  async purge(id: string | Types.ObjectId): Promise<void> {
+    const tenant = toObjectId(id);
+    await this.userModel.deleteMany({ tenant }).exec();
+    await this.roles.purgeTenantRoles(tenant);
+    await this.contexts.deleteForInstance(ContextLevel.Tenant, tenant);
+    await this.model.deleteOne({ _id: tenant }).exec();
   }
 
   /** Suma o resta espacio consumido en almacenamiento. */

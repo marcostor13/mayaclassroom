@@ -1,6 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { PASSWORD_CHANGE_REQUIRED } from '@maya/shared';
 import { ToastService } from '../services/toast.service';
 
 const SILENT = [401];
@@ -8,11 +10,20 @@ const SILENT = [401];
 /** Traduce los errores HTTP a avisos legibles para la persona usuaria. */
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const toast = inject(ToastService);
+  const router = inject(Router);
 
   return next(request).pipe(
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && !SILENT.includes(error.status)) {
-        const body = error.error as { message?: string; details?: unknown } | null;
+        const body = error.error as { message?: string; error?: string; details?: unknown } | null;
+
+        // La API cierra la plataforma a quien no ha cambiado su contraseña
+        // temporal. No es un fallo que reportar, sino un desvío.
+        if (body?.error === PASSWORD_CHANGE_REQUIRED) {
+          void router.navigate(['/password-change']);
+          return throwError(() => error);
+        }
+
         const message = body?.message ?? describe(error.status);
         toast.error('No se pudo completar la operación', message);
       }

@@ -17,3 +17,14 @@ export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
   return auth.isAuthenticated() ? router.createUrlTree(['/dashboard']) : true;
 };
+
+/**
+ * Desvía a la pantalla de cambio de contraseña a quien todavía usa la
+ * temporal con la que se creó su cuenta. La API aplica la misma regla
+ * (`PasswordChangeGuard`), así que esto es comodidad, no seguridad.
+ */
+export const passwordChangeGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.mustChangePassword() ? router.createUrlTree(['/password-change']) : true;
+};

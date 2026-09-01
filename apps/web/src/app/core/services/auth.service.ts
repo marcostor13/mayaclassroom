@@ -50,6 +50,9 @@ export class AuthService {
   readonly capabilities = computed(() => new Set(this.userSignal()?.capabilities ?? []));
   readonly isPlatformAdmin = computed(() => this.userSignal()?.isPlatformAdmin ?? false);
 
+  /** Arrastra una contraseña temporal: la plataforma queda cerrada hasta cambiarla. */
+  readonly mustChangePassword = computed(() => this.userSignal()?.mustChangePassword ?? false);
+
   /** Roles del usuario agrupados por curso, para decidir vistas de profesor. */
   readonly courseRoles = computed(() => {
     const map = new Map<string, string[]>();
