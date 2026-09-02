@@ -44,6 +44,15 @@ export class ManualPaymentSettingsDto {
   @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(2000) instructions?: string | null;
 }
 
+export class SimulatedPaymentSettingsDto {
+  @ApiPropertyOptional({
+    description: 'Con esto encendido cualquiera puede matricularse sin pagar.',
+  })
+  @IsBoolean()
+  @IsOptional()
+  enabled?: boolean;
+}
+
 export class UpdatePaymentSettingsDto {
   @ApiPropertyOptional({ example: 'EUR' })
   @IsString()
@@ -68,6 +77,12 @@ export class UpdatePaymentSettingsDto {
   @ValidateNested()
   @Type(() => ManualPaymentSettingsDto)
   manual?: ManualPaymentSettingsDto;
+
+  @ApiPropertyOptional({ type: SimulatedPaymentSettingsDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SimulatedPaymentSettingsDto)
+  simulated?: SimulatedPaymentSettingsDto;
 }
 
 /** Compra iniciada desde la ficha pública de un curso, sin sesión detrás. */
@@ -82,6 +97,13 @@ export class CreateCheckoutDto {
   @ApiProperty() @IsString() @MaxLength(80) lastName!: string;
   @ApiProperty() @IsEmail() email!: string;
   @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(40) phone?: string;
+}
+
+/** Resultado que se le pide a la pasarela simulada. */
+export class SimulatePaymentDto {
+  @ApiProperty({ description: 'true simula un pago aprobado; false, uno rechazado.' })
+  @IsBoolean()
+  approve!: boolean;
 }
 
 export class UpdateOrderStatusDto {

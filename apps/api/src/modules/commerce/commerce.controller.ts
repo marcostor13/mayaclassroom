@@ -8,7 +8,12 @@ import { Audit, CurrentUser, Public, RequireCapability } from '../../common/deco
 import type { RequestUser } from '../../common/types/request-context';
 import { OrdersService } from './orders.service';
 import { PaymentsService } from './payments.service';
-import { CreateCheckoutDto, UpdateOrderStatusDto, UpdatePaymentSettingsDto } from './dto/commerce.dto';
+import {
+  CreateCheckoutDto,
+  SimulatePaymentDto,
+  UpdateOrderStatusDto,
+  UpdatePaymentSettingsDto,
+} from './dto/commerce.dto';
 
 /**
  * Venta de cursos: lo público (comprar, volver de la pasarela) y lo interno
@@ -47,6 +52,23 @@ export class CommerceController {
   })
   orderStatus(@Param('slug') slug: string, @Param('reference') reference: string) {
     return this.orders.resolveReturn(slug, reference);
+  }
+
+  @Public()
+  // Mismo límite que la compra: sin sesión detrás y con matrícula al final.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('site/public/:slug/orders/:reference/simulate')
+  @ApiOperation({
+    summary: 'Resolver un pedido de la pasarela de prueba',
+    description:
+      'Solo funciona sobre pedidos de la pasarela simulada y con la empresa teniéndola activada.',
+  })
+  simulate(
+    @Param('slug') slug: string,
+    @Param('reference') reference: string,
+    @Body() dto: SimulatePaymentDto,
+  ) {
+    return this.orders.simulate(slug, reference, dto.approve);
   }
 
   @Public()

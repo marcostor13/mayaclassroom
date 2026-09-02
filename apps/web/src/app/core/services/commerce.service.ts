@@ -24,6 +24,7 @@ export interface PaymentSettingsPayload {
     sandbox?: boolean;
   };
   manual?: { enabled?: boolean; instructions?: string | null };
+  simulated?: { enabled?: boolean };
 }
 
 /** Cobros y pedidos de la empresa. */

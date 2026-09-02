@@ -1,0 +1,102 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--maya-bg);
+  color: var(--maya-text);
+}
+
+.pasarela {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--maya-space-6) var(--maya-space-4);
+}
+
+.tarjeta {
+  display: grid;
+  gap: var(--maya-space-3);
+  width: 100%;
+  max-width: 460px;
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-xl);
+  box-shadow: var(--maya-shadow-md);
+  padding: var(--maya-space-6) var(--maya-space-5);
+
+  h1 {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-xl);
+    font-weight: 800;
+  }
+}
+
+/* La cinta es lo primero que se lee: nadie debe confundir esta pantalla con
+   una pasarela de verdad, ni al usarla ni al verla en una captura. */
+.cinta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  padding: 5px 12px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-warning-soft);
+  color: var(--maya-warning);
+  font-size: var(--maya-text-xs);
+  font-weight: 800;
+}
+
+.marca {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  justify-self: center;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-warning-soft);
+  color: var(--maya-warning);
+}
+
+.detalle {
+  display: grid;
+  gap: var(--maya-space-2);
+  margin: 0;
+  padding-block: var(--maya-space-4);
+  border-block: 1px solid var(--maya-border);
+
+  > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--maya-space-3);
+  }
+
+  dt {
+    color: var(--maya-text-subtle);
+    font-size: var(--maya-text-sm);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-size: var(--maya-text-sm);
+    text-align: end;
+  }
+
+  code {
+    font-family: var(--maya-font-mono);
+    background: var(--maya-surface-3);
+    padding: 2px 8px;
+    border-radius: var(--maya-radius-xs);
+  }
+}
+
+.detalle__total dd {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-lg);
+  font-weight: 800;
+}
+
+.acciones {
+  display: grid;
+  gap: var(--maya-space-2);
+}

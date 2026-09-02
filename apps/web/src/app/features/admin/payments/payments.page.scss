@@ -50,6 +50,13 @@
   color: var(--maya-primary-ink);
 }
 
+/* La pasarela de prueba se marca en ámbar: es la única que no cobra, y debe
+   distinguirse de un vistazo de las que sí. */
+.tarjeta__icono--aviso {
+  background: var(--maya-warning-soft);
+  color: var(--maya-warning);
+}
+
 .tarjeta__cuerpo {
   display: grid;
   gap: var(--maya-space-3);

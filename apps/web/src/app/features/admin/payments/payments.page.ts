@@ -75,6 +75,7 @@ export class AdminPaymentsPage implements OnInit {
       mercadoPago: { ...actual.mercadoPago, ...(cambio.mercadoPago ?? {}) },
       paypal: { ...actual.paypal, ...(cambio.paypal ?? {}) },
       manual: { ...actual.manual, ...(cambio.manual ?? {}) },
+      simulated: { ...actual.simulated, ...(cambio.simulated ?? {}) },
     } as PaymentSettingsDto);
   }
 
@@ -99,6 +100,7 @@ export class AdminPaymentsPage implements OnInit {
         enabled: settings.manual.enabled,
         instructions: settings.manual.instructions ?? null,
       },
+      simulated: { enabled: settings.simulated.enabled },
     };
 
     // Solo se envían las credenciales que se hayan escrito: enviarlas vacías

@@ -35,6 +35,19 @@ export class ManualPaymentSettingsSchema {
 }
 
 /**
+ * Pasarela simulada.
+ *
+ * No tiene credenciales porque no habla con nadie: recorre el circuito de
+ * compra sin cobrar. Apagada por defecto, y con aviso en la pantalla de
+ * ajustes, porque mientras esté encendida cualquiera puede matricularse sin
+ * pagar.
+ */
+@Schema({ _id: false })
+export class SimulatedPaymentSettingsSchema {
+  @Prop({ default: false }) enabled!: boolean;
+}
+
+/**
  * Cómo cobra una empresa. Un documento por empresa, creado al leerlo por
  * primera vez para que la pantalla de ajustes no tenga que decidir nada.
  */
@@ -54,6 +67,9 @@ export class PaymentSettings extends TenantScopedDocument {
 
   @Prop({ type: ManualPaymentSettingsSchema, default: () => ({}) })
   manual!: ManualPaymentSettingsSchema;
+
+  @Prop({ type: SimulatedPaymentSettingsSchema, default: () => ({}) })
+  simulated!: SimulatedPaymentSettingsSchema;
 }
 
 export type PaymentSettingsDocument = HydratedDocument<PaymentSettings>;

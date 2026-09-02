@@ -22,6 +22,14 @@ export const routes: Routes = [
       import('./features/site/course-public.page').then((m) => m.CoursePublicPage),
   },
   {
+    // Pasarela de prueba. Ruta propia porque el circuito debe salir de la
+    // ficha y volver a ella, igual que con una pasarela de verdad.
+    path: 'p/:slug/pago-prueba/:reference',
+    title: 'Pago de prueba · Maya Classroom',
+    loadComponent: () =>
+      import('./features/site/payment-sandbox.page').then((m) => m.PaymentSandboxPage),
+  },
+  {
     // Vuelta de la pasarela. Ruta propia y no un parámetro de la ficha para que
     // recargar o guardar el enlace siga enseñando el estado de la compra.
     path: 'p/:slug/pedido/:reference',

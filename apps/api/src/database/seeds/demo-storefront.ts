@@ -470,12 +470,13 @@ async function publicarEscaparate(env: EntornoDemo): Promise<void> {
 /* --------------------------------- Cobros --------------------------------- */
 
 /**
- * Se activa la transferencia y no una pasarela.
+ * Se activan la transferencia y la pasarela de prueba.
  *
  * Mercado Pago y PayPal necesitan credenciales de una cuenta real, que no se
- * pueden inventar en una siembra. La transferencia deja la demostración
- * completa igualmente: se compra, entra el pedido, se confirma a mano desde
- * Pedidos y la matrícula se hace sola.
+ * pueden inventar en una siembra. Con estas dos la demostración queda completa
+ * por los dos caminos: la de prueba recorre el circuito entero de una compra
+ * de pago —salir a la pasarela, decidir y volver matriculado— y la
+ * transferencia enseña el pedido que la empresa confirma a mano.
  */
 async function configurarCobros(env: EntornoDemo): Promise<void> {
   await env.payments.update(env.tenantId, {
@@ -486,6 +487,7 @@ async function configurarCobros(env: EntornoDemo): Promise<void> {
         'Haga una transferencia a ES00 0000 0000 0000 0000 0000 indicando la referencia de su ' +
         'pedido. En cuanto la veamos le damos acceso al curso.',
     },
+    simulated: { enabled: true },
   });
 }
 

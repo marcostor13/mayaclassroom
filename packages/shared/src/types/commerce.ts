@@ -12,6 +12,15 @@ export enum PaymentProvider {
   PayPal = 'paypal',
   /** Transferencia o pago acordado fuera: lo confirma la empresa a mano. */
   Manual = 'manual',
+  /**
+   * Pasarela simulada: recorre la compra entera sin cobrar nada.
+   *
+   * Existe para poder enseñar y probar el circuito completo —ficha, pago,
+   * vuelta, matrícula y correo— sin una cuenta de vendedor. La empresa la
+   * activa a propósito y queda anotada en el pedido, de modo que una venta
+   * simulada nunca se confunde con una real.
+   */
+  Simulated = 'simulated',
   /** Cursos gratuitos: no hay cobro, pero sí pedido, para tener el histórico. */
   Free = 'free',
 }
@@ -110,6 +119,10 @@ export interface PaymentSettingsDto {
   manual: {
     enabled: boolean;
     instructions?: string | null;
+  };
+  /** Pasarela simulada. Apagada salvo que la empresa la encienda. */
+  simulated: {
+    enabled: boolean;
   };
 }
 

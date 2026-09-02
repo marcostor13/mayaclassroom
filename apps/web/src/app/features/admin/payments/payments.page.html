@@ -214,6 +214,44 @@
           </div>
         }
       </section>
+
+      <!-- ---------------------------- Pago de prueba ------------------------- -->
+      <section class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <div class="tarjeta__identidad">
+            <span class="tarjeta__icono tarjeta__icono--aviso">
+              <maya-icon name="flame" [size]="20" />
+            </span>
+            <div>
+              <b>Pago de prueba</b>
+              <span class="maya-tiny maya-subtle">
+                Recorre la compra entera sin cobrar. Para enseñar la plataforma.
+              </span>
+            </div>
+          </div>
+          <label class="maya-switch">
+            <input
+              type="checkbox"
+              [checked]="s.simulated.enabled"
+              (change)="patch({ simulated: { enabled: $any($event.target).checked } })"
+            />
+            <span></span>
+          </label>
+        </header>
+
+        @if (s.simulated.enabled) {
+          <div class="tarjeta__cuerpo">
+            <p class="maya-alert maya-alert--warning">
+              Mientras esté encendido, cualquiera que entre en su página puede matricularse en
+              sus cursos de pago sin pagar. Apáguelo en cuanto termine de probar.
+            </p>
+            <p class="maya-small maya-subtle">
+              Los pedidos que entren por aquí quedan marcados como de prueba en la lista de
+              pedidos, así que nunca se confunden con una venta real.
+            </p>
+          </div>
+        }
+      </section>
     </div>
 
     <section class="tarjeta">

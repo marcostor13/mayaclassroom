@@ -1,0 +1,75 @@
+<div class="pasarela">
+  @if (loading()) {
+    <div class="maya-skeleton" style="height: 320px; border-radius: var(--maya-radius-xl)"></div>
+  } @else if (error()) {
+    <div class="tarjeta">
+      <span class="marca"><maya-icon name="alert" [size]="26" /></span>
+      <h1>No encontramos ese pedido</h1>
+      <a class="maya-btn maya-btn--primary" [href]="'/p/' + slug()">Volver a los cursos</a>
+    </div>
+  } @else if (result(); as r) {
+    <div class="tarjeta">
+      <span class="cinta">
+        <maya-icon name="alert" [size]="14" />
+        Pasarela de prueba · no se cobra nada
+      </span>
+
+      <h1>Confirmar el pago</h1>
+      <p class="maya-muted">
+        Esta pantalla imita la de una pasarela real para poder ver el circuito completo.
+        Ningún dato bancario viaja a ninguna parte.
+      </p>
+
+      <dl class="detalle">
+        <div>
+          <dt>Concepto</dt>
+          <dd>{{ r.order.courseTitle }}</dd>
+        </div>
+        <div>
+          <dt>Referencia</dt>
+          <dd><code>{{ r.order.reference }}</code></dd>
+        </div>
+        <div>
+          <dt>Comprador</dt>
+          <dd>{{ r.email }}</dd>
+        </div>
+        <div class="detalle__total">
+          <dt>Total</dt>
+          <dd>{{ importe() }}</dd>
+        </div>
+      </dl>
+
+      @if (resuelto()) {
+        <p class="maya-alert maya-alert--info">
+          Este pedido ya está resuelto. Consulte su estado en la página de la compra.
+        </p>
+        <a
+          class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block"
+          [href]="'/p/' + slug() + '/pedido/' + reference()"
+        >
+          Ver la compra
+        </a>
+      } @else {
+        <div class="acciones">
+          <button
+            type="button"
+            class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block"
+            [disabled]="enviando()"
+            (click)="resolver(true)"
+          >
+            <maya-icon name="circle-check" [size]="18" />
+            {{ enviando() ? 'Un momento…' : 'Simular pago aprobado' }}
+          </button>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--block"
+            [disabled]="enviando()"
+            (click)="resolver(false)"
+          >
+            Simular pago rechazado
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

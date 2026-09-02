@@ -99,6 +99,19 @@ export class OrdersService {
       });
     }
 
+    if (order.provider === PaymentProvider.Simulated) {
+      if (!(await this.payments.simulationEnabled(tenant._id))) {
+        throw new BadRequestException('Esa forma de pago no está disponible.');
+      }
+      // Se manda a una pantalla propia que imita a la pasarela en vez de
+      // matricular aquí mismo: lo que se quiere enseñar es el circuito
+      // entero —salir, decidir y volver—, no un atajo.
+      return this.session(order, {
+        redirectUrl: `${this.webUrl}/p/${tenant.slug}/pago-prueba/${order.reference}`,
+        message: 'Pasarela de prueba: no se cobrará nada.',
+      });
+    }
+
     const resolved = await this.payments.gatewayFor(tenant._id, order.provider);
     if (!resolved) {
       throw new BadRequestException('Esa forma de pago no está disponible.');
@@ -164,7 +177,12 @@ export class OrdersService {
     const tenant = await this.tenants.requireBySlug(slug);
     const order = await this.requireOrder(tenant._id, reference);
 
-    if (order.status === OrderStatus.Pending && order.providerReference) {
+    // La simulada no tiene a quién preguntar: la resuelve `simulate`.
+    if (
+      order.status === OrderStatus.Pending &&
+      order.providerReference &&
+      order.provider !== PaymentProvider.Simulated
+    ) {
       const resolved = await this.payments.gatewayFor(tenant._id, order.provider);
       if (resolved) {
         const status = await resolved.gateway.confirm(order.providerReference);
@@ -175,6 +193,43 @@ export class OrdersService {
           order.status = OrderStatus.Failed;
           await order.save();
         }
+      }
+    }
+
+    return {
+      order: this.toDto(order),
+      enrolled: order.enrolled,
+      email: order.buyer.email,
+      message: this.messageFor(order),
+    };
+  }
+
+  /**
+   * Resuelve un pedido de la pasarela simulada.
+   *
+   * Tres condiciones, y las tres se comprueban aquí y no en el cliente: el
+   * pedido tiene que ser de la pasarela simulada, la empresa tiene que
+   * tenerla encendida y el pedido tiene que seguir pendiente. Sin eso, esta
+   * ruta sería una forma de matricularse gratis en cualquier curso.
+   */
+  async simulate(slug: string, reference: string, approve: boolean): Promise<CheckoutResult> {
+    const tenant = await this.tenants.requireBySlug(slug);
+    const order = await this.requireOrder(tenant._id, reference);
+
+    if (order.provider !== PaymentProvider.Simulated) {
+      throw new BadRequestException('Este pedido no es de la pasarela de prueba.');
+    }
+    if (!(await this.payments.simulationEnabled(tenant._id))) {
+      throw new BadRequestException('La pasarela de prueba no está activada.');
+    }
+
+    if (order.status === OrderStatus.Pending) {
+      if (approve) {
+        await this.fulfil(order);
+      } else {
+        order.status = OrderStatus.Failed;
+        order.note = 'Pago rechazado en la pasarela de prueba.';
+        await order.save();
       }
     }
 
@@ -197,9 +252,13 @@ export class OrdersService {
       case OrderStatus.Refunded:
         return 'Esta compra ha sido reembolsada.';
       default:
-        return order.provider === PaymentProvider.Manual
-          ? 'Hemos anotado su pedido. Le escribiremos para confirmar el pago.'
-          : 'El pago está en curso. En cuanto la pasarela lo confirme recibirá su acceso.';
+        if (order.provider === PaymentProvider.Manual) {
+          return 'Hemos anotado su pedido. Le escribiremos para confirmar el pago.';
+        }
+        if (order.provider === PaymentProvider.Simulated) {
+          return 'Pedido de prueba pendiente. Complete el pago simulado para recibir su acceso.';
+        }
+        return 'El pago está en curso. En cuanto la pasarela lo confirme recibirá su acceso.';
     }
   }
 

@@ -99,6 +99,7 @@ export class PaymentsService {
     }
 
     if (dto.manual) Object.assign(settings.manual, dto.manual);
+    if (dto.simulated) Object.assign(settings.simulated, dto.simulated);
 
     await settings.save();
     return settings;
@@ -123,6 +124,7 @@ export class PaymentsService {
         enabled: settings.manual.enabled,
         instructions: settings.manual.instructions,
       },
+      simulated: { enabled: settings.simulated.enabled },
     };
   }
 
@@ -163,7 +165,23 @@ export class PaymentsService {
       });
     }
 
+    // Va la última: mientras esté encendida es la vía por la que cualquiera
+    // puede matricularse sin pagar, y no debe competir con las de verdad.
+    if (settings.simulated.enabled) {
+      methods.push({
+        provider: PaymentProvider.Simulated,
+        label: 'Pago de prueba',
+        hint: 'Simula el cobro para ver el circuito completo. No se cobra nada.',
+        sandbox: true,
+      });
+    }
+
     return methods;
+  }
+
+  /** `true` si la empresa tiene encendida la pasarela simulada. */
+  async simulationEnabled(tenantId: string | Types.ObjectId): Promise<boolean> {
+    return (await this.forTenant(tenantId)).simulated.enabled;
   }
 
   /** La pasarela lista para cobrar, o `null` si no está configurada. */

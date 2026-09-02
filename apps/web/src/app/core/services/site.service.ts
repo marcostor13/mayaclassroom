@@ -51,6 +51,20 @@ export class SiteService {
     return this.api.get<CheckoutResult>(`/site/public/${slug}/orders/${reference}`);
   }
 
+  /**
+   * Resuelve un pedido de la pasarela de prueba.
+   *
+   * La API vuelve a comprobar que el pedido es de esa pasarela y que la
+   * empresa la tiene encendida: lo que decide aquí el navegador es solo si el
+   * pago simulado sale aprobado o rechazado.
+   */
+  simulatePayment(slug: string, reference: string, approve: boolean): Observable<CheckoutResult> {
+    return this.api.post<CheckoutResult>(
+      `/site/public/${slug}/orders/${reference}/simulate`,
+      { approve },
+    );
+  }
+
   requestPlace(
     slug: string,
     payload: {

@@ -64,6 +64,7 @@ function orderDouble(base: Record<string, unknown>): Record<string, unknown> & {
 async function build(options: {
   priceCents: number;
   manualEnabled?: boolean;
+  simulationEnabled?: boolean;
   gateway?: unknown;
   existingUser?: unknown;
 }) {
@@ -97,6 +98,7 @@ async function build(options: {
     currencyOf: jest.fn(async () => 'EUR'),
     forTenant: jest.fn(async () => ({ manual: { enabled: options.manualEnabled ?? false, instructions: null } })),
     gatewayFor: jest.fn(async () => options.gateway ?? null),
+    simulationEnabled: jest.fn(async () => options.simulationEnabled ?? false),
   };
   const config = {
     getOrThrow: jest.fn(() => ({ webUrl: 'https://maya.test', url: 'https://api.maya.test' })),
@@ -280,5 +282,92 @@ describe('OrdersService · confirmación', () => {
     expect(resultado.order.status).toBe(OrderStatus.Paid);
     expect(enrolments.enrol).toHaveBeenCalled();
     expect(mail.sendCourseAccess).toHaveBeenCalled();
+  });
+});
+
+
+describe('OrdersService · pasarela de prueba', () => {
+  const compraSimulada = { ...compra, provider: PaymentProvider.Simulated };
+
+  it('no la ofrece si la empresa no la ha activado', async () => {
+    const { service } = await build({ priceCents: 4900, simulationEnabled: false });
+
+    await expect(service.checkout('acme', compraSimulada)).rejects.toThrow(/no está disponible/i);
+  });
+
+  it('manda a la pantalla de prueba en vez de matricular al comprar', async () => {
+    const { service, enrolments, pedido } = await build({
+      priceCents: 4900,
+      simulationEnabled: true,
+    });
+
+    const session = await service.checkout('acme', compraSimulada);
+
+    expect(session.redirectUrl).toContain('/pago-prueba/');
+    expect(session.status).toBe(OrderStatus.Pending);
+    // El circuito entero es la gracia: matricular aquí sería un atajo.
+    expect(enrolments.enrol).not.toHaveBeenCalled();
+    expect(pedido()?.enrolled).toBe(false);
+  });
+
+  it('matricula al aprobar el pago simulado', async () => {
+    const { service, enrolments, mail } = await build({
+      priceCents: 4900,
+      simulationEnabled: true,
+    });
+    await service.checkout('acme', compraSimulada);
+
+    const resultado = await service.simulate('acme', 'MC-XXXXXX', true);
+
+    expect(resultado.enrolled).toBe(true);
+    expect(resultado.order.status).toBe(OrderStatus.Paid);
+    expect(enrolments.enrol).toHaveBeenCalled();
+    expect(mail.sendCourseAccess).toHaveBeenCalled();
+  });
+
+  it('deja el pedido fallido al rechazar el pago simulado', async () => {
+    const { service, enrolments } = await build({ priceCents: 4900, simulationEnabled: true });
+    await service.checkout('acme', compraSimulada);
+
+    const resultado = await service.simulate('acme', 'MC-XXXXXX', false);
+
+    expect(resultado.order.status).toBe(OrderStatus.Failed);
+    expect(resultado.enrolled).toBe(false);
+    expect(enrolments.enrol).not.toHaveBeenCalled();
+  });
+
+  it('rechaza simular un pedido que no es de la pasarela de prueba', async () => {
+    // El caso que convertiría esta ruta en una matrícula gratis: un pedido
+    // creado contra una pasarela real y resuelto por la vía simulada.
+    const { service } = await build({
+      priceCents: 4900,
+      simulationEnabled: true,
+      manualEnabled: true,
+    });
+    await service.checkout('acme', { ...compra, provider: PaymentProvider.Manual });
+
+    await expect(service.simulate('acme', 'MC-XXXXXX', true)).rejects.toThrow(
+      /no es de la pasarela de prueba/i,
+    );
+  });
+
+  it('rechaza simular si la empresa apagó la pasarela después de crear el pedido', async () => {
+    const { service, payments } = await build({ priceCents: 4900, simulationEnabled: true });
+    await service.checkout('acme', compraSimulada);
+
+    payments.simulationEnabled.mockImplementation(async () => false);
+
+    await expect(service.simulate('acme', 'MC-XXXXXX', true)).rejects.toThrow(/no está activada/i);
+  });
+
+  it('no vuelve a matricular un pedido simulado ya resuelto', async () => {
+    const { service, enrolments } = await build({ priceCents: 4900, simulationEnabled: true });
+    await service.checkout('acme', compraSimulada);
+    await service.simulate('acme', 'MC-XXXXXX', true);
+
+    enrolments.enrol.mockClear();
+    await service.simulate('acme', 'MC-XXXXXX', true);
+
+    expect(enrolments.enrol).not.toHaveBeenCalled();
   });
 });

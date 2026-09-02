@@ -18,6 +18,7 @@ function settingsDouble(base: Record<string, unknown> = {}) {
     mercadoPago: { enabled: false, publicKey: null, accessToken: null, sandbox: true },
     paypal: { enabled: false, clientId: null, secret: null, sandbox: true },
     manual: { enabled: false, instructions: null },
+    simulated: { enabled: false },
     save: jest.fn(async () => undefined),
     ...base,
   };
@@ -141,6 +142,30 @@ describe('PaymentsService · qué formas de pago se ofrecen', () => {
     ]);
     expect(JSON.stringify(metodos)).not.toContain('token');
     expect(JSON.stringify(metodos)).not.toContain('sec');
+  });
+
+  it('la pasarela de prueba va al final y avisa de que no cobra', async () => {
+    const { service } = await build(
+      settingsDouble({
+        manual: { enabled: true, instructions: null },
+        simulated: { enabled: true },
+      }),
+    );
+
+    const metodos = await service.publicMethods(TENANT);
+
+    // La última: mientras esté encendida es la vía por la que cualquiera se
+    // matricula sin pagar, y no debe competir con las de verdad.
+    expect(metodos[metodos.length - 1].provider).toBe(PaymentProvider.Simulated);
+    expect(metodos[metodos.length - 1].sandbox).toBe(true);
+  });
+
+  it('no ofrece la pasarela de prueba mientras esté apagada', async () => {
+    const { service } = await build(settingsDouble({ manual: { enabled: true, instructions: null } }));
+
+    const metodos = await service.publicMethods(TENANT);
+
+    expect(metodos.some((m) => m.provider === PaymentProvider.Simulated)).toBe(false);
   });
 
   it('no construye la pasarela si le falta la mitad de las credenciales', async () => {

@@ -320,8 +320,11 @@
             <span class="maya-tiny maya-subtle">
               <code>{{ order.reference }}</code> ·
               {{ order.createdAt | mayaDate: 'short' }} ·
-              {{ order.provider }}
+              {{ proveedor(order) }}
             </span>
+            @if (esPrueba(order)) {
+              <span class="maya-badge maya-badge--warning">Pedido de prueba</span>
+            }
           </div>
 
           <div class="fila__lateral">

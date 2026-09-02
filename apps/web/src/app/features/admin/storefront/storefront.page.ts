@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { OrderStatus, SiteTemplate } from '@maya/shared';
+import { OrderStatus, PaymentProvider, SiteTemplate } from '@maya/shared';
 import type {
   CourseSummary,
   EnrolmentRequestDto,
@@ -384,6 +384,32 @@ export class AdminStorefrontPage implements OnInit {
       style: 'currency',
       currency: order.currency || 'EUR',
     }).format(order.amountCents / 100);
+  }
+
+  /** Nombre legible de la forma de pago; el valor guardado es un código. */
+  proveedor(order: OrderDto): string {
+    switch (order.provider) {
+      case PaymentProvider.MercadoPago:
+        return 'Mercado Pago';
+      case PaymentProvider.PayPal:
+        return 'PayPal';
+      case PaymentProvider.Manual:
+        return 'Transferencia';
+      case PaymentProvider.Simulated:
+        return 'Pago de prueba';
+      default:
+        return 'Gratuito';
+    }
+  }
+
+  /**
+   * Un pedido que no movió dinero.
+   *
+   * Se marca en la lista porque, si no, un pedido simulado cuadra igual que
+   * una venta real y acaba contando en las cuentas de fin de mes.
+   */
+  esPrueba(order: OrderDto): boolean {
+    return order.provider === PaymentProvider.Simulated;
   }
 
   estadoPedido(status: OrderStatus): string {
