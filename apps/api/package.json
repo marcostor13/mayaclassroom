@@ -5,17 +5,17 @@
   "description": "API NestJS 11 de Maya Classroom",
   "license": "MIT",
   "scripts": {
-    "build": "nest build",
+    "build": "bun run --filter @maya/shared build && nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "bun run dist/main.js",
-    "lint": "eslint \"src/**/*.ts\"",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:cov": "bun test --coverage",
-    "seed": "nest build && bun run dist/database/seeds/seed.js"
+    "lint": "bun run --filter @maya/shared build && eslint \"src/**/*.ts\"",
+    "test": "bun run --filter @maya/shared build && bun test",
+    "test:watch": "bun run --filter @maya/shared build && bun test --watch",
+    "test:cov": "bun run --filter @maya/shared build && bun test --coverage",
+    "seed": "bun run build && bun run dist/database/seeds/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1124.0",

@@ -16,9 +16,9 @@ de API) va en inglés.
 
 ```bash
 bun install
-bun run build:shared   # obligatorio antes de cualquier typecheck o compilación
 bun run dev            # API en :3000 y cliente en :4205
 bun run seed           # datos de demostración (necesita MONGODB_URI)
+bun run build:shared   # solo hace falta antes de un `tsc` lanzado a mano
 
 bun run lint                          # ESLint de la API
 bun run test                          # pruebas de la API (bun test)
@@ -31,10 +31,13 @@ bun run build                         # shared + api + web
 Cada una de estas ha costado ya un ciclo de depuración; comprobarlas antes de
 dar por rota una herramienta.
 
-- **`bun run build:shared` primero.** `@maya/shared` se consume desde `dist/`,
-  no desde las fuentes. Sin compilarlo, el typecheck de la API y la
-  compilación del cliente fallan con errores de módulo no encontrado que no
-  apuntan a la causa real.
+- **`@maya/shared` se consume desde `dist/`, no desde las fuentes.** Con el
+  `dist` ausente o atrasado, la API falla con decenas de errores que no
+  apuntan a la causa: «no se encuentra el módulo `@maya/shared`» si falta, o
+  «la propiedad X no existe» si está viejo. Los guiones del espacio de trabajo
+  (`build`, `seed`, `test`, `lint`, `dev`) ya lo recompilan antes, así que esto
+  solo muerde al lanzar `bunx tsc` o `nest build` a mano: en ese caso,
+  `bun run build:shared` primero.
 - **Node ≥ 22.22.3.** Los CLI de Nest y Angular se invocan con shebang `node` y
   Angular 22 exige esa versión. El contenedor de las sesiones remotas trae una
   anterior; `.claude/hooks/session-start.sh` la corrige y persiste el PATH.

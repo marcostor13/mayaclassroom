@@ -45,6 +45,10 @@ bun run build:api                              # 6
 bun run build:web                              # 7
 ```
 
+El paso 2 sigue estando porque el 3 lanza `tsc` a mano y ese no recompila nada.
+Los demás guiones (`lint`, `test`, `build:*`) ya lo hacen por su cuenta, así que
+repetirlo cuesta un segundo y evita tener que recordar el orden.
+
 Con un argumento (`api`, `web`) se puede recortar el alcance, pero los pasos 1
 y 2 se ejecutan siempre: son la base de todo lo demás.
 
