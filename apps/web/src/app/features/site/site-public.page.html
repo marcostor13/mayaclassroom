@@ -1,0 +1,320 @@
+@if (loading()) {
+  <div class="contenedor" style="padding-block: var(--maya-space-8)">
+    <div class="maya-skeleton" style="height: 60vh"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="contenedor" style="padding-block: var(--maya-space-8); text-align: center">
+    <h1 style="font-size: var(--maya-text-2xl)">Página no disponible</h1>
+    <p class="maya-muted">Puede que la dirección no sea correcta.</p>
+  </div>
+} @else if (data(); as d) {
+  <div class="sitio" [class]="'sitio sitio--' + d.site.template">
+    <header class="barra">
+      <div class="contenedor barra__interior">
+        <div class="barra__marca">
+          @if (d.tenant.logoUrl) {
+            <img class="barra__logo" [src]="d.tenant.logoUrl" [alt]="d.tenant.name" />
+          }
+          <span>{{ d.tenant.name }}</span>
+        </div>
+        <a class="maya-btn maya-btn--primary maya-btn--sm" href="/auth/login">Acceder</a>
+      </div>
+    </header>
+
+    @for (section of sections(); track section.id) {
+      <section class="seccion" [id]="section.id">
+        <div class="contenedor">
+          @switch (section.type) {
+            @case (SectionType.Hero) {
+              <div class="portada">
+                <div>
+                  <h1 class="portada__titulo">{{ section.title }}</h1>
+                  @if (section.subtitle) {
+                    <p class="portada__texto">{{ section.subtitle }}</p>
+                  }
+                  @if (section.ctaLabel) {
+                    <a
+                      class="maya-btn maya-btn--primary maya-btn--lg"
+                      style="margin-top: var(--maya-space-5)"
+                      [href]="section.ctaUrl || '#'"
+                    >
+                      {{ section.ctaLabel }}
+                    </a>
+                  }
+                </div>
+                @if (section.imageUrl) {
+                  <img class="portada__imagen" [src]="section.imageUrl" alt="" />
+                }
+              </div>
+            }
+
+            @case (SectionType.Courses) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__subtitulo">{{ section.subtitle }}</p>
+              }
+
+              @if (d.categories.length > 1) {
+                <div class="maya-row" style="flex-wrap: wrap; margin-bottom: var(--maya-space-5)">
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--sm"
+                    [class.maya-btn--primary]="categoryFilter() === ''"
+                    [class.maya-btn--ghost]="categoryFilter() !== ''"
+                    (click)="categoryFilter.set('')"
+                  >
+                    Todas
+                  </button>
+                  @for (category of d.categories; track category.id) {
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--sm"
+                      [class.maya-btn--primary]="categoryFilter() === category.id"
+                      [class.maya-btn--ghost]="categoryFilter() !== category.id"
+                      (click)="categoryFilter.set(category.id)"
+                    >
+                      {{ category.name }} ({{ category.courseCount }})
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (coursesFor(section).length) {
+                <div class="cursos">
+                  @for (course of coursesFor(section); track course.id) {
+                    <article class="curso">
+                      @if (course.imageUrl) {
+                        <img class="curso__imagen" [src]="course.imageUrl" [alt]="course.title" />
+                      }
+                      <div class="curso__cuerpo">
+                        @if (course.categoryName) {
+                          <span class="maya-tiny maya-subtle">{{ course.categoryName }}</span>
+                        }
+                        <h3 class="curso__titulo">{{ course.title }}</h3>
+                        <p class="curso__gancho">
+                          {{ course.catalog.headline || course.summary }}
+                        </p>
+
+                        @if (course.catalog.highlights?.length) {
+                          <ul class="curso__lista">
+                            @for (item of course.catalog.highlights; track item) {
+                              <li>{{ item }}</li>
+                            }
+                          </ul>
+                        }
+
+                        <div class="maya-row maya-tiny maya-subtle" style="gap: var(--maya-space-3)">
+                          @if (course.catalog.durationHours) {
+                            <span>{{ course.catalog.durationHours }} h</span>
+                          }
+                          @if (course.catalog.level) {
+                            <span>{{ course.catalog.level }}</span>
+                          }
+                        </div>
+
+                        <div class="curso__pie">
+                          <span
+                            class="curso__precio"
+                            [class.curso__precio--gratis]="course.catalog.priceCents <= 0"
+                          >
+                            {{ price(course) }}
+                          </span>
+                          <button
+                            type="button"
+                            class="maya-btn maya-btn--primary maya-btn--sm"
+                            (click)="openRequest(course)"
+                          >
+                            {{ course.catalog.priceCents > 0 ? 'Solicitar plaza' : 'Matricularme' }}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  }
+                </div>
+              } @else {
+                <p class="maya-muted">Todavía no hay cursos publicados en esta categoría.</p>
+              }
+            }
+
+            @case (SectionType.Categories) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              <div class="tarjetas">
+                @for (category of d.categories; track category.id) {
+                  <div class="tarjeta">
+                    <h3 class="curso__titulo">{{ category.name }}</h3>
+                    <p class="maya-small maya-subtle">
+                      {{ category.courseCount }}
+                      {{ category.courseCount === 1 ? 'curso' : 'cursos' }}
+                    </p>
+                  </div>
+                }
+              </div>
+            }
+
+            @case (SectionType.About) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              <p class="prosa">{{ section.body }}</p>
+            }
+
+            @case (SectionType.Testimonials) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              <div class="tarjetas">
+                @for (item of section.items ?? []; track item.title) {
+                  <blockquote class="tarjeta">
+                    <p class="curso__titulo">{{ item.title }}</p>
+                    <p class="maya-small maya-subtle" style="margin-top: var(--maya-space-2)">
+                      {{ item.body }}
+                    </p>
+                    @if (item.author) {
+                      <footer class="tarjeta__autor">— {{ item.author }}</footer>
+                    }
+                  </blockquote>
+                }
+              </div>
+            }
+
+            @case (SectionType.Faq) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              <div class="maya-stack">
+                @for (item of section.items ?? []; track item.title) {
+                  <details class="tarjeta">
+                    <summary class="curso__titulo" style="cursor: pointer">{{ item.title }}</summary>
+                    <p class="maya-small maya-subtle" style="margin-top: var(--maya-space-3)">
+                      {{ item.body }}
+                    </p>
+                  </details>
+                }
+              </div>
+            }
+
+            @case (SectionType.Cta) {
+              <div class="llamada">
+                <h2 class="seccion__titulo">{{ section.title }}</h2>
+                @if (section.subtitle) {
+                  <p class="maya-muted">{{ section.subtitle }}</p>
+                }
+                @if (section.ctaLabel) {
+                  <a
+                    class="maya-btn maya-btn--primary maya-btn--lg"
+                    style="margin-top: var(--maya-space-4)"
+                    [href]="section.ctaUrl || '#'"
+                  >
+                    {{ section.ctaLabel }}
+                  </a>
+                }
+              </div>
+            }
+
+            @case (SectionType.Contact) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__subtitulo">{{ section.subtitle }}</p>
+              }
+              <div class="maya-stack maya-small">
+                @if (d.site.contact.email) {
+                  <p>
+                    <maya-icon name="mail" [size]="15" />
+                    <a [href]="'mailto:' + d.site.contact.email">{{ d.site.contact.email }}</a>
+                  </p>
+                }
+                @if (d.site.contact.phone) {
+                  <p><maya-icon name="phone" [size]="15" /> {{ d.site.contact.phone }}</p>
+                }
+                @if (d.site.contact.address) {
+                  <p>{{ d.site.contact.address }}</p>
+                }
+              </div>
+            }
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Solicitud de plaza. Vive al final y siempre en el árbol para que el
+         enlace del botón de cada curso tenga a dónde desplazarse. -->
+    <section class="seccion" id="solicitud">
+      <div class="contenedor">
+        @if (sent(); as mensaje) {
+          <div class="llamada">
+            <h2 class="seccion__titulo">Solicitud recibida</h2>
+            <p class="maya-muted">{{ mensaje }}</p>
+          </div>
+        } @else if (selectedCourse(); as course) {
+          <h2 class="seccion__titulo">Solicitar plaza en «{{ course.title }}»</h2>
+          <p class="seccion__subtitulo">
+            {{
+              course.catalog.priceCents > 0
+                ? 'Nos pondremos en contacto para confirmar la plaza y el pago.'
+                : 'Es gratuito: le daremos acceso al momento.'
+            }}
+          </p>
+
+          <form [formGroup]="form" (ngSubmit)="submitRequest()" class="solicitud">
+            <div class="solicitud__fila">
+              <div class="maya-field">
+                <label class="maya-label" for="s-nombre">Nombre *</label>
+                <input
+                  id="s-nombre"
+                  class="maya-input"
+                  formControlName="firstName"
+                  [class.is-invalid]="invalid('firstName')"
+                />
+              </div>
+              <div class="maya-field">
+                <label class="maya-label" for="s-apellidos">Apellidos *</label>
+                <input
+                  id="s-apellidos"
+                  class="maya-input"
+                  formControlName="lastName"
+                  [class.is-invalid]="invalid('lastName')"
+                />
+              </div>
+            </div>
+            <div class="maya-field">
+              <label class="maya-label" for="s-email">Correo electrónico *</label>
+              <input
+                id="s-email"
+                type="email"
+                class="maya-input"
+                formControlName="email"
+                [class.is-invalid]="invalid('email')"
+              />
+              @if (invalid('email')) {
+                <span class="maya-error">Introduzca un correo válido.</span>
+              }
+            </div>
+            <div class="maya-field">
+              <label class="maya-label" for="s-tel">Teléfono</label>
+              <input id="s-tel" class="maya-input" formControlName="phone" />
+            </div>
+            <div class="maya-field">
+              <label class="maya-label" for="s-msg">Mensaje</label>
+              <textarea id="s-msg" class="maya-input" rows="3" formControlName="message"></textarea>
+            </div>
+            <div class="maya-row">
+              <button
+                type="submit"
+                class="maya-btn maya-btn--primary maya-btn--lg"
+                [disabled]="submitting()"
+              >
+                {{ submitting() ? 'Enviando…' : 'Enviar solicitud' }}
+              </button>
+              <button type="button" class="maya-btn maya-btn--ghost" (click)="closeRequest()">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </section>
+
+    <footer class="pie">
+      <div class="contenedor">
+        © {{ d.tenant.name }}
+        @if (d.site.contact.website) {
+          · <a [href]="d.site.contact.website">{{ d.site.contact.website }}</a>
+        }
+      </div>
+    </footer>
+  </div>
+}

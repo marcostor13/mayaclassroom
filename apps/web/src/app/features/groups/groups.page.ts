@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CAP, EnrolmentDto, GroupDto, GroupingDto } from '@maya/shared';
+import { CAP, EnrolmentDto, GroupDto, GroupingDto, MAX_PAGE_SIZE } from '@maya/shared';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { CoursesService } from '../../core/services/courses.service';
@@ -107,7 +107,7 @@ export class GroupsPage {
     this.courses.groupings(this.courseId).subscribe({
       next: (groupings) => this.groupings.set(groupings),
     });
-    this.courses.participants(this.courseId, { limit: 500 }).subscribe({
+    this.courses.participants(this.courseId, { limit: MAX_PAGE_SIZE }).subscribe({
       next: (result) => this.participants.set(result.items),
     });
   }

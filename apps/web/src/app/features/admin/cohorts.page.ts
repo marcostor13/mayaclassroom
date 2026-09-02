@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CAP, CohortDto, CourseSummary, UserDto } from '@maya/shared';
+import { CAP, CohortDto, CourseSummary, MAX_PAGE_SIZE, UserDto } from '@maya/shared';
 import { AdminService, CohortMember } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmService } from '../../core/services/confirm.service';
@@ -205,7 +205,7 @@ export class AdminCohortsPage {
     this.syncing.set(cohort);
     this.syncCourseId.set('');
     if (!this.myCourses().length) {
-      this.courses.list({ limit: 200 }).subscribe({
+      this.courses.list({ limit: MAX_PAGE_SIZE }).subscribe({
         next: (result) => this.myCourses.set(result.items),
       });
     }

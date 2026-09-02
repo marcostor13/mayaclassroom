@@ -94,6 +94,13 @@ export const NAV_ITEMS: NavItem[] = [
     capabilities: [CAP.TENANT_UPDATE, CAP.TENANT_MANAGE_BRANDING],
   },
   {
+    label: 'Página pública',
+    icon: 'globe',
+    route: '/admin/storefront',
+    group: 'administración',
+    capabilities: [CAP.SITE_MANAGE, CAP.SITE_MANAGE_REQUESTS],
+  },
+  {
     label: 'Sitio',
     icon: 'sliders',
     route: '/admin/site',

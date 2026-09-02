@@ -12,7 +12,7 @@ import { FileRef } from '@maya/shared';
 import { StoredFile, StoredFileDocument } from './schemas/stored-file.schema';
 import { StorageService } from './storage.service';
 import { TenantsService } from '../tenants/tenants.service';
-import { StorageConfig } from '../../config';
+import { AppConfig, StorageConfig } from '../../config';
 import { toObjectId } from '../../common/utils';
 
 export interface UploadInput {
@@ -68,7 +68,7 @@ export class FilesService {
     }
 
     const key = this.storage.buildKey(`${input.component}/${input.fileArea}`, file.originalname);
-    const stored = await this.storage.put(key, file.buffer);
+    const stored = await this.storage.put(key, file.buffer, file.mimetype);
 
     let thumbnailKey: string | null = null;
     if ((input.makeThumbnail ?? true) && IMAGE_MIME.test(file.mimetype) && file.mimetype !== 'image/svg+xml') {
@@ -102,7 +102,7 @@ export class FilesService {
         .webp({ quality: 78 })
         .toBuffer();
       const thumbKey = `${key}.thumb.webp`;
-      await this.storage.put(thumbKey, thumb);
+      await this.storage.put(thumbKey, thumb, 'image/webp');
       return thumbKey;
     } catch {
       return null;
@@ -188,7 +188,42 @@ export class FilesService {
       .exec();
   }
 
+  /**
+   * Un fichero público guardado fuera se enlaza directamente al almacenamiento
+   * y no a través de la API.
+   *
+   * No es solo eficiencia: un logo o la portada de un curso los pide el
+   * navegador de gente sin sesión —la página pública, el correo de bienvenida—
+   * y `/files/:id/download` exige testigo. Sirviéndolos desde el bucket, además,
+   * el tráfico de imágenes deja de pasar por el servidor de la API.
+   *
+   * Lo privado sigue saliendo por la API, que es donde se comprueban permisos.
+   */
   toRef(file: StoredFileDocument): FileRef {
+    if (file.isPublic) {
+      // Con almacenamiento remoto se enlaza al bucket; con disco local, a la
+      // ruta pública de la API. En los dos casos la dirección es **absoluta**:
+      // el cliente vive en otro origen que la API (:4205 frente a :3000), así
+      // que una ruta relativa apuntaría al propio cliente y daría 404.
+      const url = this.storage.isRemote
+        ? this.storage.publicUrl(file.storageKey)
+        : `${this.apiBase}/files/public/${file.id}`;
+      return {
+        id: file.id,
+        filename: file.filename,
+        mimeType: file.mimeType,
+        size: file.size,
+        url,
+        thumbnailUrl:
+          file.thumbnailKey && this.storage.isRemote
+            ? this.storage.publicUrl(file.thumbnailKey)
+            : url,
+        createdAt: file.createdAt?.toISOString(),
+      };
+    }
+
+    // Lo privado sigue saliendo por la ruta con permisos, en relativo: solo lo
+    // pide la aplicación, que ya sabe a qué servidor hablar.
     return {
       id: file.id,
       filename: file.filename,
@@ -198,6 +233,12 @@ export class FilesService {
       thumbnailUrl: file.thumbnailKey ? `/api/v1/files/${file.id}/thumbnail` : null,
       createdAt: file.createdAt?.toISOString(),
     };
+  }
+
+  /** Base pública de la API, sin barra final: «https://api.ejemplo.com/api/v1». */
+  private get apiBase(): string {
+    const app = this.config.getOrThrow<AppConfig>('app');
+    return `${app.url.replace(/\/$/, '')}/${app.globalPrefix}/v1`;
   }
 
   toRefs(files: StoredFileDocument[]): FileRef[] {

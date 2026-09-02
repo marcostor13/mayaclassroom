@@ -6,6 +6,15 @@ import { capabilityGuard, platformAdminGuard } from './core/guards/capability.gu
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
 
+  /* ────────────────────── Escaparate público (sin sesión) ─────────────── */
+  {
+    // Fuera del armazón de la aplicación y sin guard: su público es quien
+    // todavía no tiene cuenta. Es la única ruta que se sirve a desconocidos.
+    path: 'p/:slug',
+    loadComponent: () =>
+      import('./features/site/site-public.page').then((m) => m.SitePublicPage),
+  },
+
   /* ─────────────────────────── Autenticación ─────────────────────────── */
   {
     path: 'auth',
@@ -273,6 +282,16 @@ export const routes: Routes = [
         },
         loadComponent: () =>
           import('./features/admin/site/site.page').then((m) => m.AdminSitePage),
+      },
+      {
+        // «storefront» y no «site»: `admin/site` ya es la administración de la
+        // plataforma (registros, auditoría, copias). Esto es el escaparate.
+        path: 'admin/storefront',
+        title: 'Página pública · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.SITE_MANAGE, CAP.SITE_MANAGE_REQUESTS] },
+        loadComponent: () =>
+          import('./features/admin/storefront/storefront.page').then((m) => m.AdminStorefrontPage),
       },
       {
         path: 'admin/tenants',

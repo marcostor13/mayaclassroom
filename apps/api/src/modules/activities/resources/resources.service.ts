@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ModuleType, sanitizeHtml } from '@maya/shared';
+import type { LessonBlock } from '@maya/shared';
 import { CourseResource, CourseResourceDocument } from './schemas/resource.schema';
 import { BookChapter, BookChapterDocument } from './schemas/book-chapter.schema';
 import {
@@ -16,6 +17,7 @@ import { toObjectId } from '../../../common/utils';
 interface ResourceSettings {
   intro?: string;
   content?: string;
+  blocks?: LessonBlock[];
   externalUrl?: string;
   display?: 'auto' | 'embed' | 'new' | 'open' | 'download';
   fileIds?: string[];
@@ -129,6 +131,29 @@ export class ResourcesService implements OnModuleInit {
     if (settings.intro !== undefined) resource.intro = settings.intro ?? null;
     if (settings.content !== undefined) {
       resource.content = settings.content ? sanitizeHtml(settings.content) : null;
+    }
+
+    if (settings.blocks !== undefined) {
+      const bloques = settings.blocks ?? [];
+      resource.blocks = bloques.map((bloque) => ({
+        id: bloque.id,
+        type: bloque.type,
+        // El texto de un bloque llega de un editor enriquecido y se muestra
+        // como HTML: se limpia igual que el cuerpo de una página.
+        content: bloque.content ? sanitizeHtml(bloque.content) : null,
+        url: bloque.url ?? null,
+        title: bloque.title ?? null,
+        variant: bloque.variant ?? null,
+        mimeType: bloque.mimeType ?? null,
+        filename: bloque.filename ?? null,
+      }));
+      // `content` se mantiene al día con el texto de los bloques: lo siguen
+      // leyendo los resúmenes, la búsqueda y las copias de seguridad, que no
+      // saben de bloques.
+      resource.content = bloques
+        .filter((bloque) => bloque.content)
+        .map((bloque) => sanitizeHtml(bloque.content as string))
+        .join('\n');
     }
     if (settings.externalUrl !== undefined) resource.externalUrl = settings.externalUrl ?? null;
     if (settings.display !== undefined) resource.display = settings.display;

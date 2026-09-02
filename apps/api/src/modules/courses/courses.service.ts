@@ -225,8 +225,15 @@ export class CoursesService {
       await this.categories.adjustCourseCount(category._id, 1);
     }
 
-    const { startDate, endDate, numSections, ...rest } = dto;
+    const { startDate, endDate, numSections, catalog, ...rest } = dto;
     Object.assign(course, rest);
+
+    // El catálogo se fusiona campo a campo en lugar de asignarse entero: el
+    // editor manda solo lo que ha tocado, y un `Object.assign` del objeto
+    // completo borraría el precio al cambiar únicamente la casilla de publicar.
+    if (catalog) {
+      course.catalog = { ...course.catalog, ...catalog } as typeof course.catalog;
+    }
     if (startDate !== undefined) course.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) course.endDate = endDate ? new Date(endDate) : null;
 
@@ -236,9 +243,20 @@ export class CoursesService {
     }
 
     await course.save();
+
+    // El padre va explícito aunque aquí solo se refresque la etiqueta: sin él,
+    // `ensureContext` toma el contexto del sistema como padre y reubica el
+    // curso —con sus módulos— fuera del árbol de la empresa. Eso rompía los
+    // permisos de todo el curso en cuanto se guardaba un cambio, porque los
+    // roles se asignan en el contexto de la empresa y dejaban de alcanzarlo.
+    const contextoCategoria = await this.contexts.requireByInstance(
+      ContextLevel.Category,
+      course.category,
+    );
     await this.contexts.ensureContext({
       level: ContextLevel.Course,
       instanceId: course._id,
+      parentId: contextoCategoria._id,
       tenantId: course.tenant,
       label: course.fullName,
     });
@@ -496,10 +514,19 @@ export class CoursesService {
     if (dto.availabilityJson !== undefined) module.availabilityJson = dto.availabilityJson || null;
 
     await module.save();
+
+    // Con el padre explícito, igual que al crearlo: sin él, guardar un cambio
+    // sacaba la actividad del árbol de su curso y la dejaba sin permisos.
+    const curso = await this.findById(module.course);
+    const contextoCurso = await this.contexts.requireByInstance(
+      ContextLevel.Course,
+      module.course,
+    );
     await this.contexts.ensureContext({
       level: ContextLevel.Module,
       instanceId: module._id,
-      tenantId: (await this.findById(module.course)).tenant,
+      parentId: contextoCurso._id,
+      tenantId: curso.tenant,
       label: module.name,
     });
     return module;

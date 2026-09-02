@@ -10,6 +10,7 @@ import {
   LoginDto,
   RefreshDto,
   RegisterDto,
+  TenantChoiceDto,
   ResetPasswordDto,
   DisableTwoFactorDto,
   TwoFactorSetupDto,
@@ -31,9 +32,23 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
-  @ApiOperation({ summary: 'Iniciar sesión en una empresa' })
+  @ApiOperation({
+    summary: 'Iniciar sesión',
+    description:
+      'La empresa se deduce de las credenciales. Si las mismas valen en varias, la respuesta ' +
+      'llega con «requiresTenantChoice» y la lista para elegir, que se resuelve en ' +
+      '«/auth/login/tenant».',
+  })
   login(@Body() dto: LoginDto, @Req() req: MayaRequest) {
     return this.auth.login(dto, this.client(req));
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('login/tenant')
+  @ApiOperation({ summary: 'Elegir empresa cuando las credenciales valen en varias' })
+  chooseTenant(@Body() dto: TenantChoiceDto, @Req() req: MayaRequest) {
+    return this.auth.chooseTenant(dto.tenantChoiceToken, dto.tenantId, dto.totp, this.client(req));
   }
 
   @Public()

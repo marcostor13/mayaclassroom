@@ -15,16 +15,70 @@ import {
   SectionDto,
 } from '@maya/shared';
 import { ActivityType, CoursesService } from '../../core/services/courses.service';
+import { moduleIcon, moduleLink } from '../../core/module-links';
 import { ToastService } from '../../core/services/toast.service';
-import { IconComponent, ModalComponent } from '../../shared';
+import {
+  IconComponent,
+  ImageUploadComponent,
+  ModalComponent,
+  RichEditorComponent,
+} from '../../shared';
 import { ConfirmService } from '../../core/services/confirm.service';
 
 /** Creación y edición de cursos, con gestión de secciones y actividades. */
 @Component({
   selector: 'maya-course-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, IconComponent, ModalComponent],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    RouterLink,
+    IconComponent,
+    ImageUploadComponent,
+    ModalComponent,
+    RichEditorComponent,
+  ],
   templateUrl: './course-editor.page.html',
+  styles: `
+    /* Título de sección editable en el sitio: parece texto hasta que se toca. */
+    .titulo-seccion {
+      flex: 1;
+      min-width: 0;
+      font: inherit;
+      font-size: var(--maya-text-md);
+      font-weight: 700;
+      color: inherit;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--maya-radius-sm);
+      padding: 4px 8px;
+      margin-left: -8px;
+    }
+
+    .titulo-seccion:hover {
+      border-color: var(--maya-border);
+    }
+
+    .titulo-seccion:focus {
+      outline: none;
+      border-color: var(--maya-primary);
+      background: var(--maya-surface);
+    }
+
+    .enlace-actividad {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .enlace-actividad:hover .maya-bold {
+      color: var(--maya-primary-ink);
+    }
+  `,
 })
 export class CourseEditorPage {
   private readonly fb = inject(FormBuilder);
@@ -48,11 +102,19 @@ export class CourseEditorPage {
   readonly activityName = signal('');
   readonly groups = signal<GroupDto[]>([]);
 
+  /** Portada del curso: la usan la lista de cursos y el catálogo público. */
+  readonly imageUrl = signal<string | null>(null);
+
+  /**
+   * Resumen en HTML. Fuera del formulario reactivo, como el resto de campos
+   * que edita un componente de señales.
+   */
+  readonly summary = signal('');
+
   readonly form = this.fb.nonNullable.group({
     shortName: ['', [Validators.required]],
     fullName: ['', [Validators.required]],
     categoryId: ['', [Validators.required]],
-    summary: [''],
     format: [CourseFormat.Topics],
     numSections: [10],
     enableCompletion: [true],
@@ -85,12 +147,13 @@ export class CourseEditorPage {
       shortName: course.shortName,
       fullName: course.fullName,
       categoryId: course.categoryId,
-      summary: course.summary ?? '',
       format: course.format,
       numSections: course.numSections,
       enableCompletion: course.enableCompletion,
       visibility: course.visibility,
     });
+    this.imageUrl.set(course.imageUrl ?? null);
+    this.summary.set(course.summary ?? '');
   }
 
   private loadSections(id: string): void {
@@ -207,7 +270,11 @@ export class CourseEditorPage {
       return;
     }
     this.saving.set(true);
-    const payload = this.form.getRawValue() as unknown as Partial<CourseDetail> & {
+    const payload = {
+      ...this.form.getRawValue(),
+      imageUrl: this.imageUrl(),
+      summary: this.summary(),
+    } as unknown as Partial<CourseDetail> & {
       shortName: string;
       fullName: string;
       categoryId: string;
@@ -288,6 +355,63 @@ export class CourseEditorPage {
     if (!id) return;
     this.courses.setModuleVisibility(id, moduleId, visible).subscribe({
       next: () => this.loadSections(id),
+    });
+  }
+
+  /**
+   * Duplica una actividad. Es la vía natural para hacer la lección siguiente
+   * cuando se parece a la anterior: copiar y cambiar lo que difiere cuesta
+   * mucho menos que montarla otra vez desde cero.
+   */
+  duplicateModule(moduleId: string): void {
+    const id = this.courseId();
+    if (!id) return;
+    this.courses.duplicateModule(id, moduleId).subscribe({
+      next: () => {
+        this.loadSections(id);
+        this.toast.success('Actividad duplicada');
+      },
+    });
+  }
+
+  /**
+   * Sube o baja una actividad dentro de su sección.
+   *
+   * Con botones y no arrastrando: funciona con el teclado y en una pantalla
+   * táctil, donde arrastrar entre bloques altos es incómodo de verdad.
+   */
+  moveModule(section: SectionDto, moduleId: string, delta: -1 | 1): void {
+    const id = this.courseId();
+    if (!id) return;
+    const modules = section.modules ?? [];
+    const from = modules.findIndex((module) => module.id === moduleId);
+    const to = from + delta;
+    if (from < 0 || to < 0 || to >= modules.length) return;
+
+    this.courses.moveModule(id, moduleId, section.id, to).subscribe({
+      next: () => this.loadSections(id),
+    });
+  }
+
+  /** Ruta de la actividad, para abrirla y editar su contenido. */
+  moduleLink(module: CourseModuleDto): string[] {
+    return moduleLink(module);
+  }
+
+  moduleIcon(module: CourseModuleDto): string {
+    return moduleIcon(module);
+  }
+
+  /** Renombra la sección sin salir de la pantalla. */
+  renameSection(section: SectionDto, name: string): void {
+    const id = this.courseId();
+    const limpio = name.trim();
+    if (!id || !limpio || limpio === section.name) return;
+    this.courses.updateSection(id, section.id, { name: limpio }).subscribe({
+      next: () => {
+        this.loadSections(id);
+        this.toast.success('Sección renombrada');
+      },
     });
   }
 

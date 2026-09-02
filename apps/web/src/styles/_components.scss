@@ -511,6 +511,9 @@
 .maya-alert--success { border-color: var(--maya-success); background: var(--maya-success-soft); }
 .maya-alert--warning { border-color: var(--maya-warning); background: var(--maya-warning-soft); }
 .maya-alert--danger { border-color: var(--maya-danger); background: var(--maya-danger-soft); }
+// Los tokens `--maya-info` existían desde el principio; solo faltaba la
+// variante que los usara, para los avisos que no son ni éxito ni problema.
+.maya-alert--info { border-color: var(--maya-info); background: var(--maya-info-soft); }
 
 /* --- Estado vacío ------------------------------------------------------ */
 

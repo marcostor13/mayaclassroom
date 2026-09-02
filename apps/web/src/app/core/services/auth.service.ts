@@ -107,25 +107,52 @@ export class AuthService {
     return this.api.get<PublicTenantProfile>(`/tenants/public/${slug}`);
   }
 
+  /**
+   * Entrada con correo o usuario y contraseña. La empresa la deduce la API de
+   * las propias credenciales; `tenantSlug` solo se envía cuando se entra por el
+   * dominio de una empresa concreta.
+   */
   login(credentials: {
     login: string;
     password: string;
-    tenantSlug: string;
+    tenantSlug?: string;
     totp?: string;
   }): Observable<LoginResponse> {
     this.loadingSignal.set(true);
     return this.api.post<LoginResponse>('/auth/login', credentials).pipe(
       tap({
-        next: (response) => {
-          this.loadingSignal.set(false);
-          if (response.requiresTwoFactor) return;
-          this.storeTokens(response.tokens);
-          this.setTenant(credentials.tenantSlug);
-          this.userSignal.set(response.user);
-        },
+        next: (response) => this.afterLogin(response),
         error: () => this.loadingSignal.set(false),
       }),
     );
+  }
+
+  /** Segundo paso cuando las credenciales valen en más de una empresa. */
+  chooseTenant(payload: {
+    tenantChoiceToken: string;
+    tenantId: string;
+    totp?: string;
+  }): Observable<LoginResponse> {
+    this.loadingSignal.set(true);
+    return this.api.post<LoginResponse>('/auth/login/tenant', payload).pipe(
+      tap({
+        next: (response) => this.afterLogin(response),
+        error: () => this.loadingSignal.set(false),
+      }),
+    );
+  }
+
+  /**
+   * Guarda la sesión salvo que la respuesta sea un paso intermedio. La empresa
+   * se toma de la respuesta y no de lo que se envió: es el único sitio donde
+   * consta cuál resolvió la API.
+   */
+  private afterLogin(response: LoginResponse): void {
+    this.loadingSignal.set(false);
+    if (response.requiresTwoFactor || response.requiresTenantChoice) return;
+    this.storeTokens(response.tokens);
+    this.setTenant(response.user.tenantSlug);
+    this.userSignal.set(response.user);
   }
 
   register(payload: {
@@ -170,8 +197,13 @@ export class AuthService {
     if (redirect) void this.router.navigate(['/auth/login']);
   }
 
-  forgotPassword(email: string, tenantSlug: string): Observable<{ sent: boolean }> {
-    return this.api.post<{ sent: boolean }>('/auth/forgot-password', { email, tenantSlug });
+  /**
+   * Pide el enlace de recuperación. Sin empresa: quien no recuerda su
+   * contraseña tampoco tiene por qué recordar dónde está dado de alta, y la
+   * API envía un enlace por cada empresa en la que exista el correo.
+   */
+  forgotPassword(email: string): Observable<{ sent: boolean }> {
+    return this.api.post<{ sent: boolean }>('/auth/forgot-password', { email });
   }
 
   resetPassword(token: string, password: string): Observable<{ reset: boolean }> {

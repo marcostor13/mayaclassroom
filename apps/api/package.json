@@ -18,6 +18,7 @@
     "seed": "nest build && bun run dist/database/seeds/seed.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1124.0",
     "@maya/shared": "1.0.0",
     "@nestjs/common": "^11.2.3",
     "@nestjs/config": "^4.0.2",

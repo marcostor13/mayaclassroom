@@ -21,14 +21,14 @@ desarrollo; para todo lo que está tras el acceso hace falta además la API con
 `MONGODB_URI` configurada.
 
 ```bash
-cd apps/web && bunx ng serve --host 127.0.0.1 --port 4200
+cd apps/web && bunx ng serve --host 127.0.0.1 --port 4205
 ```
 
 Esperar a que el registro diga `Watch mode enabled` y capturar:
 
 ```bash
 node .claude/skills/revisar-ui/scripts/capturar.mjs \
-  http://127.0.0.1:4200/auth/login ./capturas movil,tableta,escritorio
+  http://127.0.0.1:4205/auth/login ./capturas movil,tableta,escritorio
 ```
 
 El guion escribe un PNG por anchura y **enumera los errores de consola**, que

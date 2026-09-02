@@ -77,16 +77,22 @@
     </div>
 
     <div class="maya-field">
-      <label class="maya-label" for="e-summary">Resumen del curso</label>
-      <textarea
-        id="e-summary"
-        class="maya-textarea"
-        rows="5"
-        formControlName="summary"
+      <label class="maya-label">Resumen del curso</label>
+      <maya-rich-editor
+        [value]="summary()"
+        (valueChange)="summary.set($event)"
         placeholder="Describa los objetivos y contenidos del curso…"
-      ></textarea>
-      <span class="maya-hint">Admite HTML sencillo (párrafos, listas y enlaces).</span>
+      />
+      <span class="maya-hint">Es lo primero que lee quien se plantea matricularse.</span>
     </div>
+
+    <maya-image-upload
+      label="Portada del curso"
+      purpose="course"
+      hint="Se ve en la lista de cursos y, si el curso está a la venta, en la página pública."
+      [value]="imageUrl()"
+      (valueChange)="imageUrl.set($event)"
+    />
 
     <label class="maya-switch">
       <input type="checkbox" formControlName="enableCompletion" />
@@ -107,9 +113,15 @@
     @for (section of sections(); track section.id) {
       <section class="maya-card">
         <div class="maya-card__header">
-          <h3 class="maya-card__title" style="font-size: var(--maya-text-md)">
-            {{ sectionTitle(section) }}
-          </h3>
+          <!-- El título de la sección se edita en el sitio: entrar en otra
+               pantalla para cambiar una palabra rompe el ritmo de montar el
+               curso. -->
+          <input
+            class="titulo-seccion"
+            [value]="sectionTitle(section)"
+            (change)="renameSection(section, $any($event.target).value)"
+            [attr.aria-label]="'Nombre de la sección ' + sectionTitle(section)"
+          />
           <button
             type="button"
             class="maya-btn maya-btn--soft maya-btn--sm"
@@ -158,11 +170,39 @@
             <li
               style="display: flex; align-items: center; gap: var(--maya-space-3); padding: var(--maya-space-3) var(--maya-space-5); border-top: 1px solid var(--maya-border)"
             >
-              <maya-icon name="file" [size]="18" />
-              <div style="flex: 1; min-width: 0">
-                <p class="maya-bold maya-small">{{ module.name }}</p>
-                <p class="maya-tiny maya-subtle">{{ module.moduleType }}</p>
-              </div>
+              <maya-icon [name]="moduleIcon(module)" [size]="18" />
+              <!-- El nombre abre la actividad: es donde se escribe su
+                   contenido, y llegar ahí era el paso que faltaba. -->
+              <a [routerLink]="moduleLink(module)" class="enlace-actividad">
+                <span class="maya-bold maya-small">{{ module.name }}</span>
+                <span class="maya-tiny maya-subtle">{{ module.moduleType }}</span>
+              </a>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                (click)="moveModule(section, module.id, -1)"
+                [disabled]="$first"
+                aria-label="Subir actividad"
+              >
+                <maya-icon name="chevron-up" [size]="16" />
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                (click)="moveModule(section, module.id, 1)"
+                [disabled]="$last"
+                aria-label="Bajar actividad"
+              >
+                <maya-icon name="chevron-down" [size]="16" />
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                (click)="duplicateModule(module.id)"
+                [attr.aria-label]="'Duplicar ' + module.name"
+              >
+                <maya-icon name="copy" [size]="16" />
+              </button>
               <button
                 type="button"
                 class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"

@@ -60,6 +60,12 @@ export const CAP = {
   TENANT_MANAGE_WEBSERVICES: 'maya/tenant:managewebservices',
   TENANT_MANAGE_POLICIES: 'maya/tenant:managepolicies',
 
+  // --- Página pública ------------------------------------------------------
+  /** Diseñar el escaparate: plantilla, secciones y textos. */
+  SITE_MANAGE: 'maya/site:manage',
+  /** Resolver las solicitudes de matrícula que llegan por la página. */
+  SITE_MANAGE_REQUESTS: 'maya/site:managerequests',
+
   // --- Usuarios ------------------------------------------------------------
   USER_CREATE: 'moodle/user:create',
   USER_UPDATE: 'moodle/user:update',

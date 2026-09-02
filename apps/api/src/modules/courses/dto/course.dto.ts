@@ -16,6 +16,7 @@ import {
   Min,
   MinLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { CourseFormat, CourseVisibility, GroupMode, ModuleType } from '@maya/shared';
 import { PaginationQueryDto } from '../../../common/dto';
@@ -90,7 +91,53 @@ export class CreateCourseDto {
   customFields?: Record<string, unknown>;
 }
 
-export class UpdateCourseDto extends PartialType(CreateCourseDto) {}
+/**
+ * Datos de venta del curso, para el escaparate público. Van en su propio
+ * objeto porque describen el producto, no la asignatura: sin `listed` el curso
+ * ni siquiera aparece fuera.
+ */
+export class CourseCatalogDto {
+  @ApiPropertyOptional({ description: 'Mostrar el curso en la página pública' })
+  @IsBoolean()
+  @IsOptional()
+  listed?: boolean;
+
+  @ApiPropertyOptional({ description: 'Precio en céntimos. 0 es gratuito.' })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  priceCents?: number;
+
+  @ApiPropertyOptional({ example: 'EUR' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(3)
+  currency?: string;
+
+  @ApiPropertyOptional({ description: 'Frase gancho, distinta del resumen académico' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  headline?: string | null;
+
+  @ApiPropertyOptional({ type: [String], description: '«Lo que aprenderá»' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  highlights?: string[];
+
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(40) level?: string | null;
+
+  @ApiPropertyOptional() @IsInt() @Min(0) @IsOptional() durationHours?: number | null;
+}
+
+export class UpdateCourseDto extends PartialType(CreateCourseDto) {
+  @ApiPropertyOptional({ type: CourseCatalogDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CourseCatalogDto)
+  catalog?: CourseCatalogDto;
+}
 
 export class CourseQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional() @IsMongoId() @IsOptional() categoryId?: string;

@@ -47,6 +47,7 @@ import { CompetenciesModule } from './modules/competencies/competencies.module';
 import { BadgesModule } from './modules/badges/badges.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { SiteModule } from './modules/site/site.module';
 
 @Module({
   imports: [
@@ -108,6 +109,9 @@ import { PlatformModule } from './modules/platform/platform.module';
     BadgesModule,
     CertificatesModule,
     PlatformModule,
+
+    // Fase 4
+    SiteModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

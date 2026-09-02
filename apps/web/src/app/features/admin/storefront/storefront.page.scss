@@ -1,0 +1,145 @@
+/**
+ * Editor de la página pública. Solo lo que el sistema de diseño no cubre: la
+ * lista de secciones reordenables y el selector de plantilla.
+ */
+.compartir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-4);
+  margin-bottom: var(--maya-space-4);
+  border: 1px solid var(--maya-primary-soft);
+  background: var(--maya-primary-softer);
+  border-radius: var(--maya-radius-lg);
+}
+
+.compartir__texto {
+  flex: 1;
+  min-width: 220px;
+}
+
+.compartir__url {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--maya-text-sm);
+  /* Una dirección larga parte por donde puede en vez de desbordar la tarjeta. */
+  overflow-wrap: anywhere;
+}
+
+.compartir__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+}
+
+.plantillas {
+  display: grid;
+  gap: var(--maya-space-3);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .plantillas {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.plantilla {
+  text-align: left;
+  padding: var(--maya-space-4);
+  border: 2px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+  cursor: pointer;
+  transition: border-color var(--maya-duration) var(--maya-ease);
+}
+
+.plantilla:hover {
+  border-color: var(--maya-primary-soft);
+}
+
+.plantilla--activa {
+  border-color: var(--maya-primary);
+  background: var(--maya-primary-softer);
+}
+
+/* Miniatura esquemática de la maqueta: unas barras bastan para reconocer de un
+   vistazo en qué se diferencian, sin cargar capturas de cada plantilla. */
+.miniatura {
+  display: grid;
+  gap: 3px;
+  height: 54px;
+  margin-bottom: var(--maya-space-3);
+}
+
+.miniatura span {
+  background: var(--maya-primary-soft);
+  border-radius: 2px;
+}
+
+.miniatura--classic {
+  grid-template-rows: 22px 1fr;
+}
+
+.miniatura--classic span:last-child {
+  background: var(--maya-border);
+}
+
+.miniatura--focus {
+  grid-template-rows: 14px 14px 1fr;
+  justify-items: center;
+}
+
+.miniatura--focus span {
+  width: 70%;
+}
+
+.miniatura--grid {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr 1fr;
+}
+
+.seccion-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface);
+}
+
+.seccion-fila--apagada {
+  opacity: 0.55;
+}
+
+.seccion-fila__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.seccion-editor {
+  border: 1px solid var(--maya-primary-soft);
+  border-top: none;
+  border-radius: 0 0 var(--maya-radius-md) var(--maya-radius-md);
+  padding: var(--maya-space-4);
+  background: var(--maya-primary-softer);
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+.barra-guardar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3);
+  margin-top: var(--maya-space-5);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  box-shadow: var(--maya-shadow-md);
+}

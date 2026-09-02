@@ -1,0 +1,290 @@
+/**
+ * Escaparate público.
+ *
+ * Estilos propios y no los de la aplicación: aquí no hay barra lateral ni
+ * cabecera de aplicación, el ancho es el de una página de marketing y el
+ * público es alguien que todavía no ha entrado. Lo que sí se comparte son las
+ * variables `--maya-*`, para que la marca de la empresa mande igual que dentro.
+ *
+ * Las tres plantillas se distinguen por una clase en la raíz. Cambian ritmo,
+ * ancho y tratamiento de las tarjetas, nunca el contenido ni el orden: eso lo
+ * decide la empresa desde el editor.
+ */
+:host {
+  display: block;
+  background: var(--maya-bg);
+  color: var(--maya-text);
+  min-height: 100vh;
+}
+
+.sitio {
+  --sitio-ancho: 1120px;
+  --sitio-aire: var(--maya-space-8);
+}
+
+.sitio--focus {
+  --sitio-ancho: 880px;
+  --sitio-aire: var(--maya-space-6);
+}
+
+.sitio--grid {
+  --sitio-ancho: 1240px;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: var(--sitio-ancho);
+  margin-inline: auto;
+  padding-inline: var(--maya-space-4);
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--maya-bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--maya-border);
+}
+
+.barra__interior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+  padding-block: var(--maya-space-3);
+}
+
+.barra__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  font-weight: 700;
+}
+
+.barra__logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.seccion {
+  padding-block: var(--sitio-aire);
+}
+
+.seccion + .seccion {
+  border-top: 1px solid var(--maya-border);
+}
+
+.seccion__titulo {
+  font-size: var(--maya-text-xl);
+  margin-bottom: var(--maya-space-2);
+}
+
+.seccion__subtitulo {
+  color: var(--maya-text-soft);
+  margin-bottom: var(--maya-space-5);
+}
+
+/* --- Portada ------------------------------------------------------------- */
+
+.portada {
+  display: grid;
+  gap: var(--maya-space-6);
+  padding-block: var(--maya-space-8);
+}
+
+.portada__titulo {
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.portada__texto {
+  color: var(--maya-text-soft);
+  font-size: var(--maya-text-md);
+  max-width: 52ch;
+  margin-top: var(--maya-space-3);
+}
+
+.portada__imagen {
+  width: 100%;
+  border-radius: var(--maya-radius-lg);
+  object-fit: cover;
+  aspect-ratio: 16 / 10;
+}
+
+/* Desde tableta la portada se parte en dos, salvo en «focus», que la mantiene
+   centrada a una columna para que el texto sea el protagonista. */
+@media (min-width: 48rem) {
+  .sitio:not(.sitio--focus) .portada {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: center;
+  }
+
+  .sitio--focus .portada {
+    text-align: center;
+    justify-items: center;
+  }
+
+  .sitio--focus .portada__texto {
+    margin-inline: auto;
+  }
+}
+
+/* --- Catálogo ------------------------------------------------------------ */
+
+.cursos {
+  display: grid;
+  gap: var(--maya-space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 40rem) {
+  .cursos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 64rem) {
+  .cursos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sitio--focus .cursos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.curso {
+  display: flex;
+  flex-direction: column;
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  overflow: hidden;
+  transition:
+    transform var(--maya-duration) var(--maya-ease-out),
+    box-shadow var(--maya-duration) var(--maya-ease-out);
+}
+
+.curso:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--maya-shadow-md);
+}
+
+.curso__imagen {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--maya-primary-softer);
+}
+
+.curso__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-4);
+  flex: 1;
+}
+
+.curso__titulo {
+  font-size: var(--maya-text-md);
+  font-weight: 700;
+}
+
+.curso__gancho {
+  color: var(--maya-text-soft);
+  font-size: var(--maya-text-sm);
+  flex: 1;
+}
+
+.curso__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-2);
+}
+
+.curso__precio {
+  font-weight: 700;
+  font-size: var(--maya-text-md);
+}
+
+.curso__precio--gratis {
+  color: var(--maya-success);
+}
+
+.curso__lista {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--maya-text-soft);
+  font-size: var(--maya-text-sm);
+}
+
+/* --- Bloques de texto ---------------------------------------------------- */
+
+.tarjetas {
+  display: grid;
+  gap: var(--maya-space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .tarjetas {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}
+
+.tarjeta {
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-4);
+}
+
+.tarjeta__autor {
+  margin-top: var(--maya-space-3);
+  color: var(--maya-text-soft);
+  font-size: var(--maya-text-sm);
+}
+
+.prosa {
+  max-width: 68ch;
+  color: var(--maya-text-soft);
+  white-space: pre-line;
+}
+
+.llamada {
+  background: var(--maya-primary-softer);
+  border: 1px solid var(--maya-primary-soft);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-6);
+  text-align: center;
+}
+
+.pie {
+  border-top: 1px solid var(--maya-border);
+  padding-block: var(--maya-space-6);
+  color: var(--maya-text-soft);
+  font-size: var(--maya-text-sm);
+}
+
+/* --- Formulario de solicitud --------------------------------------------- */
+
+.solicitud {
+  display: grid;
+  gap: var(--maya-space-3);
+  max-width: 560px;
+}
+
+@media (min-width: 40rem) {
+  .solicitud__fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--maya-space-3);
+  }
+}

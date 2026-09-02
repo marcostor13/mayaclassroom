@@ -4,6 +4,7 @@ import { CAP, ContextLevel } from '@maya/shared';
 import { RequireCapability } from '../../../common/decorators';
 import { ResourcesService } from './resources.service';
 import { CoursesService } from '../../courses/courses.service';
+import { UpdateResourceDto } from './dto/resource.dto';
 
 @ApiTags('Recursos')
 @ApiBearerAuth()
@@ -21,6 +22,33 @@ export class ResourcesController {
     const module = await this.courses.findModule(moduleId);
     const resource = await this.resources.getResource(module.instance);
     return { module, resource };
+  }
+
+  @Patch(':moduleId')
+  @RequireCapability(CAP.COURSE_MANAGE_ACTIVITIES, {
+    contextLevel: ContextLevel.Module,
+    param: 'moduleId',
+  })
+  @ApiOperation({
+    summary: 'Guardar el contenido de un recurso',
+    description:
+      'El cuerpo del texto se limpia en el servidor antes de guardarse: llega desde un editor ' +
+      'enriquecido y se muestra después como HTML.',
+  })
+  async update(@Param('moduleId') moduleId: string, @Body() dto: UpdateResourceDto) {
+    const module = await this.courses.findModule(moduleId);
+    await this.resources.updateResource(module.instance, {
+      name: dto.name,
+      settings: {
+        intro: dto.intro,
+        content: dto.content,
+        blocks: dto.blocks,
+        externalUrl: dto.externalUrl,
+        display: dto.display,
+        fileIds: dto.fileIds,
+      },
+    });
+    return this.resources.getResource(module.instance);
   }
 
   @Post(':moduleId/chapters')

@@ -40,9 +40,28 @@ export interface AuthenticatedUser {
   capabilities: string[];
 }
 
+/**
+ * Empresa entre las que elegir al entrar, cuando las mismas credenciales valen
+ * en más de una. Solo lleva lo justo para pintar la tarjeta de elección.
+ */
+export interface TenantChoice {
+  id: string;
+  slug: string;
+  name: string;
+  logoUrl?: string | null;
+}
+
 export interface LoginResponse {
   user: AuthenticatedUser;
   tokens: AuthTokens;
   requiresTwoFactor?: boolean;
   twoFactorToken?: string;
+  /**
+   * Las credenciales son válidas en varias empresas y hace falta elegir una.
+   * Cuando llega, `user` y `tokens` van vacíos: todavía no hay sesión.
+   */
+  requiresTenantChoice?: boolean;
+  tenants?: TenantChoice[];
+  /** Testigo corto que autoriza el segundo paso sin repetir la contraseña. */
+  tenantChoiceToken?: string;
 }

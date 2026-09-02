@@ -6,4 +6,5 @@ export * from './grade';
 export * from './communication';
 export * from './advanced';
 export * from './tenant';
+export * from './site';
 export * from './user';

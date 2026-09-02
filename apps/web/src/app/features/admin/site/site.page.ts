@@ -8,6 +8,7 @@ import {
   CustomFieldScope,
   CustomFieldType,
   DataRequestDto,
+  MAX_PAGE_SIZE,
   ScheduledTaskDto,
   ScheduledTaskStatus,
   TagDto,
@@ -149,7 +150,7 @@ export class AdminSitePage {
     // Se abre la primera sección a la que se tenga acceso.
     const first = this.sections()[0];
     if (first) this.select(first.key);
-    this.courses.list({ limit: 200 }).subscribe({
+    this.courses.list({ limit: MAX_PAGE_SIZE }).subscribe({
       next: (result) => this.myCourses.set(result.items),
     });
   }

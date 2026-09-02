@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { LoginResponse, TenantChoice } from '@maya/shared';
 import { AuthService, PublicTenantProfile } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -25,29 +26,21 @@ export class LoginPage {
   readonly requiresTwoFactor = signal(false);
   readonly tenant = signal<PublicTenantProfile | null>(null);
 
+  /**
+   * Empresas entre las que elegir. El hub vive dentro de esta misma pantalla,
+   * y no en una ruta aparte, porque el testigo que autoriza el segundo paso
+   * solo está en memoria: con una ruta propia, recargar dejaría la elección
+   * sin nada con que completarse y habría que volver a pedir la contraseña.
+   */
+  readonly tenantChoices = signal<TenantChoice[]>([]);
+  private tenantChoiceToken = '';
+
   readonly form = this.fb.nonNullable.group({
-    tenantSlug: [this.auth.tenantSlug() || 'demo', [Validators.required]],
     login: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     totp: [''],
     remember: [true],
   });
-
-  constructor() {
-    const slug = this.form.controls.tenantSlug.value;
-    if (slug) this.loadTenant(slug);
-  }
-
-  loadTenant(slug: string): void {
-    if (!slug) return;
-    this.auth.tenantProfile(slug).subscribe({
-      next: (profile) => {
-        this.tenant.set(profile);
-        this.theme.applyBranding(profile.branding);
-      },
-      error: () => this.tenant.set(null),
-    });
-  }
 
   togglePassword(): void {
     this.showPassword.update((value) => !value);
@@ -59,38 +52,83 @@ export class LoginPage {
       return;
     }
     this.submitting.set(true);
-    const { tenantSlug, login, password, totp } = this.form.getRawValue();
+    const { login, password, totp } = this.form.getRawValue();
 
-    this.auth.login({ tenantSlug, login, password, totp: totp || undefined }).subscribe({
-      next: (response) => {
-        this.submitting.set(false);
-        if (response.requiresTwoFactor) {
-          this.requiresTwoFactor.set(true);
-          this.form.controls.totp.addValidators([Validators.required]);
-          this.form.controls.totp.updateValueAndValidity();
-          this.toast.info(
-            'Verificación en dos pasos',
-            'Introduzca el código de su aplicación de autenticación.',
-          );
-          return;
-        }
-        if (response.user.mustChangePassword) {
-          this.toast.info(
-            'Contraseña temporal',
-            'Elija una contraseña propia para empezar a usar la plataforma.',
-          );
-          void this.router.navigate(['/password-change']);
-          return;
-        }
-        this.toast.success(`Hola de nuevo, ${response.user.firstName}`);
-        const redirect = this.route.snapshot.queryParamMap.get('redirect') ?? '/dashboard';
-        void this.router.navigateByUrl(redirect);
-      },
+    this.auth.login({ login, password, totp: totp || undefined }).subscribe({
+      next: (response) => this.handle(response),
       error: () => this.submitting.set(false),
     });
   }
 
-  invalid(control: 'tenantSlug' | 'login' | 'password' | 'totp'): boolean {
+  /** Entra en la empresa elegida en el hub, sin repetir la contraseña. */
+  chooseTenant(tenant: TenantChoice): void {
+    if (this.submitting()) return;
+    this.submitting.set(true);
+    const totp = this.form.controls.totp.value;
+    this.auth
+      .chooseTenant({
+        tenantChoiceToken: this.tenantChoiceToken,
+        tenantId: tenant.id,
+        totp: totp || undefined,
+      })
+      .subscribe({
+        next: (response) => this.handle(response),
+        error: () => this.submitting.set(false),
+      });
+  }
+
+  /** Vuelve del hub al formulario, por si se equivocó de cuenta. */
+  cancelChoice(): void {
+    this.tenantChoices.set([]);
+    this.tenantChoiceToken = '';
+  }
+
+  private handle(response: LoginResponse): void {
+    this.submitting.set(false);
+
+    // El orden de estos tres desvíos es el del propio flujo: primero elegir
+    // empresa, después el doble factor de esa empresa y por último la
+    // contraseña temporal.
+    if (response.requiresTenantChoice) {
+      this.tenantChoices.set(response.tenants ?? []);
+      this.tenantChoiceToken = response.tenantChoiceToken ?? '';
+      return;
+    }
+    if (response.requiresTwoFactor) {
+      this.requiresTwoFactor.set(true);
+      this.form.controls.totp.addValidators([Validators.required]);
+      this.form.controls.totp.updateValueAndValidity();
+      this.toast.info(
+        'Verificación en dos pasos',
+        'Introduzca el código de su aplicación de autenticación.',
+      );
+      return;
+    }
+
+    // La marca de la empresa a la que se ha entrado, ahora que ya se sabe
+    // cuál es: antes el formulario la pedía por adelantado para poder pintarla.
+    this.auth.tenantProfile(response.user.tenantSlug).subscribe({
+      next: (profile) => {
+        this.tenant.set(profile);
+        this.theme.applyBranding(profile.branding);
+      },
+      error: () => this.tenant.set(null),
+    });
+
+    if (response.user.mustChangePassword) {
+      this.toast.info(
+        'Contraseña temporal',
+        'Elija una contraseña propia para empezar a usar la plataforma.',
+      );
+      void this.router.navigate(['/password-change']);
+      return;
+    }
+    this.toast.success(`Hola de nuevo, ${response.user.firstName}`);
+    const redirect = this.route.snapshot.queryParamMap.get('redirect') ?? '/dashboard';
+    void this.router.navigateByUrl(redirect);
+  }
+
+  invalid(control: 'login' | 'password' | 'totp'): boolean {
     const field = this.form.controls[control];
     return field.invalid && (field.dirty || field.touched);
   }

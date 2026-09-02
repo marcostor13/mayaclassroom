@@ -1,31 +1,55 @@
-<header class="maya-stack" style="gap: var(--maya-space-2); margin-bottom: var(--maya-space-8)">
-  <h1 style="font-size: var(--maya-text-2xl)">Bienvenido de nuevo</h1>
-  <p class="maya-muted maya-small">
-    Acceda a su aula virtual
-    @if (tenant()) {
-      de <strong>{{ tenant()!.name }}</strong>
-    }
-  </p>
-</header>
+@if (tenantChoices().length) {
+  <header class="maya-stack" style="gap: var(--maya-space-2); margin-bottom: var(--maya-space-6)">
+    <h1 style="font-size: var(--maya-text-2xl)">Elija una empresa</h1>
+    <p class="maya-muted maya-small">
+      Su cuenta está dada de alta en varias. Entrará en la que seleccione.
+    </p>
+  </header>
 
-<form [formGroup]="form" (ngSubmit)="submit()" class="maya-stack" style="gap: var(--maya-space-5)">
-  <div class="maya-field">
-    <label class="maya-label" for="tenant">
-      Empresa <span class="maya-required">*</span>
-    </label>
-    <input
-      id="tenant"
-      type="text"
-      class="maya-input"
-      formControlName="tenantSlug"
-      autocomplete="organization"
-      placeholder="demo"
-      [class.is-invalid]="invalid('tenantSlug')"
-      (blur)="loadTenant(form.controls.tenantSlug.value)"
-    />
-    <span class="maya-hint">Identificador corto que le facilitó su organización.</span>
+  <div class="maya-stack" style="gap: var(--maya-space-3)">
+    @for (choice of tenantChoices(); track choice.id) {
+      <button
+        type="button"
+        class="maya-card maya-card--interactive maya-row"
+        style="width: 100%; text-align: left; gap: var(--maya-space-3); padding: var(--maya-space-4)"
+        (click)="chooseTenant(choice)"
+        [disabled]="submitting()"
+      >
+        @if (choice.logoUrl) {
+          <img
+            [src]="choice.logoUrl"
+            [alt]=""
+            width="40"
+            height="40"
+            style="border-radius: var(--maya-radius-sm); object-fit: contain"
+          />
+        } @else {
+          <maya-icon name="building" [size]="24" />
+        }
+        <span class="maya-stack" style="gap: 2px; flex: 1">
+          <span class="maya-bold">{{ choice.name }}</span>
+          <span class="maya-tiny maya-subtle">{{ choice.slug }}</span>
+        </span>
+        <maya-icon name="arrow-right" [size]="18" />
+      </button>
+    }
   </div>
 
+  <button
+    type="button"
+    class="maya-btn maya-btn--ghost maya-btn--block"
+    style="margin-top: var(--maya-space-5)"
+    (click)="cancelChoice()"
+  >
+    Usar otra cuenta
+  </button>
+} @else {
+  <header class="maya-stack" style="gap: var(--maya-space-2); margin-bottom: var(--maya-space-8)">
+    <h1 style="font-size: var(--maya-text-2xl)">Bienvenido de nuevo</h1>
+    <p class="maya-muted maya-small">Acceda a su aula virtual</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="maya-stack" style="gap: var(--maya-space-5)">
   <div class="maya-field">
     <label class="maya-label" for="login">
       Correo o usuario <span class="maya-required">*</span>
@@ -116,12 +140,5 @@
     }
   </button>
 
-  @if (tenant()?.allowSelfRegistration) {
-    <p class="maya-small maya-muted" style="text-align: center">
-      ¿Todavía no tiene cuenta?
-      <a [routerLink]="['/auth/register']" [queryParams]="{ tenant: form.controls.tenantSlug.value }">
-        Cree una gratis
-      </a>
-    </p>
-  }
-</form>
+  </form>
+}

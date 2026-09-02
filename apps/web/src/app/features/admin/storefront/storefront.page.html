@@ -1,0 +1,521 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Página pública</h1>
+    <p class="maya-page-header__subtitle">
+      El escaparate donde ofrece sus cursos a quien todavía no tiene cuenta.
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    @if (data(); as site) {
+      @if (site.published) {
+        <a class="maya-btn maya-btn--secondary" [href]="publicUrl()" target="_blank" rel="noopener">
+          <maya-icon name="globe" [size]="16" /> Ver la página
+        </a>
+      }
+      <button
+        type="button"
+        class="maya-btn"
+        [class.maya-btn--primary]="!site.published"
+        [class.maya-btn--ghost]="site.published"
+        (click)="togglePublished()"
+      >
+        {{ site.published ? 'Retirar' : 'Publicar' }}
+      </button>
+    }
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 420px"></div>
+} @else if (data(); as site) {
+  @if (!site.published) {
+    <p class="maya-alert maya-alert--warning" style="margin-bottom: var(--maya-space-4)">
+      <maya-icon name="info" [size]="16" />
+      La página no está publicada: nadie de fuera puede verla todavía.
+    </p>
+  } @else {
+    <!-- Compartir a un clic: publicar sirve de poco si después hay que
+         reconstruir la dirección a mano para pegarla en un correo. -->
+    <section class="compartir">
+      <div class="compartir__texto">
+        <p class="maya-small maya-bold">Comparta su página de cursos</p>
+        <code class="compartir__url">{{ publicUrl() }}</code>
+      </div>
+      <div class="compartir__acciones">
+        <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="copiarEnlace()">
+          <maya-icon [name]="copiado() ? 'check' : 'copy'" [size]="15" />
+          {{ copiado() ? 'Copiado' : 'Copiar enlace' }}
+        </button>
+        <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="compartir()">
+          <maya-icon name="send" [size]="15" /> Compartir
+        </button>
+        <a
+          class="maya-btn maya-btn--ghost maya-btn--sm"
+          [href]="enlaceWhatsapp()"
+          target="_blank"
+          rel="noopener"
+        >
+          <maya-icon name="message-square" [size]="15" /> WhatsApp
+        </a>
+        <a class="maya-btn maya-btn--ghost maya-btn--sm" [href]="enlaceCorreo()">
+          <maya-icon name="mail" [size]="15" /> Correo
+        </a>
+      </div>
+    </section>
+  }
+
+  <nav class="maya-tabs" style="margin-bottom: var(--maya-space-5)">
+    <button
+      type="button"
+      class="maya-tab"
+      [class.is-active]="tab() === 'diseno'"
+      (click)="tab.set('diseno')"
+    >
+      Diseño
+    </button>
+    <button
+      type="button"
+      class="maya-tab"
+      [class.is-active]="tab() === 'cursos'"
+      (click)="tab.set('cursos')"
+    >
+      Cursos a la venta ({{ listedCount() }})
+    </button>
+    <button
+      type="button"
+      class="maya-tab"
+      [class.is-active]="tab() === 'solicitudes'"
+      (click)="tab.set('solicitudes')"
+    >
+      Solicitudes
+      @if (pendingCount()) {
+        <span class="maya-badge maya-badge--warning">{{ pendingCount() }}</span>
+      }
+    </button>
+  </nav>
+
+  <!-- ─────────────────────────────── Diseño ─────────────────────────────── -->
+  @if (tab() === 'diseno') {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Plantilla</h2>
+      </div>
+      <div class="maya-card__body">
+        <div class="plantillas">
+          @for (template of templates; track template.value) {
+            <button
+              type="button"
+              class="plantilla"
+              [class.plantilla--activa]="site.template === template.value"
+              (click)="setTemplate(template.value)"
+            >
+              <div class="miniatura" [class]="'miniatura miniatura--' + template.value">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <p class="maya-bold maya-small">{{ template.label }}</p>
+              <p class="maya-tiny maya-subtle">{{ template.hint }}</p>
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Secciones</h2>
+        <p class="maya-tiny maya-subtle">
+          Actívelas, ordénelas y edite sus textos. Se muestran en este orden.
+        </p>
+      </div>
+      <div class="maya-card__body maya-stack">
+        @for (section of site.sections; track section.id; let i = $index) {
+          <div>
+            <div class="seccion-fila" [class.seccion-fila--apagada]="!section.enabled">
+              <label class="maya-switch">
+                <input
+                  type="checkbox"
+                  [checked]="section.enabled"
+                  (change)="toggleSection(section)"
+                  [attr.aria-label]="'Mostrar ' + meta(section.type).label"
+                />
+                <span></span>
+              </label>
+              <div class="seccion-fila__texto">
+                <p class="maya-small maya-bold">{{ meta(section.type).label }}</p>
+                <p class="maya-tiny maya-subtle">{{ section.title || meta(section.type).hint }}</p>
+              </div>
+              <div class="maya-row">
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  (click)="move(section, -1)"
+                  [disabled]="i === 0"
+                  aria-label="Subir"
+                >
+                  <maya-icon name="chevron-up" [size]="15" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  (click)="move(section, 1)"
+                  [disabled]="i === site.sections.length - 1"
+                  aria-label="Bajar"
+                >
+                  <maya-icon name="chevron-down" [size]="15" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  (click)="openSection.set(openSection() === section.id ? null : section.id)"
+                >
+                  {{ openSection() === section.id ? 'Cerrar' : 'Editar' }}
+                </button>
+              </div>
+            </div>
+
+            @if (openSection() === section.id) {
+              <div class="seccion-editor">
+                <div class="maya-field">
+                  <label class="maya-label">Título</label>
+                  <input
+                    class="maya-input"
+                    [value]="section.title ?? ''"
+                    (change)="editField(section, 'title', $any($event.target).value)"
+                  />
+                </div>
+
+                @if (section.type !== SectionType.About) {
+                  <div class="maya-field">
+                    <label class="maya-label">Subtítulo</label>
+                    <input
+                      class="maya-input"
+                      [value]="section.subtitle ?? ''"
+                      (change)="editField(section, 'subtitle', $any($event.target).value)"
+                    />
+                  </div>
+                }
+
+                @if (section.type === SectionType.About) {
+                  <div class="maya-field">
+                    <label class="maya-label">Texto</label>
+                    <textarea
+                      class="maya-input"
+                      rows="6"
+                      [value]="section.body ?? ''"
+                      (change)="editField(section, 'body', $any($event.target).value)"
+                    ></textarea>
+                  </div>
+                }
+
+                @if (section.type === SectionType.Hero || section.type === SectionType.Cta) {
+                  <div class="maya-grid" style="grid-template-columns: 1fr 1fr; gap: var(--maya-space-3)">
+                    <div class="maya-field">
+                      <label class="maya-label">Texto del botón</label>
+                      <input
+                        class="maya-input"
+                        [value]="section.ctaLabel ?? ''"
+                        (change)="editField(section, 'ctaLabel', $any($event.target).value)"
+                      />
+                    </div>
+                    <div class="maya-field">
+                      <label class="maya-label">Enlace del botón</label>
+                      <input
+                        class="maya-input"
+                        [value]="section.ctaUrl ?? ''"
+                        (change)="editField(section, 'ctaUrl', $any($event.target).value)"
+                      />
+                    </div>
+                  </div>
+                }
+
+                @if (section.type === SectionType.Hero) {
+                  <maya-image-upload
+                    label="Imagen de portada"
+                    purpose="storefront"
+                    hint="Apaisada y de al menos 1200 px de ancho."
+                    [value]="section.imageUrl ?? null"
+                    (valueChange)="editField(section, 'imageUrl', $event)"
+                  />
+                }
+
+                @if (section.type === SectionType.Courses) {
+                  <div class="maya-field">
+                    <label class="maya-label">Cuántos cursos mostrar</label>
+                    <input
+                      type="number"
+                      min="1"
+                      class="maya-input"
+                      style="max-width: 160px"
+                      [value]="section.limit ?? ''"
+                      placeholder="Todos"
+                      (change)="editField(section, 'limit', $any($event.target).valueAsNumber || null)"
+                    />
+                  </div>
+                }
+
+                @if (section.type === SectionType.Testimonials || section.type === SectionType.Faq) {
+                  <div class="maya-stack">
+                    @for (item of section.items ?? []; track $index; let j = $index) {
+                      <div class="maya-card" style="padding: var(--maya-space-3)">
+                        <div class="maya-field">
+                          <label class="maya-label">
+                            {{ section.type === SectionType.Faq ? 'Pregunta' : 'Titular' }}
+                          </label>
+                          <input
+                            class="maya-input"
+                            [value]="item.title"
+                            (change)="editItem(section, j, 'title', $any($event.target).value)"
+                          />
+                        </div>
+                        <div class="maya-field">
+                          <label class="maya-label">
+                            {{ section.type === SectionType.Faq ? 'Respuesta' : 'Texto' }}
+                          </label>
+                          <textarea
+                            class="maya-input"
+                            rows="2"
+                            [value]="item.body ?? ''"
+                            (change)="editItem(section, j, 'body', $any($event.target).value)"
+                          ></textarea>
+                        </div>
+                        @if (section.type === SectionType.Testimonials) {
+                          <div class="maya-field">
+                            <label class="maya-label">Quién lo dice</label>
+                            <input
+                              class="maya-input"
+                              [value]="item.author ?? ''"
+                              (change)="editItem(section, j, 'author', $any($event.target).value)"
+                            />
+                          </div>
+                        }
+                        <button
+                          type="button"
+                          class="maya-btn maya-btn--ghost maya-btn--sm"
+                          (click)="removeItem(section, j)"
+                        >
+                          <maya-icon name="trash" [size]="14" /> Quitar
+                        </button>
+                      </div>
+                    }
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--secondary maya-btn--sm"
+                      (click)="addItem(section)"
+                    >
+                      <maya-icon name="plus" [size]="15" /> Añadir
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Contacto y buscadores</h2>
+      </div>
+      <div class="maya-card__body maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+        <div class="maya-field">
+          <label class="maya-label">Correo de contacto</label>
+          <input
+            class="maya-input"
+            [value]="site.contact.email ?? ''"
+            (change)="editContact('email', $any($event.target).value)"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label">Teléfono</label>
+          <input
+            class="maya-input"
+            [value]="site.contact.phone ?? ''"
+            (change)="editContact('phone', $any($event.target).value)"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label">Dirección</label>
+          <input
+            class="maya-input"
+            [value]="site.contact.address ?? ''"
+            (change)="editContact('address', $any($event.target).value)"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label">Sitio web</label>
+          <input
+            class="maya-input"
+            [value]="site.contact.website ?? ''"
+            (change)="editContact('website', $any($event.target).value)"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label">Título en buscadores</label>
+          <input
+            class="maya-input"
+            [value]="site.seo.title ?? ''"
+            (change)="editSeo('title', $any($event.target).value)"
+          />
+        </div>
+        <div class="maya-field">
+          <label class="maya-label">Descripción en buscadores</label>
+          <input
+            class="maya-input"
+            [value]="site.seo.description ?? ''"
+            (change)="editSeo('description', $any($event.target).value)"
+          />
+          <span class="maya-hint">Unas 25 palabras. Es lo que se lee bajo el enlace.</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="barra-guardar">
+      <span class="maya-small maya-subtle">
+        {{ dirty() ? 'Hay cambios sin guardar.' : 'Todo guardado.' }}
+      </span>
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        (click)="save()"
+        [disabled]="saving() || !dirty()"
+      >
+        {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </div>
+  }
+
+  <!-- ─────────────────────────────── Cursos ─────────────────────────────── -->
+  @if (tab() === 'cursos') {
+    <p class="maya-small maya-subtle" style="margin-bottom: var(--maya-space-4)">
+      Marque los cursos que quiere ofrecer y póngales precio. Los gratuitos matriculan al momento;
+      los de pago generan una solicitud que usted aprueba.
+    </p>
+
+    @if (catalogue().length) {
+      <div class="maya-table-wrap">
+        <table class="maya-table">
+          <thead>
+            <tr>
+              <th scope="col">A la venta</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Frase gancho</th>
+              <th scope="col">Precio (€)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (course of catalogue(); track course.id) {
+              <tr>
+                <td>
+                  <label class="maya-switch">
+                    <input
+                      type="checkbox"
+                      [checked]="course.catalog?.listed ?? false"
+                      (change)="toggleListed(course)"
+                      [attr.aria-label]="'Ofrecer ' + course.fullName"
+                    />
+                    <span></span>
+                  </label>
+                </td>
+                <td>
+                  <p class="maya-small maya-bold">{{ course.fullName }}</p>
+                  <p class="maya-tiny maya-subtle">{{ course.categoryName }}</p>
+                </td>
+                <td>
+                  <input
+                    class="maya-input"
+                    [value]="course.catalog?.headline ?? ''"
+                    placeholder="Lo que hace atractivo el curso"
+                    (change)="setHeadline(course, $any($event.target).value)"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="maya-input"
+                    style="max-width: 120px"
+                    [value]="priceOf(course)"
+                    (change)="setPrice(course, $any($event.target).value)"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="maya-muted">Todavía no hay cursos que ofrecer.</p>
+    }
+  }
+
+  <!-- ───────────────────────────── Solicitudes ──────────────────────────── -->
+  @if (tab() === 'solicitudes') {
+    @if (requests().length) {
+      <div class="maya-table-wrap">
+        <table class="maya-table">
+          <thead>
+            <tr>
+              <th scope="col">Persona</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Recibida</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="maya-sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (request of requests(); track request.id) {
+              <tr>
+                <td>
+                  <p class="maya-small maya-bold">{{ request.firstName }} {{ request.lastName }}</p>
+                  <p class="maya-tiny maya-subtle">{{ request.email }}</p>
+                  @if (request.phone) {
+                    <p class="maya-tiny maya-subtle">{{ request.phone }}</p>
+                  }
+                  @if (request.message) {
+                    <p class="maya-tiny" style="margin-top: 4px">«{{ request.message }}»</p>
+                  }
+                </td>
+                <td class="maya-small">{{ request.course.title }}</td>
+                <td class="maya-small">{{ request.createdAt | mayaDate: 'short' }}</td>
+                <td>
+                  <span
+                    class="maya-badge"
+                    [class.maya-badge--success]="request.status === RequestStatus.Approved"
+                    [class.maya-badge--warning]="request.status === RequestStatus.Pending"
+                    [class.maya-badge--danger]="request.status === RequestStatus.Rejected"
+                  >
+                    {{ statusLabel(request.status) }}
+                  </span>
+                </td>
+                <td>
+                  @if (request.status === RequestStatus.Pending) {
+                    <div class="maya-row">
+                      <button
+                        type="button"
+                        class="maya-btn maya-btn--primary maya-btn--sm"
+                        (click)="resolve(request, RequestStatus.Approved)"
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        class="maya-btn maya-btn--ghost maya-btn--sm"
+                        (click)="resolve(request, RequestStatus.Rejected)"
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="maya-muted">Todavía no ha llegado ninguna solicitud.</p>
+    }
+  }
+}

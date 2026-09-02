@@ -4,12 +4,12 @@ import { TenantDto } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
-import { IconComponent } from '../../shared';
+import { IconComponent, ImageUploadComponent } from '../../shared';
 
 @Component({
   selector: 'maya-admin-tenant',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule, IconComponent, ImageUploadComponent],
   templateUrl: './tenant.page.html',
 })
 export class AdminTenantPage {
@@ -35,6 +35,19 @@ export class AdminTenantPage {
     logoUrl: [''],
     welcomeMessage: [''],
   });
+
+  /**
+   * El logotipo se lleva aparte del formulario reactivo porque el componente de
+   * subida trabaja con señales: mantenerlo como control obligaría a sincronizar
+   * las dos direcciones a mano cada vez que termina una subida.
+   */
+  readonly logoUrl = signal<string | null>(null);
+
+  setLogo(url: string | null): void {
+    this.logoUrl.set(url);
+    this.brandingForm.controls.logoUrl.setValue(url ?? '');
+    this.brandingForm.markAsDirty();
+  }
 
   readonly settingsForm = this.fb.nonNullable.group({
     defaultLanguage: ['es'],
@@ -62,6 +75,7 @@ export class AdminTenantPage {
           logoUrl: tenant.branding.logoUrl ?? '',
           welcomeMessage: tenant.branding.welcomeMessage ?? '',
         });
+        this.logoUrl.set(tenant.branding.logoUrl ?? null);
         this.settingsForm.patchValue(tenant.settings);
       },
     });

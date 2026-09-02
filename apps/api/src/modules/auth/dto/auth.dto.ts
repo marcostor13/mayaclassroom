@@ -12,9 +12,15 @@ export class LoginDto {
   @MinLength(6)
   password!: string;
 
-  @ApiProperty({ example: 'acme', description: 'Identificador de la empresa' })
+  @ApiPropertyOptional({
+    example: 'acme',
+    description:
+      'Identificador de la empresa. Opcional: si no se indica, se deduce de las credenciales, ' +
+      'y cuando valen en varias empresas la respuesta pide elegir una.',
+  })
   @IsString()
-  tenantSlug!: string;
+  @IsOptional()
+  tenantSlug?: string;
 
   @ApiPropertyOptional({ description: 'Código TOTP si el usuario tiene 2FA activo' })
   @IsString()
@@ -25,6 +31,22 @@ export class LoginDto {
   @IsBoolean()
   @IsOptional()
   rememberMe?: boolean;
+}
+
+/** Segundo paso del acceso cuando las credenciales valen en varias empresas. */
+export class TenantChoiceDto {
+  @ApiProperty({ description: 'Testigo devuelto por el primer paso del acceso' })
+  @IsString()
+  tenantChoiceToken!: string;
+
+  @ApiProperty({ description: 'Empresa elegida, de entre las que devolvió el primer paso' })
+  @IsString()
+  tenantId!: string;
+
+  @ApiPropertyOptional({ description: 'Código TOTP si la cuenta tiene 2FA activo' })
+  @IsString()
+  @IsOptional()
+  totp?: string;
 }
 
 export class RegisterDto {
@@ -45,7 +67,15 @@ export class RefreshDto {
 
 export class ForgotPasswordDto {
   @ApiProperty() @IsEmail() email!: string;
-  @ApiProperty() @IsString() tenantSlug!: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Empresa concreta. Opcional: sin ella se envía un enlace por cada empresa donde exista ' +
+      'ese correo.',
+  })
+  @IsString()
+  @IsOptional()
+  tenantSlug?: string;
 }
 
 export class ResetPasswordDto {

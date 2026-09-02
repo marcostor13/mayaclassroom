@@ -75,6 +75,21 @@ export class ContextsService {
     const instanceId = toObjectId(params.instanceId);
     const existing = await this.model.findOne({ level: params.level, instanceId }).exec();
 
+    // Un contexto que ya existe solo se reubica si se pide un padre concreto.
+    //
+    // Antes, omitir el padre significaba «cuélgalo del sistema», y bastaba con
+    // llamar aquí para refrescar la etiqueta —algo que se hace al guardar
+    // cualquier cambio— para sacar el subárbol entero del sitio donde estaba.
+    // Un curso así queda fuera del alcance de los roles de su empresa y deja
+    // de dejar entrar a nadie, incluida quien lo administra.
+    if (existing && !params.parentId) {
+      if (params.label && existing.label !== params.label) {
+        existing.label = params.label;
+        await existing.save();
+      }
+      return existing;
+    }
+
     const parent = params.parentId
       ? await this.findById(params.parentId)
       : await this.getSystemContext();

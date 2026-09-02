@@ -12,6 +12,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { CoursesService } from '../../core/services/courses.service';
 import { ActivitiesService } from '../../core/services/activities.service';
 import { ToastService } from '../../core/services/toast.service';
+import { moduleIcon, moduleLink } from '../../core/module-links';
+import { PreviewService } from '../../core/services/preview.service';
 import {
   EmptyStateComponent,
   FormatDatePipe,
@@ -19,40 +21,6 @@ import {
   ProgressBarComponent,
   SafeHtmlPipe,
 } from '../../shared';
-
-/** Iconos por tipo de actividad, alineados con el catálogo de la API. */
-const MODULE_ICONS: Record<string, string> = {
-  [ModuleType.Assign]: 'clipboard-check',
-  [ModuleType.Quiz]: 'help-circle',
-  [ModuleType.Forum]: 'message-square',
-  [ModuleType.Choice]: 'list-checks',
-  [ModuleType.Feedback]: 'clipboard-list',
-  [ModuleType.Resource]: 'file',
-  [ModuleType.Folder]: 'folder',
-  [ModuleType.Page]: 'file-text',
-  [ModuleType.Url]: 'link',
-  [ModuleType.Book]: 'book-open',
-  [ModuleType.Label]: 'tag',
-  [ModuleType.Lesson]: 'route',
-  [ModuleType.Glossary]: 'book-a',
-  [ModuleType.Wiki]: 'network',
-  [ModuleType.Workshop]: 'users-round',
-  [ModuleType.Database]: 'database',
-  [ModuleType.Chat]: 'messages-square',
-  [ModuleType.Scorm]: 'package',
-  [ModuleType.Lti]: 'plug',
-  [ModuleType.H5p]: 'puzzle',
-  [ModuleType.Survey]: 'bar-chart-3',
-  [ModuleType.Attendance]: 'user-check',
-};
-
-const MODULE_ROUTES: Record<string, string> = {
-  [ModuleType.Assign]: '/mod/assign',
-  [ModuleType.Quiz]: '/mod/quiz',
-  [ModuleType.Forum]: '/mod/forum',
-  [ModuleType.Choice]: '/mod/choice',
-  [ModuleType.Feedback]: '/mod/feedback',
-};
 
 @Component({
   selector: 'maya-course-view',
@@ -83,12 +51,40 @@ export class CourseViewPage {
   readonly tab = signal<'contents' | 'participants' | 'grades'>('contents');
   readonly collapsed = signal<Set<string>>(new Set());
 
-  readonly canEdit = computed(
+  readonly preview = inject(PreviewService);
+
+  /** Quien de verdad puede editar, se mire como se mire. */
+  private readonly esDocente = computed(
     () => this.auth.can(CAP.COURSE_MANAGE_ACTIVITIES) || this.auth.isTeacherOf(this.courseId),
   );
+
+  // En vista de alumno desaparecen los controles: es justo lo que se quiere
+  // comprobar. El permiso real no cambia, solo lo que se muestra.
+  readonly canEdit = computed(() => this.esDocente() && !this.preview.studentView());
   readonly canGrade = computed(
-    () => this.auth.can(CAP.GRADE_VIEW_ALL) || this.auth.isTeacherOf(this.courseId),
+    () =>
+      (this.auth.can(CAP.GRADE_VIEW_ALL) || this.auth.isTeacherOf(this.courseId)) &&
+      !this.preview.studentView(),
   );
+
+  /** Puede alternar la vista quien podría editar. */
+  readonly canPreview = computed(() => this.esDocente());
+
+  /**
+   * Secciones tal como las vería el alumnado: sin lo oculto.
+   *
+   * El filtro es de presentación, no de seguridad: la API ya decide qué
+   * entrega a cada quien. Aquí solo sirve para comprobar el resultado.
+   */
+  readonly visibleSections = computed(() => {
+    if (!this.preview.studentView()) return this.sections();
+    return this.sections()
+      .filter((section) => section.visible !== false)
+      .map((section) => ({
+        ...section,
+        modules: (section.modules ?? []).filter((module) => module.visible !== false),
+      }));
+  });
 
   readonly totalActivities = computed(() =>
     this.sections().reduce((sum, section) => sum + section.modules.length, 0),
@@ -117,28 +113,11 @@ export class CourseViewPage {
   }
 
   icon(module: CourseModuleDto): string {
-    return MODULE_ICONS[module.moduleType] ?? 'file';
+    return moduleIcon(module);
   }
 
   link(module: CourseModuleDto): string[] {
-    const base = MODULE_ROUTES[module.moduleType];
-    if (base) return [base, module.id];
-    const advanced = [
-      ModuleType.Lesson,
-      ModuleType.Glossary,
-      ModuleType.Wiki,
-      ModuleType.Workshop,
-      ModuleType.Database,
-      ModuleType.Chat,
-      ModuleType.Scorm,
-      ModuleType.Lti,
-      ModuleType.H5p,
-      ModuleType.Survey,
-      ModuleType.Attendance,
-    ];
-    return advanced.includes(module.moduleType)
-      ? ['/mod/advanced', module.id]
-      : ['/mod/resource', module.id];
+    return moduleLink(module);
   }
 
   isComplete(module: CourseModuleDto): boolean {

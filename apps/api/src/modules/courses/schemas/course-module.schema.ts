@@ -61,3 +61,24 @@ export const CourseModuleSchema = SchemaFactory.createForClass(CourseModule);
 
 CourseModuleSchema.index({ course: 1, section: 1, sortOrder: 1 });
 CourseModuleSchema.index({ moduleType: 1, instance: 1 }, { unique: true });
+
+/**
+ * Los nombres que espera el contrato compartido.
+ *
+ * En la base los campos son referencias y se llaman `course`, `section` e
+ * `instance`; `CourseModuleDto` los declara como `courseId`, `sectionId` e
+ * `instanceId`. Sin estos virtuales el cliente recibía `courseId: undefined`,
+ * y la miga de pan de una actividad construía un enlace a
+ * «/courses/undefined» que acababa en un error del servidor.
+ *
+ * La serialización global ya incluye los virtuales, así que basta declararlos.
+ */
+CourseModuleSchema.virtual('courseId').get(function (this: CourseModule) {
+  return this.course?.toString();
+});
+CourseModuleSchema.virtual('sectionId').get(function (this: CourseModule) {
+  return this.section?.toString();
+});
+CourseModuleSchema.virtual('instanceId').get(function (this: CourseModule) {
+  return this.instance?.toString();
+});

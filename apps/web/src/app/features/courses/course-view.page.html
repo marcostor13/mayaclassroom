@@ -33,6 +33,18 @@
     </div>
 
     <div class="course-hero__actions">
+      @if (canPreview()) {
+        <button
+          type="button"
+          class="maya-btn maya-btn--sm"
+          [class.maya-btn--primary]="preview.studentView()"
+          [class.maya-btn--secondary]="!preview.studentView()"
+          (click)="preview.toggle()"
+        >
+          <maya-icon [name]="preview.studentView() ? 'eye-off' : 'eye'" [size]="16" />
+          {{ preview.studentView() ? 'Salir de la vista de alumno' : 'Ver como alumno' }}
+        </button>
+      }
       @if (canEdit()) {
         <a
           [routerLink]="['/courses', courseId, 'edit']"
@@ -100,7 +112,15 @@
 
   <!-- Contenido del curso -->
   <div class="sections">
-    @for (section of sections(); track section.id) {
+    @if (preview.studentView()) {
+      <p class="maya-alert maya-alert--info" style="margin-bottom: var(--maya-space-4)">
+        <maya-icon name="info" [size]="16" />
+        Está viendo el curso como lo verá su alumnado: sin los controles de edición y sin lo que
+        esté oculto. Sus calificaciones y su progreso siguen siendo los suyos.
+      </p>
+    }
+
+    @for (section of visibleSections(); track section.id) {
       <section class="section maya-card">
         <button
           type="button"

@@ -1,0 +1,149 @@
+/**
+ * Editor de lección por bloques.
+ *
+ * La barra de cada bloque está siempre visible en lugar de aparecer al pasar
+ * el ratón: en una pantalla táctil no hay `:hover`, y esconder ahí las acciones
+ * de mover y borrar las haría inalcanzables en móvil.
+ */
+:host {
+  display: block;
+}
+
+.vacio {
+  padding: var(--maya-space-6);
+  text-align: center;
+  border: 1px dashed var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+}
+
+.bloques {
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+.bloque {
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+  overflow: hidden;
+}
+
+.bloque__barra {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-2) var(--maya-space-3);
+  background: var(--maya-surface-alt);
+  border-bottom: 1px solid var(--maya-border);
+  color: var(--maya-text-soft);
+}
+
+.bloque__acciones {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.bloque__cuerpo {
+  display: grid;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3);
+}
+
+.vista {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface-alt);
+}
+
+audio {
+  width: 100%;
+}
+
+/* Marco de proporción fija: el vídeo externo no puede fijar su alto y sin esto
+   el bloque salta de tamaño al terminar de cargar. */
+.marco {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--maya-radius-md);
+  overflow: hidden;
+  background: #000;
+}
+
+.marco iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--maya-text-sm);
+  white-space: pre;
+}
+
+.separador {
+  border: none;
+  border-top: 1px solid var(--maya-border);
+  margin: 0;
+}
+
+/* Fila para intercalar un bloque. Discreta hasta que se necesita: si pesara
+   visualmente tanto como el contenido, la lección se leería a trozos. */
+.insertar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px var(--maya-space-3) var(--maya-space-3);
+  opacity: 0.55;
+  transition: opacity var(--maya-duration) var(--maya-ease);
+}
+
+.bloque:hover .insertar,
+.bloque:focus-within .insertar {
+  opacity: 1;
+}
+
+.insertar__boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: var(--maya-text-xs);
+  color: var(--maya-text-soft);
+  background: transparent;
+  border: 1px dashed var(--maya-border);
+  border-radius: var(--maya-radius-sm);
+  cursor: pointer;
+}
+
+.insertar__boton:hover,
+.insertar__boton:active {
+  color: var(--maya-primary-deep);
+  border-color: var(--maya-primary);
+  border-style: solid;
+  background: var(--maya-primary-softer);
+}
+
+.anadir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-4);
+  padding-top: var(--maya-space-4);
+  border-top: 1px solid var(--maya-border);
+}
+
+/* En móvil los botones de la barra necesitan sitio para el dedo. */
+@media (max-width: 30rem) {
+  .bloque__acciones .maya-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}

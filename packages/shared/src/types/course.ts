@@ -8,6 +8,7 @@ import {
   GroupMode,
   ModuleType,
 } from '../enums';
+import type { CourseCatalog } from './site';
 
 export interface CategoryNode {
   id: string;
@@ -40,6 +41,8 @@ export interface CourseSummary {
   teachers?: { id: string; fullName: string; avatarUrl: string | null }[];
   lastAccess?: string | null;
   favourite?: boolean;
+  /** Datos de venta. Solo llega a quien administra: fuera se usa `PublicCourseDto`. */
+  catalog?: CourseCatalog;
 }
 
 export interface CourseDetail extends CourseSummary {

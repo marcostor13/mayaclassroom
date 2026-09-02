@@ -43,11 +43,11 @@ bun run build:shared
 # 5 · Datos de demostración (crea empresa, usuarios y cursos de ejemplo)
 bun run seed
 
-# 6 · Arrancar API (:3000) y cliente (:4200) a la vez
+# 6 · Arrancar API (:3000) y cliente (:4205) a la vez
 bun run dev
 ```
 
-Abra `http://localhost:4200` y acceda con la empresa **`demo`**:
+Abra `http://localhost:4205` y acceda con la empresa **`demo`**:
 
 | Perfil | Usuario | Contraseña |
 |---|---|---|
@@ -92,7 +92,7 @@ maya-classroom/
 |---|---|
 | `bun run dev` | API y cliente en modo desarrollo |
 | `bun run dev:api` | Solo la API (`http://localhost:3000`) |
-| `bun run dev:web` | Solo el cliente (`http://localhost:4200`) |
+| `bun run dev:web` | Solo el cliente (`http://localhost:4205`) |
 | `bun run build` | Compila los tres paquetes |
 | `bun run seed` | Siembra datos de demostración |
 | `bun run test` | Pruebas de la API |
@@ -144,7 +144,8 @@ update(@Param('id') id: string, @Body() dto: UpdateCourseDto) { … }
 | **3** | Competencias, insignias, certificados, cohortes, actividades avanzadas, analíticas, copias de seguridad, RGPD, servicios web, tareas programadas | ✅ |
 
 El detalle está en [`PLAN.md`](./PLAN.md) y la arquitectura técnica en
-[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Para poner el almacenamiento
+de ficheros en Cloudflare R2, [`docs/R2.md`](./docs/R2.md).
 
 ---
 

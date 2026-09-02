@@ -74,10 +74,13 @@
           />
         </div>
       </div>
-      <div class="maya-field">
-        <label class="maya-label" for="t-logo">URL del logotipo</label>
-        <input id="t-logo" class="maya-input" formControlName="logoUrl" />
-      </div>
+      <maya-image-upload
+        label="Logotipo"
+        purpose="branding"
+        hint="PNG o WebP con fondo transparente. Se ve en la barra superior y en su página pública."
+        [value]="logoUrl()"
+        (valueChange)="setLogo($event)"
+      />
       <div class="maya-field">
         <label class="maya-label" for="t-welcome">Mensaje de bienvenida</label>
         <textarea

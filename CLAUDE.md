@@ -17,7 +17,7 @@ de API) va en inglés.
 ```bash
 bun install
 bun run build:shared   # obligatorio antes de cualquier typecheck o compilación
-bun run dev            # API en :3000 y cliente en :4200
+bun run dev            # API en :3000 y cliente en :4205
 bun run seed           # datos de demostración (necesita MONGODB_URI)
 
 bun run lint                          # ESLint de la API

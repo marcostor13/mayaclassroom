@@ -8,6 +8,7 @@ import {
   DiscussionDto,
   FeedbackDto,
   ForumDto,
+  LessonBlock,
   PostDto,
   QuestionDto,
   QuizAttemptDto,
@@ -157,6 +158,22 @@ export class ActivitiesService {
 
   resource(moduleId: string): Observable<{ module: CourseModuleDto; resource: Record<string, unknown> }> {
     return this.api.get(`/mod/resource/${moduleId}`);
+  }
+
+  /** Guarda el contenido de un recurso y devuelve cómo queda. */
+  updateResource(
+    moduleId: string,
+    payload: {
+      name?: string;
+      intro?: string;
+      content?: string;
+      blocks?: LessonBlock[];
+      externalUrl?: string;
+      display?: string;
+      fileIds?: string[];
+    },
+  ): Observable<Record<string, unknown>> {
+    return this.api.patch(`/mod/resource/${moduleId}`, payload);
   }
 
   advanced(moduleId: string): Observable<{ module: CourseModuleDto; activity: Record<string, unknown> }> {

@@ -116,6 +116,29 @@ export class UsersService {
     return query.exec();
   }
 
+  /**
+   * Cuentas con ese correo o usuario en **cualquier** empresa.
+   *
+   * Es la única consulta del sistema que no filtra por `tenant`, y lo hace a
+   * propósito: al entrar todavía no se sabe en qué empresa está la persona,
+   * que es precisamente lo que hay que averiguar. No es una fuga porque nada
+   * de lo que devuelve sale de `AuthService`: allí se descarta todo candidato
+   * cuya contraseña no coincida, así que quien llama nunca llega a saber en
+   * qué empresas existe un correo ajeno.
+   *
+   * El tope existe para que una lista larga de homónimos no dispare otras
+   * tantas verificaciones de argon2, que son caras a propósito.
+   */
+  async findAllByLogin(login: string, limit = 10): Promise<UserDocument[]> {
+    const value = login.toLowerCase().trim();
+    return this.model
+      .find({ $or: [{ email: value }, { username: value }], ...notDeleted })
+      .select('+passwordHash +twoFactorSecret +twoFactorRecoveryCodes')
+      .sort({ createdAt: 1 })
+      .limit(limit)
+      .exec();
+  }
+
   /** Consulta cruda incluyendo los campos sensibles (uso interno de Auth). */
   async findOneWithSecrets(filter: FilterQuery<UserDocument>): Promise<UserDocument | null> {
     return this.model

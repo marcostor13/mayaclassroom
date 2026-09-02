@@ -32,6 +32,7 @@ import { AccessService } from '../rbac/access.service';
 import { ContextsService } from '../contexts/contexts.service';
 import { MailService } from '../mail/mail.service';
 import { UserDocument } from '../users/schemas/user.schema';
+import type { TenantDocument } from '../tenants/schemas/tenant.schema';
 import { toObjectId } from '../../common/utils';
 import {
   ChangePasswordDto,
@@ -44,6 +45,20 @@ import {
 interface ClientInfo {
   ip: string;
   userAgent: string;
+}
+
+/** Una cuenta y la empresa en la que vive, mientras se resuelve la entrada. */
+interface LoginCandidate {
+  user: UserDocument;
+  tenant: TenantDocument;
+}
+
+/** Tipo del testigo que autoriza el segundo paso de la elección de empresa. */
+const TENANT_CHOICE = 'tenant-choice';
+
+/** Una empresa suspendida o archivada no deja entrar a nadie. */
+function isTenantOpen(status: TenantStatus): boolean {
+  return status !== TenantStatus.Suspended && status !== TenantStatus.Archived;
 }
 
 @Injectable()
@@ -77,33 +92,157 @@ export class AuthService {
 
   /* -------------------------------- Login -------------------------------- */
 
+  /**
+   * Entrada a la plataforma.
+   *
+   * La empresa ya no se pide en el formulario: se deduce de las credenciales.
+   * Se buscan las cuentas con ese correo o usuario en toda la plataforma y se
+   * comprueba la contraseña contra cada una; las que casan son las empresas a
+   * las que esa persona puede entrar. Con una sola se entra directo, y con
+   * varias hay que elegir.
+   *
+   * El orden importa para no filtrar nada: la lista de empresas se construye
+   * **después** de validar la contraseña, así que un tercero no puede
+   * averiguar en qué empresas existe un correo ajeno.
+   *
+   * `tenantSlug` sigue aceptándose para quien entre por el dominio de una
+   * empresa concreta; entonces solo se mira ahí.
+   */
   async login(dto: LoginDto, client: ClientInfo): Promise<LoginResponse> {
-    const tenant = await this.tenants.requireBySlug(dto.tenantSlug);
-    if (tenant.status === TenantStatus.Suspended || tenant.status === TenantStatus.Archived) {
-      throw new ForbiddenException('El acceso a esta empresa está deshabilitado.');
-    }
-
-    const user = await this.users.findByLogin(dto.login, tenant._id, true);
-    if (!user || !user.passwordHash) {
+    const candidates = await this.candidateAccounts(dto.login, dto.tenantSlug);
+    if (candidates.length === 0) {
       throw new UnauthorizedException('Credenciales incorrectas.');
     }
 
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
+    const now = new Date();
+    const unlocked = candidates.filter((c) => !(c.user.lockedUntil && c.user.lockedUntil > now));
+    if (unlocked.length === 0) {
       throw new UnauthorizedException(
         'La cuenta está bloqueada temporalmente por intentos fallidos. Inténtelo más tarde.',
       );
     }
 
-    const valid = await this.users.verifyPassword(user.passwordHash, dto.password);
-    if (!valid) {
-      await this.users.registerFailedLogin(
-        user,
-        this.security.loginMaxAttempts,
-        this.security.loginLockMinutes,
-      );
+    const matches: LoginCandidate[] = [];
+    for (const candidate of unlocked) {
+      if (!candidate.user.passwordHash) continue;
+      if (await this.users.verifyPassword(candidate.user.passwordHash, dto.password)) {
+        matches.push(candidate);
+      }
+    }
+
+    if (matches.length === 0) {
+      // El fallo se anota en todas las cuentas con ese correo, no solo en una:
+      // son la misma persona en distintas empresas y el bloqueo por intentos
+      // no tendría sentido si bastara con ir probando empresa por empresa.
+      for (const candidate of unlocked) {
+        await this.users.registerFailedLogin(
+          candidate.user,
+          this.security.loginMaxAttempts,
+          this.security.loginLockMinutes,
+        );
+      }
       throw new UnauthorizedException('Credenciales incorrectas.');
     }
 
+    if (matches.length > 1) return this.buildTenantChoice(matches);
+
+    return this.finishLogin(matches[0], dto.totp, client);
+  }
+
+  /**
+   * Segundo paso cuando las credenciales valen en varias empresas: completa la
+   * entrada en la elegida sin volver a pedir la contraseña.
+   *
+   * El testigo lleva dentro las cuentas que ya pasaron la comprobación, así
+   * que elegir una empresa que no estuviera entre ellas no sirve de nada.
+   */
+  async chooseTenant(
+    tenantChoiceToken: string,
+    tenantId: string,
+    totp: string | undefined,
+    client: ClientInfo,
+  ): Promise<LoginResponse> {
+    let payload: { type?: string; users?: string[] };
+    try {
+      payload = await this.jwt.verifyAsync(tenantChoiceToken, {
+        secret: this.jwtConfig.accessSecret,
+      });
+    } catch {
+      throw new UnauthorizedException('La elección de empresa ha caducado. Vuelva a entrar.');
+    }
+    if (payload.type !== TENANT_CHOICE || !payload.users?.length) {
+      throw new UnauthorizedException('El testigo de elección no es válido.');
+    }
+
+    const user = await this.users.findOneWithSecrets({
+      _id: { $in: payload.users.map((id) => toObjectId(id)) },
+      tenant: toObjectId(tenantId),
+      deletedAt: null,
+    });
+    if (!user) {
+      throw new UnauthorizedException('La empresa elegida no está entre las disponibles.');
+    }
+
+    const tenant = await this.tenants.findById(user.tenant);
+    return this.finishLogin({ user, tenant }, totp, client);
+  }
+
+  /**
+   * Cuentas que podrían corresponder a esas credenciales, ya descartadas las
+   * empresas cerradas. Todavía no se ha comprobado ninguna contraseña.
+   */
+  private async candidateAccounts(login: string, tenantSlug?: string): Promise<LoginCandidate[]> {
+    if (tenantSlug) {
+      const tenant = await this.tenants.requireBySlug(tenantSlug);
+      if (!isTenantOpen(tenant.status)) {
+        throw new ForbiddenException('El acceso a esta empresa está deshabilitado.');
+      }
+      const user = await this.users.findByLogin(login, tenant._id, true);
+      return user ? [{ user, tenant }] : [];
+    }
+
+    const users = await this.users.findAllByLogin(login);
+    const candidates: LoginCandidate[] = [];
+    for (const user of users) {
+      const tenant = await this.tenants.findById(user.tenant);
+      if (isTenantOpen(tenant.status)) candidates.push({ user, tenant });
+    }
+    return candidates;
+  }
+
+  /**
+   * Devuelve las empresas entre las que elegir. El perfil que acompaña es el
+   * de la primera cuenta y no destapa nada: para llegar aquí ha habido que
+   * acertar la contraseña de todas ellas.
+   */
+  private async buildTenantChoice(matches: LoginCandidate[]): Promise<LoginResponse> {
+    return {
+      user: await this.buildSessionUser(matches[0].user._id),
+      tokens: { accessToken: '', refreshToken: '', expiresIn: 0, tokenType: 'Bearer' },
+      requiresTenantChoice: true,
+      tenants: matches.map(({ tenant }) => ({
+        id: tenant.id as string,
+        slug: tenant.slug,
+        name: tenant.name,
+        logoUrl: tenant.branding?.logoUrl ?? null,
+      })),
+      tenantChoiceToken: await this.jwt.signAsync(
+        {
+          sub: matches[0].user._id.toString(),
+          type: TENANT_CHOICE,
+          users: matches.map((m) => m.user._id.toString()),
+        },
+        { secret: this.jwtConfig.accessSecret, expiresIn: '5m' } as JwtSignOptions,
+      ),
+    };
+  }
+
+  /** Comprobaciones de estado, doble factor y emisión de la sesión. */
+  private async finishLogin(
+    { user, tenant }: LoginCandidate,
+    totp: string | undefined,
+    client: ClientInfo,
+  ): Promise<LoginResponse> {
     if (user.status === UserStatus.Suspended) {
       throw new ForbiddenException('Su cuenta está suspendida. Contacte con el administrador.');
     }
@@ -112,7 +251,7 @@ export class AuthService {
     }
 
     if (user.twoFactorEnabled) {
-      if (!dto.totp) {
+      if (!totp) {
         return {
           user: await this.buildSessionUser(user._id),
           tokens: { accessToken: '', refreshToken: '', expiresIn: 0, tokenType: 'Bearer' },
@@ -120,8 +259,9 @@ export class AuthService {
           twoFactorToken: await this.issueTwoFactorChallenge(user),
         };
       }
-      const ok = this.verifyTotp(user, dto.totp);
-      if (!ok) throw new UnauthorizedException('El código de verificación no es válido.');
+      if (!this.verifyTotp(user, totp)) {
+        throw new UnauthorizedException('El código de verificación no es válido.');
+      }
     }
 
     await this.users.touchLogin(user._id, client.ip);
@@ -350,18 +490,45 @@ export class AuthService {
 
   /* ------------------------- Contraseñas y correo ------------------------ */
 
+  /**
+   * Envía el enlace de recuperación, igual que el acceso, sin pedir la empresa:
+   * quien no recuerda su contraseña tampoco tiene por qué recordar en qué
+   * empresa está dada de alta.
+   *
+   * Si el correo existe en varias, sale un enlace por cada una. No hace falta
+   * elegir aquí, como sí ocurre al entrar, porque cada enlace ya lleva dentro
+   * la cuenta a la que pertenece: `resetPassword` deduce la empresa del propio
+   * testigo.
+   */
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
-    const tenant = await this.tenants.requireBySlug(dto.tenantSlug);
-    const user = await this.users.findByEmail(dto.email, tenant._id);
-    // Respuesta uniforme: no se revela si el correo existe.
-    if (!user) return;
+    // Se reutiliza la búsqueda del acceso, que casa por correo o por usuario:
+    // aquí el DTO ya obliga a que sea un correo.
+    const accounts = dto.tenantSlug
+      ? await this.singleAccountIn(dto.tenantSlug, dto.email)
+      : await this.users.findAllByLogin(dto.email);
 
+    // Respuesta uniforme pase lo que pase: no se revela si el correo existe ni
+    // en cuántas empresas.
+    for (const user of accounts) {
+      const tenant = await this.tenants.findById(user.tenant);
+      if (!isTenantOpen(tenant.status)) continue;
+      await this.sendPasswordReset(user, tenant.slug);
+    }
+  }
+
+  private async singleAccountIn(tenantSlug: string, email: string): Promise<UserDocument[]> {
+    const tenant = await this.tenants.requireBySlug(tenantSlug);
+    const user = await this.users.findByEmail(email, tenant._id);
+    return user ? [user] : [];
+  }
+
+  private async sendPasswordReset(user: UserDocument, tenantSlug: string): Promise<void> {
     const token = randomBytes(32).toString('base64url');
     user.passwordResetToken = this.hashToken(token);
     user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    const link = `${this.app.webUrl}/auth/reset-password?token=${token}&tenant=${tenant.slug}`;
+    const link = `${this.app.webUrl}/auth/reset-password?token=${token}&tenant=${tenantSlug}`;
     await this.mail.sendPasswordReset(user.email, fullName(user.firstName, user.lastName), link);
   }
 

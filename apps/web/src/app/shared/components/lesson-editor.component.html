@@ -1,0 +1,226 @@
+@if (!blocks().length) {
+  <div class="vacio">
+    <p class="maya-small maya-muted">
+      La lección está vacía. Empiece por un bloque de texto o un vídeo; luego podrá moverlos.
+    </p>
+  </div>
+}
+
+<div class="bloques">
+  @for (block of blocks(); track block.id; let i = $index, primero = $first, ultimo = $last) {
+    <article class="bloque" [class.bloque--abierto]="abierto() === block.id">
+      <!-- Cabecera: qué es y qué se puede hacer con él. Siempre visible, para
+           que mover un bloque no obligue a abrirlo antes. -->
+      <header class="bloque__barra">
+        <maya-icon [name]="icono(block.type)" [size]="15" />
+        <span class="maya-tiny maya-bold">{{ etiqueta(block.type) }}</span>
+
+        <div class="bloque__acciones">
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+            (click)="move(block.id, -1)"
+            [disabled]="primero"
+            aria-label="Subir bloque"
+          >
+            <maya-icon name="chevron-up" [size]="14" />
+          </button>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+            (click)="move(block.id, 1)"
+            [disabled]="ultimo"
+            aria-label="Bajar bloque"
+          >
+            <maya-icon name="chevron-down" [size]="14" />
+          </button>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+            (click)="duplicate(block.id)"
+            aria-label="Duplicar bloque"
+          >
+            <maya-icon name="copy" [size]="14" />
+          </button>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+            (click)="remove(block.id)"
+            aria-label="Eliminar bloque"
+          >
+            <maya-icon name="trash" [size]="14" />
+          </button>
+        </div>
+      </header>
+
+      <div class="bloque__cuerpo">
+        @switch (block.type) {
+          @case (Tipo.Text) {
+            <maya-rich-editor
+              [value]="block.content ?? ''"
+              (valueChange)="update(block.id, { content: $event })"
+              placeholder="Escriba aquí…"
+            />
+          }
+
+          @case (Tipo.Image) {
+            @if (block.url) {
+              <img class="vista" [src]="block.url" [alt]="block.title ?? ''" />
+            }
+            <div class="maya-row">
+              <input
+                type="file"
+                class="maya-sr-only"
+                [id]="'img-' + block.id"
+                accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+                (change)="subirMedio(block.id, $event, 'image')"
+              />
+              <label class="maya-btn maya-btn--secondary maya-btn--sm" [attr.for]="'img-' + block.id">
+                <maya-icon [name]="subiendoEn() === block.id ? 'refresh' : 'upload'" [size]="15" />
+                {{ subiendoEn() === block.id ? 'Subiendo…' : block.url ? 'Cambiar' : 'Subir imagen' }}
+              </label>
+            </div>
+            <input
+              class="maya-input"
+              placeholder="Pie de imagen (opcional)"
+              [value]="block.title ?? ''"
+              (change)="update(block.id, { title: $any($event.target).value })"
+            />
+          }
+
+          @case (Tipo.Media) {
+            @if (block.url) {
+              @if (esAudio(block)) {
+                <audio controls preload="metadata" [src]="block.url"></audio>
+              } @else {
+                <video class="vista" controls preload="metadata" [src]="block.url"></video>
+              }
+            }
+            <div class="maya-row">
+              <input
+                type="file"
+                class="maya-sr-only"
+                [id]="'med-' + block.id"
+                accept="video/mp4,video/webm,video/ogg,audio/mpeg,audio/ogg,audio/wav"
+                (change)="subirMedio(block.id, $event, 'media')"
+              />
+              <label class="maya-btn maya-btn--secondary maya-btn--sm" [attr.for]="'med-' + block.id">
+                <maya-icon [name]="subiendoEn() === block.id ? 'refresh' : 'upload'" [size]="15" />
+                {{
+                  subiendoEn() === block.id ? 'Subiendo…' : block.url ? 'Cambiar' : 'Subir vídeo o audio'
+                }}
+              </label>
+              @if (block.filename) {
+                <span class="maya-tiny maya-subtle">{{ block.filename }}</span>
+              }
+            </div>
+          }
+
+          @case (Tipo.Embed) {
+            @if (block.url) {
+              <div class="marco">
+                <iframe
+                  [src]="block.url"
+                  title="Vídeo"
+                  loading="lazy"
+                  allowfullscreen
+                  referrerpolicy="strict-origin-when-cross-origin"
+                ></iframe>
+              </div>
+            }
+            <input
+              class="maya-input"
+              placeholder="Pegue el enlace de YouTube o Vimeo"
+              [value]="block.url ?? ''"
+              (change)="fijarIncrustado(block.id, $any($event.target).value)"
+            />
+            <span class="maya-hint">
+              Vale el enlace normal del navegador; se convierte solo al formato que se puede
+              incrustar.
+            </span>
+          }
+
+          @case (Tipo.Callout) {
+            <div class="maya-row">
+              @for (v of ['info', 'success', 'warning']; track v) {
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--sm"
+                  [class.maya-btn--primary]="block.variant === v"
+                  [class.maya-btn--ghost]="block.variant !== v"
+                  (click)="update(block.id, { variant: $any(v) })"
+                >
+                  {{ v === 'info' ? 'Información' : v === 'success' ? 'Consejo' : 'Atención' }}
+                </button>
+              }
+            </div>
+            <input
+              class="maya-input"
+              placeholder="Título del aviso"
+              [value]="block.title ?? ''"
+              (change)="update(block.id, { title: $any($event.target).value })"
+            />
+            <maya-rich-editor
+              [value]="block.content ?? ''"
+              (valueChange)="update(block.id, { content: $event })"
+              placeholder="Qué quiere destacar…"
+            />
+          }
+
+          @case (Tipo.Quote) {
+            <maya-rich-editor
+              [value]="block.content ?? ''"
+              (valueChange)="update(block.id, { content: $event })"
+              placeholder="La cita…"
+            />
+            <input
+              class="maya-input"
+              placeholder="Quién lo dijo"
+              [value]="block.title ?? ''"
+              (change)="update(block.id, { title: $any($event.target).value })"
+            />
+          }
+
+          @case (Tipo.Code) {
+            <textarea
+              class="maya-input codigo"
+              rows="6"
+              placeholder="Pegue aquí el código…"
+              [value]="block.content ?? ''"
+              (change)="update(block.id, { content: $any($event.target).value })"
+            ></textarea>
+          }
+
+          @case (Tipo.Divider) {
+            <hr class="separador" />
+          }
+        }
+      </div>
+
+      <!-- Insertar justo debajo de este bloque: montar una lección es
+           intercalar, no solo añadir al final. -->
+      <div class="insertar">
+        @for (tipo of tipos; track tipo.type) {
+          <button
+            type="button"
+            class="insertar__boton"
+            [title]="tipo.ayuda"
+            (click)="add(tipo.type, block.id)"
+          >
+            <maya-icon [name]="tipo.icono" [size]="14" />
+            {{ tipo.label }}
+          </button>
+        }
+      </div>
+    </article>
+  }
+</div>
+
+<div class="anadir">
+  <span class="maya-tiny maya-subtle">Añadir al final:</span>
+  @for (tipo of tipos; track tipo.type) {
+    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="add(tipo.type)">
+      <maya-icon [name]="tipo.icono" [size]="15" /> {{ tipo.label }}
+    </button>
+  }
+</div>

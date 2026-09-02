@@ -11,24 +11,126 @@
 
   <header class="activity-header">
     <span class="activity-header__icon"><maya-icon [name]="icon(item.kind)" [size]="24" /></span>
-    <div>
+    <div style="flex: 1">
       <h1 class="activity-header__title">{{ item.name }}</h1>
-      @if (item.intro) {
+      @if (item.intro && !editing()) {
         <p class="maya-small maya-muted">{{ item.intro }}</p>
       }
     </div>
+    @if (canEdit() && !editing()) {
+      <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="startEditing()">
+        <maya-icon name="edit" [size]="15" /> Editar
+      </button>
+    }
   </header>
+
+  @if (editing()) {
+    <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+      <div class="maya-card__body maya-stack">
+        <div class="maya-field">
+          <label class="maya-label" for="r-nombre">Título</label>
+          <input
+            id="r-nombre"
+            class="maya-input"
+            [ngModel]="draftName()"
+            (ngModelChange)="draftName.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+        </div>
+
+        <div class="maya-field">
+          <label class="maya-label" for="r-intro">Descripción breve</label>
+          <input
+            id="r-intro"
+            class="maya-input"
+            placeholder="Una línea que explique de qué va, visible bajo el título"
+            [ngModel]="draftIntro()"
+            (ngModelChange)="draftIntro.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+        </div>
+
+        @if (item.kind === ModuleType.Url) {
+          <div class="maya-field">
+            <label class="maya-label" for="r-url">Dirección de destino</label>
+            <input
+              id="r-url"
+              class="maya-input"
+              placeholder="https://…"
+              [ngModel]="draftUrl()"
+              (ngModelChange)="draftUrl.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+            />
+          </div>
+        }
+
+        @if (hasBody(item.kind)) {
+          <div class="maya-field">
+            <label class="maya-label">Contenido de la lección</label>
+            <span class="maya-hint" style="margin-bottom: var(--maya-space-3)">
+              Cada trozo es un bloque: texto, vídeo, imagen o aviso. Puede moverlos con las
+              flechas y añadir uno nuevo justo donde lo necesite.
+            </span>
+            <maya-lesson-editor
+              [blocks]="draftBlocks()"
+              (blocksChange)="draftBlocks.set($event)"
+            />
+          </div>
+        }
+
+        <!-- Materiales descargables, distintos del contenido: aquí van los
+             apuntes y las plantillas, no lo que se lee en la propia página. -->
+        <maya-file-attachments
+          label="Materiales descargables"
+          hint="PDF, plantillas, hojas de cálculo… Quien esté matriculado podrá descargarlos."
+          [component]="'mod/' + item.kind"
+          fileArea="content"
+          [files]="draftFiles()"
+          (filesChange)="draftFiles.set($event)"
+        />
+
+        <div class="maya-row" style="justify-content: flex-end">
+          <button type="button" class="maya-btn maya-btn--ghost" (click)="cancelEditing()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="maya-btn maya-btn--primary"
+            (click)="save()"
+            [disabled]="saving()"
+          >
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </section>
+  }
 
   @switch (item.kind) {
     @case (ModuleType.Page) {
       <section class="maya-card">
-        <div class="maya-card__body maya-rich" [innerHTML]="item.content | safeHtml"></div>
+        <div class="maya-card__body">
+          <!-- Con bloques se pinta el visor; sin ellos, el HTML de siempre.
+               Las páginas antiguas se siguen viendo igual hasta que alguien
+               las edite, momento en que pasan a bloques. -->
+          @if (item.blocks?.length) {
+            <maya-lesson-view [blocks]="item.blocks!" />
+          } @else {
+            <div class="maya-rich" [innerHTML]="item.content | safeHtml"></div>
+          }
+        </div>
       </section>
     }
 
     @case (ModuleType.Label) {
       <section class="maya-card">
-        <div class="maya-card__body maya-rich" [innerHTML]="item.content | safeHtml"></div>
+        <div class="maya-card__body">
+          @if (item.blocks?.length) {
+            <maya-lesson-view [blocks]="item.blocks!" />
+          } @else {
+            <div class="maya-rich" [innerHTML]="item.content | safeHtml"></div>
+          }
+        </div>
       </section>
     }
 
@@ -108,28 +210,16 @@
         <div class="maya-card__header">
           <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Archivos</h2>
         </div>
-        <ul class="module-list" style="list-style: none; margin: 0; padding: 0">
-          @for (file of item.files; track file.id) {
-            <li
-              style="display: flex; align-items: center; gap: var(--maya-space-3); padding: var(--maya-space-3) var(--maya-space-5); border-top: 1px solid var(--maya-border)"
-            >
-              <maya-icon name="file" [size]="20" />
-              <div style="flex: 1; min-width: 0">
-                <a [href]="file.url" target="_blank" rel="noopener" class="maya-bold maya-small">
-                  {{ file.filename }}
-                </a>
-                <p class="maya-tiny maya-subtle">{{ file.size | fileSize }} · {{ file.mimeType }}</p>
-              </div>
-              <a [href]="file.url" download class="maya-btn maya-btn--soft maya-btn--sm">
-                <maya-icon name="download" [size]="15" /> Descargar
-              </a>
-            </li>
-          } @empty {
-            <li class="maya-card__body">
-              <p class="maya-small maya-muted">Este recurso no tiene archivos adjuntos.</p>
-            </li>
-          }
-        </ul>
+        <!-- La descarga pasa por el componente, que pide el fichero con la
+             sesión puesta: un enlace corriente no envía las cabeceras y estos
+             materiales son privados, así que devolvía 401. -->
+        <div class="maya-card__body">
+          <maya-file-attachments
+            label=""
+            [files]="item.files"
+            [editable]="false"
+          />
+        </div>
       </section>
     }
   }

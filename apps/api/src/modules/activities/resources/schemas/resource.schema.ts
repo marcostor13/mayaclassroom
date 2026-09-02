@@ -1,7 +1,23 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { ModuleType } from '@maya/shared';
+import { LessonBlockType, ModuleType } from '@maya/shared';
 import { BaseDocument } from '../../../../common/schemas/base.schema';
+
+/** Un bloque de la lección: ver `blocks` más abajo. */
+@Schema({ _id: false })
+export class LessonBlockSchema {
+  @Prop({ required: true }) id!: string;
+
+  @Prop({ type: String, enum: Object.values(LessonBlockType), required: true })
+  type!: LessonBlockType;
+
+  @Prop({ type: String, default: null }) content!: string | null;
+  @Prop({ type: String, default: null }) url!: string | null;
+  @Prop({ type: String, default: null }) title!: string | null;
+  @Prop({ type: String, default: null }) variant!: string | null;
+  @Prop({ type: String, default: null }) mimeType!: string | null;
+  @Prop({ type: String, default: null }) filename!: string | null;
+}
 
 /**
  * Recurso de curso. Una sola colección cubre Archivo, Carpeta, Página, URL,
@@ -37,6 +53,17 @@ export class CourseResource extends BaseDocument {
   @Prop({ default: false }) showSize!: boolean;
   @Prop({ default: false }) showType!: boolean;
   @Prop({ default: false }) forceDownload!: boolean;
+
+  /**
+   * Lección compuesta por bloques ordenados.
+   *
+   * Convive con `content`, que guarda el HTML de una sola pieza: las páginas
+   * escritas antes siguen abriéndose y mostrándose igual. Cuando hay bloques,
+   * mandan ellos; `content` se mantiene sincronizado como HTML plano para lo
+   * que aún lo lee —los resúmenes, las búsquedas y las copias de seguridad.
+   */
+  @Prop({ type: [LessonBlockSchema], default: [] })
+  blocks!: LessonBlockSchema[];
 }
 
 export type CourseResourceDocument = HydratedDocument<CourseResource>;

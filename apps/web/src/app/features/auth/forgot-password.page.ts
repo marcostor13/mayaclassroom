@@ -33,10 +33,6 @@ import { IconComponent } from '../../shared';
 
       <form [formGroup]="form" (ngSubmit)="submit()" class="maya-stack">
         <div class="maya-field">
-          <label class="maya-label" for="fp-tenant">Empresa</label>
-          <input id="fp-tenant" class="maya-input" formControlName="tenantSlug" />
-        </div>
-        <div class="maya-field">
           <label class="maya-label" for="fp-email">Correo electrónico</label>
           <input id="fp-email" type="email" class="maya-input" formControlName="email" />
         </div>
@@ -62,15 +58,14 @@ export class ForgotPasswordPage {
   readonly sent = signal(false);
 
   readonly form = this.fb.nonNullable.group({
-    tenantSlug: [this.auth.tenantSlug() || 'demo', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
   });
 
   submit(): void {
     if (this.form.invalid) return;
     this.submitting.set(true);
-    const { email, tenantSlug } = this.form.getRawValue();
-    this.auth.forgotPassword(email, tenantSlug).subscribe({
+    const { email } = this.form.getRawValue();
+    this.auth.forgotPassword(email).subscribe({
       next: () => {
         this.submitting.set(false);
         this.sent.set(true);

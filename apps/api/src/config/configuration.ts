@@ -41,7 +41,13 @@ export interface MailConfig {
 }
 
 export interface StorageConfig {
-  driver: 'local' | 's3';
+  /**
+   * `r2` es Cloudflare R2, que habla el protocolo de S3 pero necesita unos
+   * ajustes propios (región «auto», ruta con el bucket delante y sin los
+   * checksums que envía el SDK moderno). Se declara aparte de `s3` para no
+   * obligar a recordarlos en cada despliegue.
+   */
+  driver: 'local' | 's3' | 'r2';
   localPath: string;
   publicBaseUrl: string;
   maxFileSize: number;
@@ -51,6 +57,7 @@ export interface StorageConfig {
     accessKeyId: string;
     secretAccessKey: string;
     endpoint?: string;
+    forcePathStyle: boolean;
   };
 }
 
@@ -82,8 +89,10 @@ export const appConfig = registerAs(
     host: process.env.HOST ?? '0.0.0.0',
     name: process.env.APP_NAME ?? 'Maya Classroom',
     url: process.env.API_URL ?? 'http://localhost:3000',
-    webUrl: process.env.WEB_URL ?? 'http://localhost:4200',
-    corsOrigins: toList(process.env.CORS_ORIGINS, ['http://localhost:4200']),
+    webUrl: process.env.WEB_URL ?? 'http://localhost:4205',
+    // Debe coincidir con el puerto del cliente en desarrollo (`apps/web`), o
+    // el navegador bloquea cada petición por CORS antes de que llegue nada.
+    corsOrigins: toList(process.env.CORS_ORIGINS, ['http://localhost:4205']),
     globalPrefix: process.env.API_PREFIX ?? 'api',
     logLevel: process.env.LOG_LEVEL ?? 'log',
   }),
@@ -125,22 +134,44 @@ export const mailConfig = registerAs(
   }),
 );
 
-export const storageConfig = registerAs(
-  'storage',
-  (): StorageConfig => ({
-    driver: (process.env.STORAGE_DRIVER as 'local' | 's3') ?? 'local',
+export const storageConfig = registerAs('storage', (): StorageConfig => {
+  const driver = (process.env.STORAGE_DRIVER as StorageConfig['driver']) ?? 'local';
+  const esR2 = driver === 'r2';
+
+  // R2 admite las dos variables: las suyas propias, más claras de leer en el
+  // panel de Cloudflare, y las de S3 para quien venga de allí.
+  const bucket = process.env.R2_BUCKET ?? process.env.S3_BUCKET ?? '';
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID ?? process.env.S3_ACCESS_KEY_ID ?? '';
+  const secretAccessKey =
+    process.env.R2_SECRET_ACCESS_KEY ?? process.env.S3_SECRET_ACCESS_KEY ?? '';
+
+  // El extremo de R2 se deduce de la cuenta, que es el único dato que hay que
+  // copiar del panel; se puede sobreescribir para un dominio propio.
+  const r2Endpoint = process.env.R2_ACCOUNT_ID
+    ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+    : undefined;
+
+  return {
+    driver,
     localPath: process.env.STORAGE_LOCAL_PATH ?? './storage',
-    publicBaseUrl: process.env.STORAGE_PUBLIC_URL ?? 'http://localhost:3000/files',
+    publicBaseUrl:
+      process.env.R2_PUBLIC_URL ??
+      process.env.STORAGE_PUBLIC_URL ??
+      'http://localhost:3000/api/v1/files',
     maxFileSize: toInt(process.env.STORAGE_MAX_FILE_SIZE, 50 * 1024 * 1024),
     s3: {
-      bucket: process.env.S3_BUCKET ?? '',
-      region: process.env.S3_REGION ?? 'us-east-1',
-      accessKeyId: process.env.S3_ACCESS_KEY_ID ?? '',
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? '',
-      endpoint: process.env.S3_ENDPOINT,
+      bucket,
+      // R2 ignora la región, pero el SDK exige una: «auto» es la que
+      // documenta Cloudflare.
+      region: esR2 ? 'auto' : (process.env.S3_REGION ?? 'us-east-1'),
+      accessKeyId,
+      secretAccessKey,
+      endpoint: process.env.R2_ENDPOINT ?? r2Endpoint ?? process.env.S3_ENDPOINT,
+      // R2 sirve el bucket en la ruta, no como subdominio.
+      forcePathStyle: esR2 || process.env.S3_FORCE_PATH_STYLE === 'true',
     },
-  }),
-);
+  };
+});
 
 export const securityConfig = registerAs(
   'security',
