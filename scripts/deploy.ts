@@ -4,6 +4,7 @@
  *
  *   bun run deploy --list      Inventario de Coolify (proyectos, servidores, apps)
  *   bun run deploy --dns       Crea o actualiza los CNAME del túnel en Cloudflare
+ *   bun run deploy --tunel     Publica los dominios como reglas del túnel
  *   bun run deploy --coolify   Vuelca los dominios y sus variables en Coolify
  *   bun run deploy --check     Verifica que la configuración apunta a donde debe
  *   bun run deploy --esperar   Espera a que el despliegue termine y los dominios respondan
@@ -125,6 +126,7 @@ interface AppCoolify {
   status: string;
   git_repository: string;
   git_branch: string;
+  ports_mappings: string | null;
 }
 
 function coolify() {
@@ -209,7 +211,7 @@ async function sincronizarDns(): Promise<void> {
   if (!zona) {
     throw new Error(
       `La zona «${zonaNombre}» no es accesible con este token. Recuerde que CLOUDFLARE_ZONE_NAME ` +
-        'es el dominio registrable (mayacrm.site), no el subdominio donde se publica.',
+        'es el dominio registrable (ignia.site), no el subdominio donde se publica.',
     );
   }
   info(`zona ${zona.name} (${zona.id})`);
@@ -265,6 +267,117 @@ async function sincronizarDns(): Promise<void> {
       info(`sin cambios ${dominio} -> ${destino}`);
     }
   }
+}
+
+/* --------------------------- Túnel de Cloudflare -------------------------- */
+
+interface ReglaTunel {
+  hostname?: string;
+  service: string;
+}
+
+/**
+ * Publica cada dominio como regla de entrada del túnel.
+ *
+ * El CNAME solo lleva el tráfico hasta el túnel; quien decide qué hacer con él
+ * es la lista de reglas del propio túnel, que enruta por nombre de host a un
+ * puerto de la máquina. La última regla es un `http_status:404`, así que un
+ * dominio que no está en la lista responde 404 con el cuerpo vacío y sin
+ * cabecera de tipo: el mismo síntoma que un dominio mal apuntado, con el DNS
+ * y Coolify perfectos. Costó un despliegue entero encontrarlo.
+ *
+ * El puerto no se escribe a mano: se lee del mapeo que Coolify ya tiene para
+ * cada aplicación, que es el único sitio donde ese número está de verdad.
+ */
+async function sincronizarTunel(): Promise<void> {
+  exigirTodas([
+    'CLOUDFLARE_API_TOKEN',
+    'CLOUDFLARE_TUNNEL_ID',
+    'CLOUDFLARE_ZONE_NAME',
+    'FRONTEND_DOMAIN',
+    'BACKEND_DOMAIN',
+    'COOLIFY_URL',
+    'COOLIFY_TOKEN',
+    'COOLIFY_API_UUID',
+    'COOLIFY_WEB_UUID',
+  ]);
+  const cabeceras = {
+    Authorization: `Bearer ${exigir('CLOUDFLARE_API_TOKEN')}`,
+    'Content-Type': 'application/json',
+  };
+  const api = 'https://api.cloudflare.com/client/v4';
+  const zonaNombre = exigir('CLOUDFLARE_ZONE_NAME');
+
+  // La cuenta se deduce de la zona: es un dato más que mantener si se pide
+  // aparte, y Cloudflare ya lo devuelve aquí.
+  const zonas = await pedir<{ result: { account: { id: string } }[] }>(
+    `${api}/zones?name=${encodeURIComponent(zonaNombre)}`,
+    { headers: cabeceras },
+  );
+  const cuenta = zonas.result[0]?.account?.id;
+  if (!cuenta) throw new Error(`No se pudo deducir la cuenta de la zona «${zonaNombre}».`);
+
+  const c = coolify();
+  const puertoDe = async (uuid: string): Promise<string> => {
+    const app = await c.get<AppCoolify>(`/api/v1/applications/${uuid}`);
+    const puerto = app.ports_mappings?.split(',')[0]?.split(':')[0]?.trim();
+    if (!puerto) {
+      throw new Error(
+        `«${app.name}» no tiene mapeo de puertos en Coolify, así que el túnel no ` +
+          'tendría a dónde entregar el tráfico.',
+      );
+    }
+    return puerto;
+  };
+  const frontal = exigir('FRONTEND_DOMAIN');
+  const puertoWeb = await puertoDe(exigir('COOLIFY_WEB_UUID'));
+  const puertoApi = await puertoDe(exigir('COOLIFY_API_UUID'));
+
+  const deseadas: ReglaTunel[] = [
+    { hostname: frontal, service: `http://localhost:${puertoWeb}` },
+    ...(frontal === zonaNombre
+      ? [{ hostname: `www.${frontal}`, service: `http://localhost:${puertoWeb}` }]
+      : []),
+    { hostname: exigir('BACKEND_DOMAIN'), service: `http://localhost:${puertoApi}` },
+  ];
+
+  const url = `${api}/accounts/${cuenta}/cfd_tunnel/${exigir('CLOUDFLARE_TUNNEL_ID')}/configurations`;
+  const actual = await pedir<{ result: { config: { ingress: ReglaTunel[] } } }>(url, {
+    headers: cabeceras,
+  });
+  const ingress = actual.result.config.ingress;
+
+  // Por este túnel pasan todos los proyectos de la cuenta y el PUT reemplaza la
+  // lista entera, así que se aborta antes de escribir si la lectura no tiene la
+  // forma esperada: una lista mal formada deja sin servicio a todo lo demás.
+  const reserva = ingress[ingress.length - 1];
+  if (!reserva || reserva.hostname !== undefined) {
+    throw new Error('La última regla del túnel no es la de reserva; no se toca nada.');
+  }
+
+  let cambios = 0;
+  for (const deseada of deseadas) {
+    const existente = ingress.find((i) => i.hostname === deseada.hostname);
+    if (!existente) {
+      ingress.splice(ingress.length - 1, 0, deseada);
+      ok(`añadida  ${deseada.hostname} -> ${deseada.service}`);
+      cambios++;
+    } else if (existente.service !== deseada.service) {
+      info(`ajustada ${deseada.hostname}: ${existente.service} -> ${deseada.service}`);
+      existente.service = deseada.service;
+      cambios++;
+    } else {
+      info(`sin cambios ${deseada.hostname} -> ${deseada.service}`);
+    }
+  }
+
+  if (cambios === 0) return;
+  await pedir(url, {
+    method: 'PUT',
+    headers: cabeceras,
+    body: JSON.stringify({ config: { ...actual.result.config, ingress } }),
+  });
+  ok(`túnel actualizado (${ingress.length} reglas, ${cambios} tocadas)`);
 }
 
 /* --------------------------- Coolify: dominios ---------------------------- */
@@ -584,6 +697,8 @@ try {
     await listar();
   } else if (args.includes('--dns')) {
     await sincronizarDns();
+  } else if (args.includes('--tunel')) {
+    await sincronizarTunel();
   } else if (args.includes('--coolify')) {
     await sincronizarCoolify();
   } else if (args.includes('--check')) {

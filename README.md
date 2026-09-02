@@ -197,6 +197,9 @@ proxy de Coolify enruta por nombre de host.
 > no `*.*.ignia.site`: un host como `api.mayaclassroom.ignia.site` resuelve por
 > DNS y luego falla el handshake TLS.
 
+> El dominio `mayacrm.site` **no es de este proyecto**: es Maya CRM, que vive en
+> otra máquina. No apuntarlo aquí.
+
 El cliente y la API viven en dominios distintos, así que el navegador llama
 directamente a la API. La URL se incrusta en el paquete al construir la imagen
 (`ARG API_URL` en `apps/web/Dockerfile`) y el acceso lo autoriza `CORS_ORIGINS`
@@ -207,6 +210,7 @@ en la API.
 ```bash
 bun run deploy --list     # Inventario de Coolify: proyectos, servidores y apps
 bun run deploy --dns      # Crea o ajusta los CNAME del túnel (idempotente)
+bun run deploy --coolify  # Vuelca los dominios y sus variables en Coolify
 bun run deploy --check    # Verifica que los UUID apuntan a este repositorio
 bun run deploy            # Encola el despliegue de ambas aplicaciones
 bun run deploy --api      # Solo la API
@@ -220,7 +224,9 @@ aplicación de otro.
 
 #### Configuración en GitHub
 
-Variables del repositorio (`Settings → Secrets and variables → Actions`):
+Variables del **entorno `production`** (`Settings → Environments → production`),
+no del repositorio: los tres trabajos del flujo declaran `environment:
+production` y solo ahí las ven.
 
 | Variable | Valor |
 |---|---|
@@ -228,6 +234,13 @@ Variables del repositorio (`Settings → Secrets and variables → Actions`):
 | `FRONTEND_DOMAIN` | `mayaclassroom.ignia.site` |
 | `BACKEND_DOMAIN` | `api-mayaclassroom.ignia.site` |
 | `CLOUDFLARE_ZONE_NAME` | `ignia.site` (la zona, no el subdominio) |
+| `WEB_URL` | `https://mayaclassroom.ignia.site` |
+| `CORS_ORIGINS` | `https://mayaclassroom.ignia.site` |
+| `API_URL` | `https://api-mayaclassroom.ignia.site/api/v1` |
+
+Las tres últimas las consume `deploy --coolify`, que las vuelca en Coolify antes
+de reconstruir. `API_URL` tiene que estar ahí antes del despliegue y no después:
+se incrusta en el paquete del cliente al compilar.
 
 Secretos del repositorio:
 
