@@ -4,6 +4,7 @@
  *
  *   bun run deploy --list      Inventario de Coolify (proyectos, servidores, apps)
  *   bun run deploy --dns       Crea o actualiza los CNAME del túnel en Cloudflare
+ *   bun run deploy --coolify   Vuelca los dominios y sus variables en Coolify
  *   bun run deploy --check     Verifica que la configuración apunta a donde debe
  *   bun run deploy --esperar   Espera a que el despliegue termine y los dominios respondan
  *   bun run deploy             Dispara el despliegue de las dos aplicaciones
@@ -21,18 +22,42 @@ const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /* --------------------------------- Entorno -------------------------------- */
 
-function cargarEnv(): void {
-  for (const fichero of ['.env.deploy', '.env']) {
-    const ruta = join(RAIZ, fichero);
-    if (!existsSync(ruta)) continue;
-    // El \r se retira explícitamente: en Windows el fichero acaba con CRLF con
-    // facilidad y arrastrarlo dentro del valor corrompe tokens y URLs.
-    for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
-      const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-      // El entorno real manda: en CI los secretos ya vienen definidos.
-      if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].trim();
-    }
+function leerEnv(fichero: string): Map<string, string> {
+  const pares = new Map<string, string>();
+  const ruta = join(RAIZ, fichero);
+  if (!existsSync(ruta)) return pares;
+  // El \r se retira explícitamente: en Windows el fichero acaba con CRLF con
+  // facilidad y arrastrarlo dentro del valor corrompe tokens y URLs.
+  for (const linea of readFileSync(ruta, 'utf8').split(/\r?\n/)) {
+    const m = linea.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
+    if (m) pares.set(m[1], m[2].trim());
   }
+  return pares;
+}
+
+/**
+ * Deja en el entorno la configuración de despliegue.
+ *
+ * En CI no hay `.env.deploy` (está en .gitignore) y manda el entorno: los
+ * secretos llegan del repositorio. En local manda `.env.deploy`, y aquí está la
+ * trampa que costó un despliegue: **Bun carga `.env` automáticamente** en el
+ * entorno del proceso antes de que este guion arranque, y `.env` es el fichero
+ * de DESARROLLO, con `API_URL`, `WEB_URL` y `CORS_ORIGINS` apuntando a
+ * localhost. Rellenando solo lo ausente, esos valores ya estaban definidos,
+ * `.env.deploy` no llegaba a aplicarse y el guion publicaba en producción las
+ * URL de la máquina local sin avisar de nada.
+ */
+function cargarEnv(): void {
+  const despliegue = leerEnv('.env.deploy');
+  if (despliegue.size === 0) return;
+
+  // Se descarta lo que Bun inyectó desde `.env`: solo las claves que
+  // `.env.deploy` no define y cuyo valor coincide literalmente con el de
+  // desarrollo, para no tocar nada que venga del entorno de verdad.
+  for (const [clave, valor] of leerEnv('.env')) {
+    if (!despliegue.has(clave) && process.env[clave] === valor) delete process.env[clave];
+  }
+  for (const [clave, valor] of despliegue) process.env[clave] = valor;
 }
 
 function exigir(clave: string): string {
@@ -118,6 +143,12 @@ function coolify() {
         headers: cabeceras,
         body: cuerpo ? JSON.stringify(cuerpo) : undefined,
       }),
+    patch: <T>(ruta: string, cuerpo: unknown) =>
+      pedir<T>(`${base}${ruta}`, {
+        method: 'PATCH',
+        headers: cabeceras,
+        body: JSON.stringify(cuerpo),
+      }),
   };
 }
 
@@ -160,7 +191,8 @@ async function sincronizarDns(): Promise<void> {
   exigirTodas(['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_TUNNEL_ID', 'FRONTEND_DOMAIN', 'BACKEND_DOMAIN']);
   const token = exigir('CLOUDFLARE_API_TOKEN');
   const tunel = exigir('CLOUDFLARE_TUNNEL_ID');
-  const dominios = [exigir('FRONTEND_DOMAIN'), exigir('BACKEND_DOMAIN')];
+  const frontal = exigir('FRONTEND_DOMAIN');
+  const dominios = [frontal, exigir('BACKEND_DOMAIN')];
   const cabeceras = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   const api = 'https://api.cloudflare.com/client/v4';
 
@@ -177,10 +209,16 @@ async function sincronizarDns(): Promise<void> {
   if (!zona) {
     throw new Error(
       `La zona «${zonaNombre}» no es accesible con este token. Recuerde que CLOUDFLARE_ZONE_NAME ` +
-        'es el dominio registrable (ignia.site), no el subdominio donde se publica.',
+        'es el dominio registrable (mayacrm.site), no el subdominio donde se publica.',
     );
   }
   info(`zona ${zona.name} (${zona.id})`);
+
+  // Cuando el cliente se publica en la raíz de la zona, «www» tiene que
+  // resolver igual: un visitante que teclea www con el registro ausente recibe
+  // un fallo de DNS, no la página. Coolify ya declara ambos nombres en el FQDN
+  // de la aplicación, así que el único cabo suelto es este registro.
+  if (frontal === zona.name) dominios.push(`www.${zona.name}`);
 
   const destino = `${tunel}.cfargotunnel.com`;
 
@@ -227,6 +265,98 @@ async function sincronizarDns(): Promise<void> {
       info(`sin cambios ${dominio} -> ${destino}`);
     }
   }
+}
+
+/* --------------------------- Coolify: dominios ---------------------------- */
+
+interface EnvCoolify {
+  key: string;
+  is_buildtime: boolean;
+  is_literal: boolean;
+  is_preview: boolean;
+}
+
+/**
+ * Vuelca en Coolify los dominios públicos y las variables que dependen de ellos.
+ *
+ * Cambiar de dominio toca cuatro sitios; tres los cubre este guion y el cuarto
+ * era la interfaz de Coolify, a mano. Sin este paso el despliegue queda a medias
+ * de una forma que engaña: el DNS ya resuelve, pero el proxy no tiene ruta para
+ * el nombre nuevo y responde 404, y aunque la tuviera el cliente seguiría
+ * llamando a la API anterior, porque API_URL se incrusta en el paquete al
+ * compilar y no se lee en ejecución.
+ */
+async function sincronizarCoolify(): Promise<void> {
+  exigirTodas([
+    'COOLIFY_URL',
+    'COOLIFY_TOKEN',
+    'COOLIFY_API_UUID',
+    'COOLIFY_WEB_UUID',
+    'FRONTEND_DOMAIN',
+    'BACKEND_DOMAIN',
+    'WEB_URL',
+    'CORS_ORIGINS',
+    'API_URL',
+  ]);
+  const c = coolify();
+  const frontal = exigir('FRONTEND_DOMAIN');
+  const zona = process.env.CLOUDFLARE_ZONE_NAME ?? '';
+
+  const objetivos = [
+    {
+      etiqueta: 'WEB',
+      uuid: exigir('COOLIFY_WEB_UUID'),
+      // El cliente atiende también «www» cuando vive en la raíz de la zona.
+      dominios: frontal === zona ? [frontal, `www.${frontal}`] : [frontal],
+      variables: { API_URL: exigir('API_URL') },
+    },
+    {
+      etiqueta: 'API',
+      uuid: exigir('COOLIFY_API_UUID'),
+      dominios: [exigir('BACKEND_DOMAIN')],
+      variables: {
+        WEB_URL: exigir('WEB_URL'),
+        CORS_ORIGINS: exigir('CORS_ORIGINS'),
+        API_URL: exigir('API_URL'),
+      },
+    },
+  ] as const;
+
+  for (const objetivo of objetivos) {
+    const fqdn = objetivo.dominios.map((d) => `https://${d}`).join(',');
+    const app = await c.get<AppCoolify>(`/api/v1/applications/${objetivo.uuid}`);
+    if (app.fqdn === fqdn) {
+      info(`${objetivo.etiqueta}: dominios sin cambios (${fqdn})`);
+    } else {
+      await c.patch(`/api/v1/applications/${objetivo.uuid}`, { domains: fqdn });
+      ok(`${objetivo.etiqueta}: dominios ${app.fqdn ?? '(ninguno)'} -> ${fqdn}`);
+    }
+
+    const existentes = await c.get<EnvCoolify[]>(`/api/v1/applications/${objetivo.uuid}/envs`);
+    for (const [clave, valor] of Object.entries(objetivo.variables)) {
+      const previa = existentes.find((e) => e.key === clave);
+      const cuerpo = {
+        key: clave,
+        value: valor,
+        // «is_buildtime», no «is_build_time»: este último es el nombre que usa
+        // la documentación de Coolify y el que rechaza la validación con un 422.
+        //
+        // API_URL es un ARG del Dockerfile del cliente: si pierde esta marca,
+        // el paquete se compila con el valor por defecto y no con el dominio.
+        is_buildtime: previa?.is_buildtime ?? false,
+        is_literal: previa?.is_literal ?? true,
+        is_preview: previa?.is_preview ?? false,
+      };
+      // Coolify no devuelve el valor de las variables, así que no hay manera de
+      // saltarse la escritura cuando ya coincide: se escribe siempre.
+      const ruta = `/api/v1/applications/${objetivo.uuid}/envs`;
+      if (previa) await c.patch(ruta, cuerpo);
+      else await c.post(ruta, cuerpo);
+      ok(`${objetivo.etiqueta}: ${clave} = ${valor}`);
+    }
+  }
+
+  aviso('Las variables se aplican al reconstruir: ejecute «bun run deploy» a continuación.');
 }
 
 /* -------------------------------- Verificación ---------------------------- */
@@ -454,6 +584,8 @@ try {
     await listar();
   } else if (args.includes('--dns')) {
     await sincronizarDns();
+  } else if (args.includes('--coolify')) {
+    await sincronizarCoolify();
   } else if (args.includes('--check')) {
     process.exit((await comprobar()) > 0 ? 1 : 0);
   } else if (args.includes('--esperar')) {

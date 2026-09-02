@@ -85,6 +85,25 @@ jobs:
           BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
         run: bun run deploy --dns
 
+      - name: Sincronizar dominios en Coolify
+        # Idempotente, como el paso anterior. Deja el FQDN de cada aplicación y
+        # las variables que dependen del dominio (API_URL, WEB_URL,
+        # CORS_ORIGINS) alineadas con la configuración antes de reconstruir:
+        # API_URL se incrusta en el paquete del cliente al compilar, así que
+        # ponerla después del despliegue no tendría efecto hasta el siguiente.
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_API_UUID: ${{ secrets.COOLIFY_API_UUID }}
+          COOLIFY_WEB_UUID: ${{ secrets.COOLIFY_WEB_UUID }}
+          CLOUDFLARE_ZONE_NAME: ${{ vars.CLOUDFLARE_ZONE_NAME }}
+          FRONTEND_DOMAIN: ${{ vars.FRONTEND_DOMAIN }}
+          BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
+          WEB_URL: ${{ vars.WEB_URL }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+          API_URL: ${{ vars.API_URL }}
+        run: bun run deploy --coolify
+
       - name: Desplegar
         # El guion valida antes que cada UUID pertenece a este repositorio; si
         # no, aborta sin disparar nada. Es la protección contra un UUID heredado
