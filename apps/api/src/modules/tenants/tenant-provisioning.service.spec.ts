@@ -5,6 +5,8 @@ import { TenantProvisioningService } from './tenant-provisioning.service';
 import { TenantsService } from './tenants.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { RolesService } from '../rbac/roles.service';
+import { ContextsService } from '../contexts/contexts.service';
 import type { CreateTenantDto } from './dto/tenant.dto';
 
 /** `jest.Mock` no existe como tipo en bun-types: se deriva del propio `jest.fn`. */
@@ -12,6 +14,7 @@ type MockFn = ReturnType<typeof jest.fn>;
 
 const TENANT_ID = new Types.ObjectId();
 const USER_ID = new Types.ObjectId();
+const CONTEXT_ID = new Types.ObjectId();
 
 const defaultPolicy = {
   minLength: 8,
@@ -54,10 +57,13 @@ async function build(options: {
   createUser?: MockFn;
   sendMail?: MockFn;
   purge?: MockFn;
+  /** Administradores que devuelve el RBAC para el contexto de la empresa. */
+  assignees?: Types.ObjectId[];
 }) {
   const tenant = options.tenant ?? tenantDouble();
   const tenants = {
     create: jest.fn(async () => tenant),
+    findById: jest.fn(async () => tenant),
     purge: options.purge ?? jest.fn(async () => undefined),
   };
   const users = {
@@ -66,8 +72,18 @@ async function build(options: {
       jest.fn(async (_tenantId: unknown, dto: { email: string; username: string }) =>
         userDouble(dto),
       ),
+    findByIdInTenant: jest.fn(async () =>
+      userDouble({ email: 'contacto@acme.com', username: 'contacto' }),
+    ),
+    setTemporaryPassword: jest.fn(async () => undefined),
   };
   const mail = { sendTenantAdminWelcome: options.sendMail ?? jest.fn(async () => undefined) };
+  const roles = {
+    assigneesByShortName: jest.fn(async () => options.assignees ?? [USER_ID]),
+  };
+  const contexts = {
+    requireByInstance: jest.fn(async () => ({ _id: CONTEXT_ID })),
+  };
 
   const moduleRef = await Test.createTestingModule({
     providers: [
@@ -75,6 +91,8 @@ async function build(options: {
       { provide: TenantsService, useValue: tenants },
       { provide: UsersService, useValue: users },
       { provide: MailService, useValue: mail },
+      { provide: RolesService, useValue: roles },
+      { provide: ContextsService, useValue: contexts },
     ],
   }).compile();
 
@@ -83,6 +101,8 @@ async function build(options: {
     tenants,
     users,
     mail,
+    roles,
+    contexts,
   };
 }
 
@@ -188,5 +208,47 @@ describe('TenantProvisioningService · alta de empresa con administrador', () =>
     expect(result.admin.emailSent).toBe(false);
     expect(result.admin.temporaryPassword).toHaveLength(14);
     expect(tenants.purge).not.toHaveBeenCalled();
+  });
+});
+
+describe('TenantProvisioningService · reposición de la contraseña de administración', () => {
+  it('emite una contraseña temporal nueva para el administrador más antiguo', async () => {
+    const { service, users, roles, mail } = await build({});
+
+    const result = await service.resetAdminPassword(TENANT_ID.toString());
+
+    expect(roles.assigneesByShortName).toHaveBeenCalledWith('manager', CONTEXT_ID, TENANT_ID);
+    expect(users.setTemporaryPassword).toHaveBeenCalledTimes(1);
+
+    // La contraseña que se guarda es exactamente la que se devuelve: si se
+    // escribiera una y se entregara otra, la cuenta quedaría inaccesible.
+    const [, guardada] = users.setTemporaryPassword.mock.calls[0] as [unknown, string];
+    expect(guardada).toBe(result.temporaryPassword);
+    expect(result.temporaryPassword).toHaveLength(14);
+    expect(result.email).toBe('contacto@acme.com');
+    expect(result.emailSent).toBe(true);
+    expect(mail.sendTenantAdminWelcome).toHaveBeenCalledTimes(1);
+  });
+
+  it('avisa cuando la empresa no tiene ninguna cuenta de administración', async () => {
+    const { service, users } = await build({ assignees: [] });
+
+    await expect(service.resetAdminPassword(TENANT_ID.toString())).rejects.toThrow(
+      'no tiene ninguna cuenta de administración',
+    );
+    expect(users.setTemporaryPassword).not.toHaveBeenCalled();
+  });
+
+  it('entrega la contraseña aunque el correo falle, para poder darla a mano', async () => {
+    const { service } = await build({
+      sendMail: jest.fn(async () => {
+        throw new Error('SMTP caído');
+      }),
+    });
+
+    const result = await service.resetAdminPassword(TENANT_ID.toString());
+
+    expect(result.emailSent).toBe(false);
+    expect(result.temporaryPassword).toHaveLength(14);
   });
 });

@@ -284,6 +284,15 @@ export const routes: Routes = [
           import('./features/admin/tenants.page').then((m) => m.AdminTenantsPage),
       },
       {
+        path: 'admin/tenants/:id',
+        title: 'Ficha de empresa · Maya Classroom',
+        // Ruta propia y no un panel dentro del listado: así la ficha sobrevive
+        // a una recarga, se puede compartir y se puede guardar en marcadores.
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/tenant-detail.page').then((m) => m.AdminTenantDetailPage),
+      },
+      {
         path: 'admin/tenant',
         title: 'Empresa · Maya Classroom',
         canActivate: [capabilityGuard],

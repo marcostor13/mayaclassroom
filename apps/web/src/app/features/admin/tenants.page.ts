@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TenantAdminCredentials, TenantDto, TenantPlan, TenantStatus } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -33,7 +34,14 @@ type FormField =
 @Component({
   selector: 'maya-admin-tenants',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ReactiveFormsModule, IconComponent, EmptyStateComponent, FormatDatePipe],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    IconComponent,
+    EmptyStateComponent,
+    FormatDatePipe,
+  ],
   templateUrl: './tenants.page.html',
 })
 export class AdminTenantsPage {
@@ -52,7 +60,11 @@ export class AdminTenantsPage {
   readonly creating = signal(false);
   readonly submitting = signal(false);
   /** Credenciales del último alta, visibles hasta que se cierran a mano. */
-  readonly credentials = signal<{ tenant: string; admin: TenantAdminCredentials } | null>(null);
+  readonly credentials = signal<{
+    tenant: string;
+    tenantId: string;
+    admin: TenantAdminCredentials;
+  } | null>(null);
   readonly passwordCopied = signal(false);
 
   readonly plans = [
@@ -176,7 +188,11 @@ export class AdminTenantsPage {
         this.submitting.set(false);
         this.creating.set(false);
         this.resetForm();
-        this.credentials.set({ tenant: result.tenant.name, admin: result.admin });
+        this.credentials.set({
+          tenant: result.tenant.name,
+          tenantId: result.tenant.id,
+          admin: result.admin,
+        });
         this.passwordCopied.set(false);
         this.toast.success(
           'Empresa creada',

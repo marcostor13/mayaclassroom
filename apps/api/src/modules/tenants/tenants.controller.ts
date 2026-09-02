@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CAP, ContextLevel, TenantStatus } from '@maya/shared';
+import { CAP, ContextLevel, LogAction, TenantStatus } from '@maya/shared';
 import {
+  Audit,
   CurrentUser,
   PlatformAdminOnly,
   Public,
@@ -61,6 +62,21 @@ export class TenantsController {
   })
   create(@Body() dto: CreateTenantDto) {
     return this.provisioning.createTenantWithAdmin(dto);
+  }
+
+  @Post(':id/admin-password')
+  @ApiBearerAuth()
+  @PlatformAdminOnly()
+  @Audit(LogAction.Updated, 'tenant')
+  @ApiOperation({
+    summary: 'Emitir una contraseña temporal nueva para la administración de la empresa',
+    description:
+      'La contraseña del alta no se puede recuperar: se guarda con hash y solo se entrega ' +
+      'una vez. Esta ruta emite otra para la cuenta de administración más antigua, la vuelve ' +
+      'a enviar por correo y obliga a cambiarla al entrar.',
+  })
+  resetAdminPassword(@Param('id') id: string) {
+    return this.provisioning.resetAdminPassword(id);
   }
 
   @Patch('me')

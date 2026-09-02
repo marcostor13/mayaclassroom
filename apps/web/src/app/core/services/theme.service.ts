@@ -1,9 +1,28 @@
-import { Injectable, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { TenantBranding } from '../models';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 const THEME_KEY = 'maya.theme';
+
+/**
+ * Variables que deriva la marca de la empresa. Se limpian todas juntas: al
+ * quitar solo `--maya-primary` quedaban seis tonos derivados de la empresa
+ * anterior pisando los del tema.
+ */
+const BRAND_VARS = [
+  '--maya-primary',
+  '--maya-primary-hover',
+  '--maya-primary-active',
+  '--maya-primary-deep',
+  '--maya-primary-soft',
+  '--maya-primary-softer',
+  '--maya-pastel',
+  '--maya-accent',
+] as const;
+
+/** Fondo con el que se mezclan los tonos suaves de la marca en cada tema. */
+const LIENZO = { light: '#ffffff', dark: '#0d0e11' } as const;
 
 /**
  * Tema visual: modo claro/oscuro/sistema y personalización de marca por
@@ -17,12 +36,22 @@ export class ThemeService {
   readonly mode = this.modeSignal.asReadonly();
 
   private readonly media = window.matchMedia('(prefers-color-scheme: dark)');
+  private readonly systemDark = signal(this.media.matches);
+  /** La marca vigente, guardada para poder repintarla al cambiar de tema. */
+  private readonly branding = signal<TenantBranding | null>(null);
+
+  readonly resolvedMode = computed<'light' | 'dark'>(() => {
+    const mode = this.modeSignal();
+    return mode === 'system' ? (this.systemDark() ? 'dark' : 'light') : mode;
+  });
 
   constructor() {
-    effect(() => this.apply(this.modeSignal()));
-    this.media.addEventListener('change', () => {
-      if (this.modeSignal() === 'system') this.apply('system');
-    });
+    this.media.addEventListener('change', (event) => this.systemDark.set(event.matches));
+    // Tema y marca se pintan en el mismo efecto porque dependen uno del otro:
+    // los tonos suaves de la empresa se mezclan con el fondo, y el fondo lo
+    // decide el tema. Separarlos dejaba la marca calculada para el tema
+    // anterior hasta la siguiente carga.
+    effect(() => this.paint(this.resolvedMode(), this.branding()));
   }
 
   setMode(mode: ThemeMode): void {
@@ -35,41 +64,57 @@ export class ThemeService {
   }
 
   resolved(): 'light' | 'dark' {
-    const mode = this.modeSignal();
-    if (mode === 'system') return this.media.matches ? 'dark' : 'light';
-    return mode;
-  }
-
-  private apply(mode: ThemeMode): void {
-    const resolved = mode === 'system' ? (this.media.matches ? 'dark' : 'light') : mode;
-    document.documentElement.dataset['theme'] = resolved;
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', resolved === 'dark' ? '#0d0e11' : '#ff3b2e');
+    return this.resolvedMode();
   }
 
   /** Aplica los colores de la empresa sobre los tokens de marca. */
   applyBranding(branding: TenantBranding | null | undefined): void {
+    this.branding.set(branding ?? null);
+  }
+
+  private paint(resolved: 'light' | 'dark', branding: TenantBranding | null): void {
     const root = document.documentElement;
-    if (!branding) {
-      root.style.removeProperty('--maya-primary');
-      root.style.removeProperty('--maya-accent');
-      return;
-    }
+    root.dataset['theme'] = resolved;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', resolved === 'dark' ? LIENZO.dark : '#ff3b2e');
+
+    for (const name of BRAND_VARS) root.style.removeProperty(name);
+    const custom = document.getElementById('maya-tenant-css');
+    if (custom) custom.textContent = '';
+    if (!branding) return;
+
     if (branding.primaryColor) {
+      const oscuro = resolved === 'dark';
+      const lienzo = LIENZO[resolved];
       root.style.setProperty('--maya-primary', branding.primaryColor);
-      root.style.setProperty('--maya-primary-hover', this.shade(branding.primaryColor, -8));
-      root.style.setProperty('--maya-primary-active', this.shade(branding.primaryColor, -16));
-      root.style.setProperty('--maya-primary-deep', this.shade(branding.primaryColor, -38));
-      root.style.setProperty('--maya-primary-soft', this.tint(branding.primaryColor, 82));
-      root.style.setProperty('--maya-primary-softer', this.tint(branding.primaryColor, 94));
-      root.style.setProperty('--maya-pastel', this.tint(branding.primaryColor, 46));
+      // En oscuro los estados aclaran en vez de oscurecer: sobre un lienzo
+      // negro, oscurecer el color al pasar el ratón lo apaga en vez de
+      // destacarlo.
+      root.style.setProperty('--maya-primary-hover', this.shade(branding.primaryColor, oscuro ? 8 : -8));
+      root.style.setProperty(
+        '--maya-primary-active',
+        this.shade(branding.primaryColor, oscuro ? 16 : -16),
+      );
+      // «deep» se usa como texto encima de los tonos suaves, así que tiene que
+      // ir en dirección contraria al lienzo para que contraste.
+      root.style.setProperty(
+        '--maya-primary-deep',
+        oscuro ? this.mix(branding.primaryColor, 46, LIENZO.light) : this.shade(branding.primaryColor, -38),
+      );
+      // Aquí estaba el fallo que dejaba blancas las tarjetas «--accent»: estos
+      // tres tonos se mezclaban siempre con blanco, también en tema oscuro, y
+      // al escribirse en línea sobre `:root` ganaban al `[data-theme='dark']`
+      // del sistema de diseño, así que ni el CSS podía corregirlo.
+      root.style.setProperty('--maya-primary-soft', this.mix(branding.primaryColor, 82, lienzo));
+      root.style.setProperty('--maya-primary-softer', this.mix(branding.primaryColor, 94, lienzo));
+      root.style.setProperty('--maya-pastel', this.mix(branding.primaryColor, 46, lienzo));
     }
     if (branding.accentColor) {
       root.style.setProperty('--maya-accent', branding.accentColor);
     }
     if (branding.customCss) {
-      let style = document.getElementById('maya-tenant-css');
+      let style = custom;
       if (!style) {
         style = document.createElement('style');
         style.id = 'maya-tenant-css';
@@ -90,11 +135,16 @@ export class ThemeService {
     );
   }
 
-  /** Mezcla el color con blanco en el porcentaje indicado. */
-  private tint(hex: string, percent: number): string {
-    const { r, g, b } = this.parse(hex);
-    const mix = (channel: number) => Math.round(channel + (255 - channel) * (percent / 100));
-    return this.toHex(mix(r), mix(g), mix(b));
+  /** Mezcla el color con otro (el fondo del tema) en el porcentaje indicado. */
+  private mix(hex: string, percent: number, hacia: string): string {
+    const color = this.parse(hex);
+    const destino = this.parse(hacia);
+    const canal = (from: number, to: number) => Math.round(from + (to - from) * (percent / 100));
+    return this.toHex(
+      canal(color.r, destino.r),
+      canal(color.g, destino.g),
+      canal(color.b, destino.b),
+    );
   }
 
   private parse(hex: string): { r: number; g: number; b: number } {

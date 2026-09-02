@@ -1,0 +1,205 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 420px"></div>
+} @else if (notFound()) {
+  <header class="maya-page-header">
+    <div>
+      <h1 class="maya-page-header__title">Empresa no encontrada</h1>
+      <p class="maya-page-header__subtitle">Puede que se haya dado de baja.</p>
+    </div>
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="back()">
+        <maya-icon name="building" [size]="16" /> Volver a empresas
+      </button>
+    </div>
+  </header>
+} @else if (tenant(); as t) {
+  <header class="maya-page-header">
+    <div>
+      <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="back()">
+        <maya-icon name="building" [size]="15" /> Empresas
+      </button>
+      <h1 class="maya-page-header__title">{{ t.name }}</h1>
+      <p class="maya-page-header__subtitle">
+        {{ t.slug }} ·
+        <span
+          class="maya-badge"
+          [class.maya-badge--success]="t.status === 'active'"
+          [class.maya-badge--warning]="t.status === 'trial'"
+          [class.maya-badge--danger]="t.status === 'suspended'"
+        >
+          {{ statusLabel(t.status) }}
+        </span>
+      </p>
+    </div>
+    <div class="maya-page-header__actions">
+      @if (t.status === 'suspended') {
+        <button
+          type="button"
+          class="maya-btn maya-btn--secondary"
+          (click)="setStatus(TenantStatus.Active)"
+        >
+          Reactivar
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="maya-btn maya-btn--secondary"
+          (click)="setStatus(TenantStatus.Suspended)"
+        >
+          Suspender
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (credentials(); as cred) {
+    <section
+      class="maya-card maya-card--accent"
+      style="margin-bottom: var(--maya-space-5)"
+      aria-labelledby="cred-nueva"
+    >
+      <div class="maya-card__header maya-spread">
+        <h2 id="cred-nueva" class="maya-card__title" style="font-size: var(--maya-text-md)">
+          Contraseña temporal nueva
+        </h2>
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+          (click)="dismissCredentials()"
+          aria-label="Cerrar el aviso de credenciales"
+        >
+          <maya-icon name="x" [size]="16" />
+        </button>
+      </div>
+      <div class="maya-card__body maya-stack">
+        <p class="maya-small">
+          <strong>Solo se muestra ahora.</strong> Al salir de esta pantalla no se podrá volver a
+          consultar: habría que emitir otra.
+        </p>
+        <dl class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+          <div>
+            <dt class="maya-tiny maya-subtle">Correo</dt>
+            <dd class="maya-small maya-bold">{{ cred.email }}</dd>
+          </div>
+          <div>
+            <dt class="maya-tiny maya-subtle">Usuario</dt>
+            <dd class="maya-small maya-bold">{{ cred.username }}</dd>
+          </div>
+          <div>
+            <dt class="maya-tiny maya-subtle">Contraseña temporal</dt>
+            <dd class="maya-row" style="gap: var(--maya-space-2)">
+              <code class="maya-small maya-bold">{{ cred.temporaryPassword }}</code>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--sm"
+                (click)="copyPassword()"
+              >
+                <maya-icon [name]="passwordCopied() ? 'check' : 'copy'" [size]="15" />
+                {{ passwordCopied() ? 'Copiada' : 'Copiar' }}
+              </button>
+            </dd>
+          </div>
+        </dl>
+        @if (!cred.emailSent) {
+          <p class="maya-error">
+            <maya-icon name="alert" [size]="14" />
+            No se pudo enviar el correo: entregue estos datos por otra vía.
+          </p>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Datos de la empresa</h2>
+    </div>
+    <div class="maya-card__body">
+      <dl class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+        <div>
+          <dt class="maya-tiny maya-subtle">Identificador</dt>
+          <dd class="maya-small maya-bold">{{ t.slug }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Plan</dt>
+          <dd class="maya-small maya-bold">{{ planLabel(t.plan) }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Correo de contacto</dt>
+          <dd class="maya-small maya-bold">{{ t.contactEmail }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Teléfono</dt>
+          <dd class="maya-small maya-bold">{{ t.contactPhone || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Razón social</dt>
+          <dd class="maya-small maya-bold">{{ t.legalName || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Identificación fiscal</dt>
+          <dd class="maya-small maya-bold">{{ t.taxId || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Dominio propio</dt>
+          <dd class="maya-small maya-bold">{{ t.domain || '—' }}</dd>
+        </div>
+        <div>
+          <dt class="maya-tiny maya-subtle">Alta</dt>
+          <dd class="maya-small maya-bold">{{ t.createdAt | mayaDate: 'long' }}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))">
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Uso</h2>
+      </div>
+      <div class="maya-card__body">
+        <dl class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))">
+          <div>
+            <dt class="maya-tiny maya-subtle">Usuarios</dt>
+            <dd class="maya-small maya-bold">
+              {{ t.userCount ?? '—' }}
+              @if (t.limits.maxUsers) {
+                <span class="maya-subtle">/ {{ t.limits.maxUsers }}</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt class="maya-tiny maya-subtle">Cursos</dt>
+            <dd class="maya-small maya-bold">
+              {{ t.courseCount ?? '—' }}
+              @if (t.limits.maxCourses) {
+                <span class="maya-subtle">/ {{ t.limits.maxCourses }}</span>
+              }
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Administración</h2>
+      </div>
+      <div class="maya-card__body maya-stack">
+        <p class="maya-tiny maya-subtle">
+          La contraseña que se entrega al crear la empresa no se guarda en ninguna parte. Si se ha
+          perdido, emita otra: se enviará por correo y su titular deberá cambiarla al entrar.
+        </p>
+        <button
+          type="button"
+          class="maya-btn maya-btn--secondary"
+          (click)="resetPassword()"
+          [disabled]="resetting()"
+        >
+          <maya-icon name="key" [size]="16" />
+          {{ resetting() ? 'Emitiendo…' : 'Emitir contraseña temporal' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

@@ -8,6 +8,7 @@ import {
   CohortDto,
   IssuedBadgeDto,
   Paginated,
+  TenantAdminCredentials,
   TenantCreatedDto,
   TenantDto,
   TenantStatus,
@@ -109,6 +110,19 @@ export class AdminService {
    */
   createTenant(payload: Record<string, unknown>): Observable<TenantCreatedDto> {
     return this.api.post<TenantCreatedDto>('/tenants', payload);
+  }
+
+  tenant(id: string): Observable<TenantDto> {
+    return this.api.get<TenantDto>(`/tenants/${id}`);
+  }
+
+  /**
+   * Emite una contraseña temporal nueva para la administración de la empresa.
+   * Es el único camino de vuelta cuando se pierde la del alta, que no se
+   * guarda en claro en ninguna parte.
+   */
+  resetTenantAdminPassword(id: string): Observable<TenantAdminCredentials> {
+    return this.api.post<TenantAdminCredentials>(`/tenants/${id}/admin-password`, {});
   }
 
   updateTenant(id: string, payload: Record<string, unknown>): Observable<TenantDto> {

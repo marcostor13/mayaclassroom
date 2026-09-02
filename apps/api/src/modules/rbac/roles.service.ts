@@ -278,6 +278,25 @@ export class RolesService {
       .exec();
   }
 
+  /**
+   * Usuarios que tienen un rol concreto en un contexto, del más antiguo al más
+   * reciente. Sirve para dar con quien administra una empresa sin recorrer
+   * todas las asignaciones ni destapar el `populate` de `assignmentsInContext`.
+   */
+  async assigneesByShortName(
+    shortName: string,
+    contextId: string | Types.ObjectId,
+    tenantId?: string | Types.ObjectId | null,
+  ): Promise<Types.ObjectId[]> {
+    const role = await this.findByShortName(shortName, tenantId);
+    if (!role) return [];
+    const assignments = await this.assignmentModel
+      .find({ role: role._id, context: toObjectId(contextId) })
+      .sort({ createdAt: 1 })
+      .exec();
+    return assignments.map((assignment) => assignment.user);
+  }
+
   async assignmentsInContext(contextId: string | Types.ObjectId): Promise<RoleAssignmentDocument[]> {
     return this.assignmentModel
       .find({ context: toObjectId(contextId) })

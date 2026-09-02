@@ -298,6 +298,23 @@ export class UsersService {
   }
 
   async setPassword(id: string | Types.ObjectId, password: string): Promise<void> {
+    await this.writePassword(id, password, false);
+  }
+
+  /**
+   * Igual que `setPassword`, pero deja la cuenta obligada a cambiarla al
+   * entrar. Es la que corresponde a las contraseñas que emite la plataforma
+   * —altas y reposiciones—, frente a las que elige la propia persona.
+   */
+  async setTemporaryPassword(id: string | Types.ObjectId, password: string): Promise<void> {
+    await this.writePassword(id, password, true);
+  }
+
+  private async writePassword(
+    id: string | Types.ObjectId,
+    password: string,
+    mustChange: boolean,
+  ): Promise<void> {
     const hash = await this.hashPassword(password);
     await this.model
       .updateOne(
@@ -306,7 +323,9 @@ export class UsersService {
           $set: {
             passwordHash: hash,
             passwordChangedAt: new Date(),
-            mustChangePassword: false,
+            mustChangePassword: mustChange,
+            // La reposición desbloquea: si la cuenta quedó cerrada por intentos
+            // fallidos, la contraseña nueva no serviría de nada.
             failedLoginAttempts: 0,
             lockedUntil: null,
           },

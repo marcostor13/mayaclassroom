@@ -1,10 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomInt } from 'node:crypto';
-import { TenantCreatedDto, UserStatus, fullName } from '@maya/shared';
+import { ContextLevel, TenantCreatedDto, UserStatus, fullName } from '@maya/shared';
 import type { TenantAdminCredentials } from '@maya/shared';
 import { TenantsService } from './tenants.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { RolesService } from '../rbac/roles.service';
+import { ContextsService } from '../contexts/contexts.service';
 import type { TenantDocument } from './schemas/tenant.schema';
 import type { PasswordPolicySchema } from './schemas/tenant.schema';
 import type { CreateTenantDto } from './dto/tenant.dto';
@@ -36,7 +38,49 @@ export class TenantProvisioningService {
     private readonly tenants: TenantsService,
     private readonly users: UsersService,
     private readonly mail: MailService,
+    private readonly roles: RolesService,
+    private readonly contexts: ContextsService,
   ) {}
+
+  /**
+   * Emite una contraseña temporal nueva para quien administra la empresa.
+   *
+   * La del alta no se puede recuperar: se guarda con hash y solo viaja en la
+   * respuesta de creación y en el correo de bienvenida. Cuando se pierde
+   * —basta con recargar la pantalla— la única salida es emitir otra, así que
+   * esto no es una comodidad sino el único camino de vuelta.
+   *
+   * Se elige la cuenta de administración más antigua, que es la que se creó
+   * junto con la empresa.
+   */
+  async resetAdminPassword(tenantId: string): Promise<TenantAdminCredentials> {
+    const tenant = await this.tenants.findById(tenantId);
+    const context = await this.contexts.requireByInstance(ContextLevel.Tenant, tenant._id);
+    const [adminId] = await this.roles.assigneesByShortName('manager', context._id, tenant._id);
+    if (!adminId) {
+      throw new NotFoundException(`«${tenant.name}» no tiene ninguna cuenta de administración.`);
+    }
+
+    const admin = await this.users.findByIdInTenant(adminId, tenant._id);
+    const temporaryPassword = this.generatePassword(tenant.settings.passwordPolicy);
+    await this.users.setTemporaryPassword(admin._id, temporaryPassword);
+
+    const emailSent = await this.sendWelcome(tenant, admin.email, {
+      name: fullName(admin.firstName, admin.lastName),
+      username: admin.username,
+      temporaryPassword,
+    });
+
+    this.logger.log(`Contraseña de administración renovada en «${tenant.slug}»: ${admin.email}`);
+
+    return {
+      userId: admin.id,
+      email: admin.email,
+      username: admin.username,
+      temporaryPassword,
+      emailSent,
+    };
+  }
 
   /**
    * Crea la empresa y su administrador. Si la cuenta de administración falla,

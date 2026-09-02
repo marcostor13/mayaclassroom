@@ -38,7 +38,9 @@
     <div class="maya-card__body maya-stack">
       <p class="maya-small">
         La contraseña temporal <strong>solo se muestra ahora</strong>. Entréguela a la persona
-        responsable: al entrar, la plataforma le obligará a cambiarla.
+        responsable: al entrar, la plataforma le obligará a cambiarla. Si la pierde, puede emitir
+        otra desde la
+        <a [routerLink]="['/admin/tenants', created.tenantId]">ficha de la empresa</a>.
       </p>
       <dl class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
         <div>
@@ -271,6 +273,12 @@
             <td class="maya-small">{{ tenant.createdAt | mayaDate: 'short' }}</td>
             <td>
               <div class="maya-row">
+                <a
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  [routerLink]="['/admin/tenants', tenant.id]"
+                >
+                  <maya-icon name="eye" [size]="15" /> Ver
+                </a>
                 @if (tenant.status === 'suspended') {
                   <button
                     type="button"
