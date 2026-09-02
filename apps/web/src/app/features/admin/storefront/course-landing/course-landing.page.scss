@@ -1,0 +1,15 @@
+.cabecera__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  min-width: 0;
+
+  div { min-width: 0; }
+}
+
+.cabecera__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maya-space-2);
+}

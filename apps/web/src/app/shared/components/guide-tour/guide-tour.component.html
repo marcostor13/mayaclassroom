@@ -1,0 +1,62 @@
+@if (paso(); as step) {
+  <!-- El velo lleva el hueco: una sombra enorme alrededor del recuadro del
+       elemento. Así se ilumina sin duplicarlo ni moverlo de sitio. -->
+  <div
+    class="velo"
+    [class.velo--sin-foco]="!foco()"
+    [style.top.px]="foco()?.top ?? 0"
+    [style.left.px]="foco()?.left ?? 0"
+    [style.width.px]="foco()?.width ?? 0"
+    [style.height.px]="foco()?.height ?? 0"
+    (click)="close.emit()"
+  ></div>
+
+  <div
+    class="tarjeta"
+    [class.tarjeta--centrada]="!foco()"
+    [class.tarjeta--arriba]="tarjetaArriba()"
+    [style.top.px]="foco() ? (tarjetaArriba() ? foco()!.top : foco()!.top + foco()!.height) : null"
+    role="dialog"
+    aria-live="polite"
+    [attr.aria-label]="title()"
+  >
+    <header class="tarjeta__cabecera">
+      <span class="tarjeta__contador">Paso {{ index() + 1 }} de {{ total() }}</span>
+      <button
+        type="button"
+        class="tarjeta__cerrar"
+        aria-label="Cerrar la guía"
+        (click)="close.emit()"
+      >
+        <maya-icon name="x" [size]="16" />
+      </button>
+    </header>
+
+    <div class="tarjeta__progreso" role="presentation">
+      <span [style.width.%]="progreso()"></span>
+    </div>
+
+    <h2 class="tarjeta__titulo">{{ step.title }}</h2>
+    <p class="tarjeta__texto">{{ step.body }}</p>
+
+    <footer class="tarjeta__pie">
+      @if (index() > 0) {
+        <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="prev.emit()">
+          <maya-icon name="chevron-left" [size]="15" />
+          Atrás
+        </button>
+      } @else {
+        <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="close.emit()">
+          Ahora no
+        </button>
+      }
+
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="next.emit()">
+        {{ step.actionLabel || (esUltimo() ? 'Terminar' : 'Siguiente') }}
+        @if (!esUltimo()) {
+          <maya-icon name="chevron-right" [size]="15" />
+        }
+      </button>
+    </footer>
+  </div>
+}

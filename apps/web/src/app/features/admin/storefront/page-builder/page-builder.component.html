@@ -1,0 +1,459 @@
+<div class="constructor" [class.constructor--con-panel]="seleccionada()">
+  <!-- Barra del lienzo: anchura y añadir. Todo lo demás vive en el bloque. -->
+  <div class="lienzo">
+    <div class="lienzo__barra">
+      <div class="maya-segmented" role="group" aria-label="Anchura de la vista" data-guia="anchura">
+        @for (d of dispositivos; track d.id) {
+          <button
+            type="button"
+            class="maya-segmented__item"
+            [class.is-active]="dispositivo() === d.id"
+            [attr.aria-pressed]="dispositivo() === d.id"
+            [title]="d.label"
+            (click)="dispositivo.set(d.id)"
+          >
+            <maya-icon [name]="d.icon" [size]="15" />
+            <span class="maya-hide-mobile">{{ d.label }}</span>
+          </button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary maya-btn--sm"
+        data-guia="anadir-seccion"
+        (click)="abrirPaleta(null)"
+      >
+        <maya-icon name="plus" [size]="15" />
+        Añadir bloque
+      </button>
+    </div>
+
+    <div class="lienzo__area">
+      <div
+        class="lienzo__marco"
+        [class.lienzo__marco--dispositivo]="anchoLienzo() > 0"
+        [style.width.px]="anchoLienzo() || null"
+      >
+        <maya-site-render
+          [data]="data()"
+          [sections]="sections()"
+          [editable]="true"
+          [selectedId]="selectedId()"
+          [activeCategory]="categoria()"
+          (categoryFilter)="categoria.set($event)"
+          (sectionSelect)="seleccionar($event)"
+          (sectionMove)="mover($event)"
+          (sectionToggle)="alternar($event)"
+          (sectionDuplicate)="duplicar($event)"
+          (sectionRemove)="eliminar($event)"
+          (sectionAdd)="abrirPaleta($event)"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Inspector del bloque elegido. Panel lateral en escritorio, hoja abajo en
+       móvil: es donde cae el pulgar y deja ver la página mientras se edita. -->
+  @if (seleccionada(); as section) {
+    <aside class="panel" data-guia="inspector">
+      <header class="panel__cabecera">
+        <div class="panel__titulo">
+          <maya-icon [name]="definicionActual()!.icon" [size]="17" />
+          <div>
+            <b>{{ etiqueta(section) }}</b>
+            <span class="maya-tiny maya-subtle">{{ definicionActual()!.hint }}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="maya-btn maya-btn--icon maya-btn--ghost"
+          aria-label="Cerrar los ajustes del bloque"
+          (click)="cerrarInspector()"
+        >
+          <maya-icon name="x" [size]="18" />
+        </button>
+      </header>
+
+      <div class="panel__cuerpo">
+        @if (usa('title')) {
+          <div class="maya-field">
+            <label class="maya-label" [attr.for]="'f-titulo'">Título</label>
+            <input
+              id="f-titulo"
+              class="maya-input"
+              [value]="section.title ?? ''"
+              (input)="editar('title', $any($event.target).value)"
+            />
+          </div>
+        }
+
+        @if (usa('subtitle')) {
+          <div class="maya-field">
+            <label class="maya-label" for="f-subtitulo">Frase de apoyo</label>
+            <textarea
+              id="f-subtitulo"
+              class="maya-input maya-textarea"
+              rows="2"
+              [value]="section.subtitle ?? ''"
+              (input)="editar('subtitle', $any($event.target).value)"
+            ></textarea>
+          </div>
+        }
+
+        @if (usa('body')) {
+          @if (section.type === Tipo.RichText) {
+            <div class="maya-field">
+              <span class="maya-label">Texto</span>
+              <maya-rich-editor
+                [value]="section.body ?? ''"
+                (valueChange)="editar('body', $event)"
+              />
+            </div>
+          } @else {
+            <div class="maya-field">
+              <label class="maya-label" for="f-cuerpo">Texto</label>
+              <textarea
+                id="f-cuerpo"
+                class="maya-input maya-textarea"
+                rows="5"
+                [value]="section.body ?? ''"
+                (input)="editar('body', $any($event.target).value)"
+              ></textarea>
+            </div>
+          }
+        }
+
+        @if (usa('video')) {
+          <div class="maya-field">
+            <label class="maya-label" for="f-video">Vídeo de YouTube o Vimeo</label>
+            <input
+              id="f-video"
+              class="maya-input"
+              placeholder="Pegue aquí el enlace del navegador"
+              [value]="section.videoUrl ?? ''"
+              (change)="editarVideo($any($event.target).value)"
+            />
+            <span class="maya-hint">
+              Vale el enlace normal; se convierte solo. Si se queda vacío, es que no se reconoció.
+            </span>
+          </div>
+        }
+
+        @if (usa('image')) {
+          <maya-image-upload
+            label="Imagen"
+            purpose="storefront"
+            hint="Se usa a la derecha del titular, o de fondo si elige «Imagen» abajo."
+            [value]="section.imageUrl ?? null"
+            (valueChange)="editarImagen($event)"
+          />
+        }
+
+        @if (usa('limit')) {
+          <div class="maya-field">
+            <label class="maya-label" for="f-limite">Cuántos cursos mostrar</label>
+            <input
+              id="f-limite"
+              type="number"
+              min="1"
+              class="maya-input"
+              placeholder="Todos"
+              [value]="section.limit ?? ''"
+              (input)="editar('limit', $any($event.target).valueAsNumber || null)"
+            />
+          </div>
+        }
+
+        @if (usa('cta')) {
+          <div class="panel__pareja">
+            <div class="maya-field">
+              <label class="maya-label" for="f-cta">Botón</label>
+              <input
+                id="f-cta"
+                class="maya-input"
+                placeholder="Ver los cursos"
+                [value]="section.ctaLabel ?? ''"
+                (input)="editar('ctaLabel', $any($event.target).value)"
+              />
+            </div>
+            <div class="maya-field">
+              <label class="maya-label" for="f-cta-url">Lleva a</label>
+              <input
+                id="f-cta-url"
+                class="maya-input"
+                placeholder="#cursos"
+                [value]="section.ctaUrl ?? ''"
+                (input)="editar('ctaUrl', $any($event.target).value)"
+              />
+            </div>
+          </div>
+        }
+
+        @if (usa('ctaSecondary')) {
+          <div class="panel__pareja">
+            <div class="maya-field">
+              <label class="maya-label" for="f-cta2">Segundo botón</label>
+              <input
+                id="f-cta2"
+                class="maya-input"
+                placeholder="Opcional"
+                [value]="section.ctaSecondaryLabel ?? ''"
+                (input)="editar('ctaSecondaryLabel', $any($event.target).value)"
+              />
+            </div>
+            <div class="maya-field">
+              <label class="maya-label" for="f-cta2-url">Lleva a</label>
+              <input
+                id="f-cta2-url"
+                class="maya-input"
+                placeholder="#contacto"
+                [value]="section.ctaSecondaryUrl ?? ''"
+                (input)="editar('ctaSecondaryUrl', $any($event.target).value)"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- Elementos repetibles -->
+        @if (usa('items')) {
+          <section class="elementos">
+            <header class="elementos__cabecera">
+              <span class="maya-label">{{ definicionActual()!.elemento!.singular }}s</span>
+              <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="anadirElemento()">
+                <maya-icon name="plus" [size]="14" />
+                Añadir
+              </button>
+            </header>
+
+            @for (item of section.items ?? []; track $index; let i = $index; let first = $first; let last = $last) {
+              <article class="elemento">
+                <header class="elemento__barra">
+                  <span class="maya-tiny maya-subtle">
+                    {{ definicionActual()!.elemento!.singular }} {{ i + 1 }}
+                  </span>
+                  <div class="elemento__mandos">
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--icon maya-btn--ghost maya-btn--sm"
+                      aria-label="Subir"
+                      [disabled]="first"
+                      (click)="moverElemento(i, -1)"
+                    >
+                      <maya-icon name="chevron-up" [size]="14" />
+                    </button>
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--icon maya-btn--ghost maya-btn--sm"
+                      aria-label="Bajar"
+                      [disabled]="last"
+                      (click)="moverElemento(i, 1)"
+                    >
+                      <maya-icon name="chevron-down" [size]="14" />
+                    </button>
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--icon maya-btn--ghost maya-btn--sm"
+                      aria-label="Quitar"
+                      (click)="quitarElemento(i)"
+                    >
+                      <maya-icon name="trash" [size]="14" />
+                    </button>
+                  </div>
+                </header>
+
+                @if (usaEnElemento('icon')) {
+                  <div class="iconos" role="group" aria-label="Icono">
+                    @for (nombre of iconos; track nombre) {
+                      <button
+                        type="button"
+                        class="iconos__opcion"
+                        [class.is-active]="item.icon === nombre"
+                        [title]="nombre"
+                        (click)="editarElemento(i, 'icon', nombre)"
+                      >
+                        <maya-icon [name]="nombre" [size]="16" />
+                      </button>
+                    }
+                  </div>
+                }
+
+                @if (usaEnElemento('value')) {
+                  <input
+                    class="maya-input"
+                    placeholder="+1.200"
+                    [value]="item.value ?? ''"
+                    (input)="editarElemento(i, 'value', $any($event.target).value)"
+                  />
+                }
+
+                @if (usaEnElemento('image')) {
+                  <maya-image-upload
+                    purpose="storefront"
+                    [value]="item.imageUrl ?? null"
+                    (valueChange)="editarElemento(i, 'imageUrl', $event ?? '')"
+                  />
+                }
+
+                @if (usaEnElemento('title')) {
+                  <input
+                    class="maya-input"
+                    placeholder="Título"
+                    [value]="item.title"
+                    (input)="editarElemento(i, 'title', $any($event.target).value)"
+                  />
+                }
+
+                @if (usaEnElemento('body')) {
+                  <textarea
+                    class="maya-input maya-textarea"
+                    rows="2"
+                    placeholder="Texto"
+                    [value]="item.body ?? ''"
+                    (input)="editarElemento(i, 'body', $any($event.target).value)"
+                  ></textarea>
+                }
+
+                @if (usaEnElemento('author')) {
+                  <input
+                    class="maya-input"
+                    placeholder="Nombre y cargo"
+                    [value]="item.author ?? ''"
+                    (input)="editarElemento(i, 'author', $any($event.target).value)"
+                  />
+                }
+              </article>
+            } @empty {
+              <p class="maya-hint">Todavía no hay ninguno. Pulse «Añadir».</p>
+            }
+          </section>
+        }
+
+        <!-- Aspecto: opciones cerradas, para que no se pueda romper la página -->
+        <section class="aspecto">
+          <span class="maya-label">Aspecto del bloque</span>
+
+          <div class="aspecto__grupo">
+            <span class="maya-tiny maya-subtle">Fondo</span>
+            <!-- Rejilla y no control segmentado: cinco tramos no caben en el
+                 ancho del panel y el último quedaba cortado fuera de la vista. -->
+            <div class="aspecto__opciones" role="group" aria-label="Fondo del bloque">
+              @for (f of fondos; track f.id) {
+                <button
+                  type="button"
+                  class="aspecto__opcion"
+                  [class.is-active]="estilo(section).background === f.id"
+                  [attr.aria-pressed]="estilo(section).background === f.id"
+                  (click)="editarEstilo('background', f.id)"
+                >
+                  <span [class]="'muestra muestra--' + f.id"></span>
+                  {{ f.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="aspecto__grupo">
+            <span class="maya-tiny maya-subtle">Alineación</span>
+            <div class="maya-segmented">
+              <button
+                type="button"
+                class="maya-segmented__item"
+                [class.is-active]="estilo(section).align === 'start'"
+                (click)="editarEstilo('align', 'start')"
+              >
+                Izquierda
+              </button>
+              <button
+                type="button"
+                class="maya-segmented__item"
+                [class.is-active]="estilo(section).align === 'center'"
+                (click)="editarEstilo('align', 'center')"
+              >
+                Centrado
+              </button>
+            </div>
+          </div>
+
+          <div class="aspecto__grupo">
+            <span class="maya-tiny maya-subtle">Aire vertical</span>
+            <div class="maya-segmented">
+              @for (a of aires; track a.id) {
+                <button
+                  type="button"
+                  class="maya-segmented__item"
+                  [class.is-active]="estilo(section).spacing === a.id"
+                  (click)="editarEstilo('spacing', a.id)"
+                >
+                  {{ a.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (usa('items')) {
+            <div class="aspecto__grupo">
+              <span class="maya-tiny maya-subtle">Columnas en pantalla grande</span>
+              <div class="maya-segmented">
+                @for (n of [2, 3, 4]; track n) {
+                  <button
+                    type="button"
+                    class="maya-segmented__item"
+                    [class.is-active]="estilo(section).columns === n"
+                    (click)="editarEstilo('columns', n)"
+                  >
+                    {{ n }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </section>
+
+        <footer class="panel__pie">
+          <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="alternar(section.id)">
+            <maya-icon [name]="section.enabled ? 'eye-off' : 'eye'" [size]="15" />
+            {{ section.enabled ? 'Ocultar bloque' : 'Mostrar bloque' }}
+          </button>
+          <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="eliminar(section.id)">
+            <maya-icon name="trash" [size]="15" />
+            Eliminar
+          </button>
+        </footer>
+      </div>
+    </aside>
+  }
+</div>
+
+<!-- Paleta de bloques -->
+@if (paletaAbierta()) {
+  <div class="maya-backdrop" (click)="paletaAbierta.set(false)"></div>
+  <div class="paleta" role="dialog" aria-label="Añadir un bloque">
+    <header class="paleta__cabecera">
+      <div>
+        <b>Añadir un bloque</b>
+        <span class="maya-tiny maya-subtle">Se inserta con contenido de ejemplo, listo para editar.</span>
+      </div>
+      <button
+        type="button"
+        class="maya-btn maya-btn--icon maya-btn--ghost"
+        aria-label="Cerrar"
+        (click)="paletaAbierta.set(false)"
+      >
+        <maya-icon name="x" [size]="18" />
+      </button>
+    </header>
+
+    <div class="paleta__lista">
+      @for (bloque of paleta(); track bloque.type) {
+        <button type="button" class="paleta__opcion" (click)="anadir(bloque.type)">
+          <span class="paleta__icono"><maya-icon [name]="bloque.icon" [size]="18" /></span>
+          <span>
+            <b>{{ bloque.label }}</b>
+            <span class="maya-tiny maya-subtle">{{ bloque.hint }}</span>
+          </span>
+        </button>
+      }
+    </div>
+  </div>
+}

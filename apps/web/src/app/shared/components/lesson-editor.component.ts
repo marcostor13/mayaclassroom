@@ -4,6 +4,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { IconComponent } from './icon.component';
 import { RichEditorComponent } from './rich-editor.component';
+import { toEmbedUrl } from '../utils/embed';
 
 interface TipoBloque {
   type: LessonBlockType;
@@ -189,21 +190,10 @@ export class LessonEditorComponent {
     const url = valor.trim();
     if (!url) return this.update(id, { url: null });
 
-    const youtube = url.match(
-      /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/)|youtu\.be\/)([\w-]{11})/,
-    );
-    if (youtube) {
-      return this.update(id, { url: `https://www.youtube.com/embed/${youtube[1]}` });
-    }
+    const embed = toEmbedUrl(url);
+    if (embed) return this.update(id, { url: embed });
 
-    const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-    if (vimeo) return this.update(id, { url: `https://player.vimeo.com/video/${vimeo[1]}` });
-
-    if (!/^https?:\/\//i.test(url)) {
-      this.toast.warning('Dirección no válida', 'Pegue el enlace completo del vídeo.');
-      return;
-    }
-    this.update(id, { url });
+    this.toast.warning('Dirección no válida', 'Pegue el enlace completo de YouTube o Vimeo.');
   }
 
   esAudio(block: LessonBlock): boolean {

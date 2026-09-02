@@ -48,6 +48,8 @@ import { BadgesModule } from './modules/badges/badges.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { SiteModule } from './modules/site/site.module';
+import { CommerceModule } from './modules/commerce/commerce.module';
+import { GuidesModule } from './modules/guides/guides.module';
 
 @Module({
   imports: [
@@ -110,8 +112,10 @@ import { SiteModule } from './modules/site/site.module';
     CertificatesModule,
     PlatformModule,
 
-    // Fase 4
+    // Fase 4 — escaparate, venta y acompañamiento
     SiteModule,
+    CommerceModule,
+    GuidesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

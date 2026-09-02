@@ -9,10 +9,25 @@ export const routes: Routes = [
   /* ────────────────────── Escaparate público (sin sesión) ─────────────── */
   {
     // Fuera del armazón de la aplicación y sin guard: su público es quien
-    // todavía no tiene cuenta. Es la única ruta que se sirve a desconocidos.
+    // todavía no tiene cuenta. Son las únicas rutas que se sirven a desconocidos.
     path: 'p/:slug',
     loadComponent: () =>
       import('./features/site/site-public.page').then((m) => m.SitePublicPage),
+  },
+  {
+    // La ficha de venta de un curso. `ref` es el nombre corto —`ang-22`— para
+    // que la dirección se pueda compartir y diga de qué va.
+    path: 'p/:slug/c/:ref',
+    loadComponent: () =>
+      import('./features/site/course-public.page').then((m) => m.CoursePublicPage),
+  },
+  {
+    // Vuelta de la pasarela. Ruta propia y no un parámetro de la ficha para que
+    // recargar o guardar el enlace siga enseñando el estado de la compra.
+    path: 'p/:slug/pedido/:reference',
+    title: 'Su compra · Maya Classroom',
+    loadComponent: () =>
+      import('./features/site/order-public.page').then((m) => m.OrderPublicPage),
   },
 
   /* ─────────────────────────── Autenticación ─────────────────────────── */
@@ -292,6 +307,24 @@ export const routes: Routes = [
         data: { capabilities: [CAP.SITE_MANAGE, CAP.SITE_MANAGE_REQUESTS] },
         loadComponent: () =>
           import('./features/admin/storefront/storefront.page').then((m) => m.AdminStorefrontPage),
+      },
+      {
+        path: 'admin/storefront/curso/:id',
+        title: 'Página de venta · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.SITE_MANAGE, CAP.COURSE_UPDATE] },
+        loadComponent: () =>
+          import('./features/admin/storefront/course-landing/course-landing.page').then(
+            (m) => m.AdminCourseLandingPage,
+          ),
+      },
+      {
+        path: 'admin/payments',
+        title: 'Cobros · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.PAYMENT_MANAGE] },
+        loadComponent: () =>
+          import('./features/admin/payments/payments.page').then((m) => m.AdminPaymentsPage),
       },
       {
         path: 'admin/tenants',

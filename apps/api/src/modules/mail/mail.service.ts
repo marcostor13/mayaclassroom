@@ -138,6 +138,44 @@ export class MailService {
     });
   }
 
+  /**
+   * Acceso a un curso recién comprado.
+   *
+   * Lleva la contraseña temporal solo cuando la cuenta se acaba de crear: a
+   * quien ya tenía cuenta no se le cambia nada, y recibir una contraseña que
+   * no es la suya haría pensar que le han entrado en el aula.
+   */
+  sendCourseAccess(params: {
+    to: string;
+    name: string;
+    tenantName: string;
+    tenantSlug: string;
+    courseTitle: string;
+    reference: string;
+    temporaryPassword: string | null;
+  }): Promise<void> {
+    const credenciales = params.temporaryPassword
+      ? '<br><br>Estos son sus datos de acceso:<br>' +
+        `<strong>Usuario:</strong> ${params.to}<br>` +
+        `<strong>Contraseña temporal:</strong> ${params.temporaryPassword}`
+      : '<br><br>Entre con la cuenta que ya tenía en la plataforma.';
+
+    return this.send({
+      to: params.to,
+      subject: `Ya tiene acceso a «${params.courseTitle}» · ${params.tenantName}`,
+      title: '¡Su curso le espera!',
+      greeting: `Hola, ${params.name}`,
+      body:
+        `Su compra de <strong>${params.courseTitle}</strong> está confirmada ` +
+        `(pedido ${params.reference}).${credenciales}`,
+      ctaLabel: 'Entrar en mi curso',
+      ctaUrl: `${this.app.webUrl}/auth/login?tenant=${params.tenantSlug}`,
+      footnote: params.temporaryPassword
+        ? 'Por seguridad, le pediremos una contraseña nueva la primera vez que entre.'
+        : undefined,
+    });
+  }
+
   sendInvitation(to: string, name: string, tenantName: string, link: string): Promise<void> {
     return this.send({
       to,

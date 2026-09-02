@@ -1,0 +1,65 @@
+<header class="maya-page-header">
+  <div class="cabecera__titulo">
+    <button
+      type="button"
+      class="maya-btn maya-btn--icon maya-btn--ghost"
+      aria-label="Volver"
+      (click)="volver()"
+    >
+      <maya-icon name="arrow-left" [size]="18" />
+    </button>
+    <div>
+      <h1>Página de venta</h1>
+      <p class="maya-muted">{{ course()?.fullName }}</p>
+    </div>
+  </div>
+
+  <div class="cabecera__acciones">
+    @if (heredada()) {
+      <span class="maya-badge maya-badge--info">Maqueta por defecto</span>
+    } @else {
+      <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="restablecer()">
+        <maya-icon name="refresh" [size]="15" />
+        <span class="maya-hide-mobile">Restablecer</span>
+      </button>
+    }
+
+    <button type="button" class="maya-btn maya-btn--ghost" (click)="verFicha()">
+      <maya-icon name="arrow-up-right" [size]="16" />
+      <span class="maya-hide-mobile">Ver la ficha</span>
+    </button>
+
+    <button
+      type="button"
+      class="maya-btn maya-btn--primary"
+      [disabled]="saving() || !dirty()"
+      (click)="guardar()"
+    >
+      <maya-icon name="check" [size]="16" />
+      {{ saving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</header>
+
+@if (heredada()) {
+  <p class="maya-alert maya-alert--info">
+    Este curso todavía usa la maqueta que la plataforma compone con sus datos. En cuanto cambie
+    algo, la página pasa a ser suya y deja de actualizarse sola.
+  </p>
+}
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 60vh; border-radius: var(--maya-radius-lg)"></div>
+} @else if (render(); as datos) {
+  <maya-page-builder
+    [(sections)]="secciones"
+    [data]="datos"
+    [forCourse]="true"
+    (sectionsChanged)="marcarSucio()"
+  />
+} @else {
+  <div class="maya-empty">
+    <maya-icon name="book-open" [size]="30" />
+    <p>No se pudo cargar el curso.</p>
+  </div>
+}

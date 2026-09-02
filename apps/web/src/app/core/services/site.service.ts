@@ -1,9 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  CheckoutRequest,
+  CheckoutResult,
+  CheckoutSession,
   EnrolmentRequestDto,
   EnrolmentRequestResult,
   EnrolmentRequestStatus,
+  PublicCourseDetailDto,
+  PublicPaymentMethod,
   PublicSiteDto,
   TenantSiteDto,
 } from '@maya/shared';
@@ -19,6 +24,31 @@ export class SiteService {
   /** No necesita sesión: es la puerta de entrada de quien aún no es alumno. */
   publicSite(slug: string): Observable<PublicSiteDto> {
     return this.api.get<PublicSiteDto>(`/site/public/${slug}`);
+  }
+
+  /** Ficha de venta de un curso. `ref` admite el identificador o el nombre corto. */
+  publicCourse(slug: string, ref: string): Observable<PublicCourseDetailDto> {
+    return this.api.get<PublicCourseDetailDto>(`/site/public/${slug}/courses/${ref}`);
+  }
+
+  /** Formas de pago que la empresa tiene activas y configuradas. */
+  paymentMethods(slug: string): Observable<PublicPaymentMethod[]> {
+    return this.api.get<PublicPaymentMethod[]>(`/site/public/${slug}/payment-methods`);
+  }
+
+  checkout(slug: string, payload: CheckoutRequest): Observable<CheckoutSession> {
+    return this.api.post<CheckoutSession>(`/site/public/${slug}/checkout`, payload);
+  }
+
+  /**
+   * Estado de una compra al volver de la pasarela.
+   *
+   * La confirmación la hace el servidor consultando a la pasarela: lo que trae
+   * la dirección de vuelta lo controla el navegador y no basta para dar por
+   * bueno un pago.
+   */
+  orderStatus(slug: string, reference: string): Observable<CheckoutResult> {
+    return this.api.get<CheckoutResult>(`/site/public/${slug}/orders/${reference}`);
   }
 
   requestPlace(

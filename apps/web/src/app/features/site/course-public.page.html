@@ -1,0 +1,162 @@
+@if (loading()) {
+  <div class="cargando">
+    <div class="maya-skeleton" style="height: 56px"></div>
+    <div class="maya-skeleton" style="height: 44vh"></div>
+    <div class="maya-skeleton" style="height: 26vh"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="no-disponible">
+    <maya-icon name="book-open" [size]="40" />
+    <h1>Curso no disponible</h1>
+    <p class="maya-muted">Puede que ya no esté a la venta o que la dirección no sea correcta.</p>
+    <a class="maya-btn maya-btn--primary" [href]="'/p/' + slug()">Ver todos los cursos</a>
+  </div>
+} @else if (render(); as datos) {
+  <maya-site-render
+    [data]="datos"
+    [sections]="data()!.landing"
+    (buy)="abrirCompra()"
+    (courseOpen)="abrirCurso($event)"
+  />
+
+  <!-- Compra. Vive fuera del renderizador porque no es contenido de la página
+       diseñable, sino la pasarela: el editor no debe poder moverla ni quitarla. -->
+  <section id="compra" class="compra-zona">
+    <div class="compra-zona__interior">
+      @if (!comprando()) {
+        <div class="resumen">
+          <div>
+            <span class="maya-tiny maya-subtle">Matrícula</span>
+            <p class="resumen__precio">{{ precio() }}</p>
+          </div>
+          <button type="button" class="maya-btn maya-btn--primary maya-btn--lg" (click)="abrirCompra()">
+            {{ gratuito() ? 'Matricularme gratis' : 'Comprar ahora' }}
+          </button>
+        </div>
+      } @else {
+        <form class="formulario" [formGroup]="form" (ngSubmit)="comprar()">
+          <header class="formulario__cabecera">
+            <div>
+              <h2 class="formulario__titulo">
+                {{ gratuito() ? 'Matricúlese gratis' : 'Complete su compra' }}
+              </h2>
+              <p class="maya-small maya-subtle">
+                {{ data()!.course.title }} · <b>{{ precio() }}</b>
+              </p>
+            </div>
+            <button
+              type="button"
+              class="maya-btn maya-btn--icon maya-btn--ghost"
+              aria-label="Cerrar"
+              (click)="cerrarCompra()"
+            >
+              <maya-icon name="x" [size]="18" />
+            </button>
+          </header>
+
+          <div class="formulario__fila">
+            <div class="maya-field">
+              <label class="maya-label" for="c-nombre">Nombre *</label>
+              <input
+                id="c-nombre"
+                class="maya-input"
+                autocomplete="given-name"
+                formControlName="firstName"
+                [class.is-invalid]="invalid('firstName')"
+              />
+            </div>
+            <div class="maya-field">
+              <label class="maya-label" for="c-apellidos">Apellidos *</label>
+              <input
+                id="c-apellidos"
+                class="maya-input"
+                autocomplete="family-name"
+                formControlName="lastName"
+                [class.is-invalid]="invalid('lastName')"
+              />
+            </div>
+          </div>
+
+          <div class="maya-field">
+            <label class="maya-label" for="c-email">Correo electrónico *</label>
+            <input
+              id="c-email"
+              type="email"
+              class="maya-input"
+              autocomplete="email"
+              formControlName="email"
+              [class.is-invalid]="invalid('email')"
+            />
+            <span class="maya-hint">Aquí le enviaremos su acceso al curso.</span>
+            @if (invalid('email')) {
+              <span class="maya-error">Introduzca un correo válido.</span>
+            }
+          </div>
+
+          <div class="maya-field">
+            <label class="maya-label" for="c-tel">Teléfono (opcional)</label>
+            <input id="c-tel" class="maya-input" autocomplete="tel" formControlName="phone" />
+          </div>
+
+          @if (!gratuito()) {
+            @if (methods().length) {
+              <fieldset class="pagos">
+                <legend class="maya-label">Forma de pago</legend>
+                @for (method of methods(); track method.provider) {
+                  <label class="pago" [class.pago--activo]="provider() === method.provider">
+                    <input
+                      type="radio"
+                      name="provider"
+                      [value]="method.provider"
+                      [checked]="provider() === method.provider"
+                      (change)="provider.set(method.provider)"
+                    />
+                    <span class="pago__icono">
+                      <maya-icon
+                        [name]="method.provider === Proveedor.Manual ? 'building' : 'credit-card'"
+                        [size]="18"
+                      />
+                    </span>
+                    <span class="pago__texto">
+                      <b>{{ method.label }}</b>
+                      @if (method.hint) {
+                        <span class="maya-tiny maya-subtle">{{ method.hint }}</span>
+                      }
+                    </span>
+                    @if (method.sandbox) {
+                      <span class="maya-badge maya-badge--warning">Modo prueba</span>
+                    }
+                  </label>
+                }
+              </fieldset>
+            } @else {
+              <p class="maya-alert maya-alert--warning">
+                Esta empresa todavía no ha conectado ninguna pasarela de pago. Escríbales para
+                matricularse.
+              </p>
+            }
+          }
+
+          <button
+            type="submit"
+            class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block"
+            [disabled]="enviando() || (!gratuito() && !methods().length)"
+          >
+            {{
+              enviando()
+                ? 'Un momento…'
+                : gratuito()
+                  ? 'Matricularme gratis'
+                  : 'Pagar ' + precio()
+            }}
+          </button>
+
+          <p class="formulario__aviso">
+            <maya-icon name="lock" [size]="14" />
+            El pago se hace en la pasarela. Aquí no se guarda ningún dato de su tarjeta.
+          </p>
+        </form>
+      }
+    </div>
+  </section>
+}

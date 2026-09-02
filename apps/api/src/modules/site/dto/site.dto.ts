@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -13,12 +14,39 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { EnrolmentRequestStatus, SiteSectionType, SiteTemplate } from '@maya/shared';
+import type { SiteSectionStyle } from '@maya/shared';
 
 export class SiteSectionItemDto {
   @ApiProperty() @IsString() @MaxLength(200) title!: string;
   @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(2000) body?: string | null;
   @ApiPropertyOptional() @IsString() @IsOptional() imageUrl?: string | null;
   @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(200) author?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(40) icon?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(40) value?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(300) url?: string | null;
+}
+
+/** Aspecto de una sección: solo valores del catálogo, nunca CSS libre. */
+export class SiteSectionStyleDto {
+  @ApiPropertyOptional({ enum: ['plain', 'soft', 'brand', 'dark', 'image'] })
+  @IsIn(['plain', 'soft', 'brand', 'dark', 'image'])
+  @IsOptional()
+  background?: SiteSectionStyle['background'];
+
+  @ApiPropertyOptional({ enum: ['start', 'center'] })
+  @IsIn(['start', 'center'])
+  @IsOptional()
+  align?: SiteSectionStyle['align'];
+
+  @ApiPropertyOptional({ enum: ['compact', 'normal', 'roomy'] })
+  @IsIn(['compact', 'normal', 'roomy'])
+  @IsOptional()
+  spacing?: SiteSectionStyle['spacing'];
+
+  @ApiPropertyOptional({ enum: [2, 3, 4] })
+  @IsIn([2, 3, 4])
+  @IsOptional()
+  columns?: SiteSectionStyle['columns'];
 }
 
 export class SiteSectionDto {
@@ -45,6 +73,16 @@ export class SiteSectionDto {
   items?: SiteSectionItemDto[];
 
   @ApiPropertyOptional() @IsInt() @IsOptional() @Min(1) limit?: number | null;
+
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(60) ctaSecondaryLabel?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(300) ctaSecondaryUrl?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(500) videoUrl?: string | null;
+
+  @ApiPropertyOptional({ type: SiteSectionStyleDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SiteSectionStyleDto)
+  style?: SiteSectionStyleDto | null;
 }
 
 export class SiteSeoDto {

@@ -6,6 +6,8 @@ import { SiteService } from './site.service';
 import { TenantSite } from './schemas/tenant-site.schema';
 import { EnrolmentRequest } from './schemas/enrolment-request.schema';
 import { Course } from '../courses/schemas/course.schema';
+import { CourseSection } from '../courses/schemas/course-section.schema';
+import { CourseModule } from '../courses/schemas/course-module.schema';
 import { Category } from '../categories/schemas/category.schema';
 import { TenantsService } from '../tenants/tenants.service';
 import { UsersService } from '../users/users.service';
@@ -92,6 +94,10 @@ async function build(options: {
     find: options.course ? [options.course] : [],
   });
   const categoryModel = modelStub({ find: [] });
+  // El temario de la ficha de venta se arma con secciones y módulos; en estas
+  // pruebas no hay ninguno y basta con que el modelo exista.
+  const sectionModel = modelStub({ find: [] });
+  const courseModuleModel = modelStub({ find: [] });
 
   const users = {
     findByEmail: jest.fn(async () => options.existingUser ?? null),
@@ -109,6 +115,8 @@ async function build(options: {
       { provide: getModelToken(TenantSite.name), useValue: siteModel },
       { provide: getModelToken(EnrolmentRequest.name), useValue: requestModel },
       { provide: getModelToken(Course.name), useValue: courseModel },
+      { provide: getModelToken(CourseSection.name), useValue: sectionModel },
+      { provide: getModelToken(CourseModule.name), useValue: courseModuleModel },
       { provide: getModelToken(Category.name), useValue: categoryModel },
       { provide: TenantsService, useValue: tenants },
       { provide: UsersService, useValue: users },

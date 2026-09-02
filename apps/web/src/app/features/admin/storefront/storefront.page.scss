@@ -1,62 +1,75 @@
+@use '../../../../styles/tokens' as *;
+
 /**
- * Editor de la página pública. Solo lo que el sistema de diseño no cubre: la
- * lista de secciones reordenables y el selector de plantilla.
+ * Escaparate de la empresa. Casi todo lo visual del diseño vive en
+ * `maya-page-builder`; aquí quedan la cabecera, el enlace público y las listas
+ * de cursos, pedidos y solicitudes.
  */
-.compartir {
+.cabecera__acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: var(--maya-space-2);
+}
+
+/* --- Dirección pública --------------------------------------------------- */
+
+.enlace {
+  display: flex;
+  align-items: center;
   gap: var(--maya-space-3);
-  padding: var(--maya-space-4);
-  margin-bottom: var(--maya-space-4);
-  border: 1px solid var(--maya-primary-soft);
+  flex-wrap: wrap;
   background: var(--maya-primary-softer);
+  border: 1px solid var(--maya-primary-soft);
   border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-3) var(--maya-space-4);
+  margin-bottom: var(--maya-space-4);
+
+  maya-icon { color: var(--maya-primary-ink); flex-shrink: 0; }
 }
 
-.compartir__texto {
+.enlace__url {
   flex: 1;
-  min-width: 220px;
+  min-width: 12ch;
+  font-weight: 600;
+  color: var(--maya-primary-deep);
 }
 
-.compartir__url {
-  display: block;
-  margin-top: 4px;
-  font-size: var(--maya-text-sm);
-  /* Una dirección larga parte por donde puede en vez de desbordar la tarjeta. */
-  overflow-wrap: anywhere;
-}
-
-.compartir__acciones {
+.enlace__acciones {
   display: flex;
   flex-wrap: wrap;
   gap: var(--maya-space-2);
 }
 
+/* --- Plantillas ---------------------------------------------------------- */
+
 .plantillas {
   display: grid;
-  gap: var(--maya-space-3);
+  gap: var(--maya-space-2);
+  margin-block: var(--maya-space-4);
+}
+
+.plantillas__opciones {
+  display: grid;
+  gap: var(--maya-space-2);
   grid-template-columns: 1fr;
 }
 
-@media (min-width: 40rem) {
-  .plantillas {
-    grid-template-columns: repeat(3, 1fr);
-  }
+@include from($maya-bp-sm) {
+  .plantillas__opciones { grid-template-columns: repeat(3, 1fr); }
 }
 
 .plantilla {
-  text-align: left;
-  padding: var(--maya-space-4);
-  border: 2px solid var(--maya-border);
-  border-radius: var(--maya-radius-lg);
+  display: grid;
+  gap: 2px;
+  padding: var(--maya-space-3);
+  border: 1.5px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
   background: var(--maya-surface);
-  cursor: pointer;
-  transition: border-color var(--maya-duration) var(--maya-ease);
-}
+  text-align: start;
+  min-height: 60px;
 
-.plantilla:hover {
-  border-color: var(--maya-primary-soft);
+  &:active { transform: scale(0.99); }
 }
 
 .plantilla--activa {
@@ -64,82 +77,139 @@
   background: var(--maya-primary-softer);
 }
 
-/* Miniatura esquemática de la maqueta: unas barras bastan para reconocer de un
-   vistazo en qué se diferencian, sin cargar capturas de cada plantilla. */
-.miniatura {
-  display: grid;
-  gap: 3px;
-  height: 54px;
-  margin-bottom: var(--maya-space-3);
+/* --- Ajustes plegables --------------------------------------------------- */
+
+.ajustes {
+  margin-top: var(--maya-space-5);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  overflow: hidden;
 }
 
-.miniatura span {
-  background: var(--maya-primary-soft);
-  border-radius: 2px;
-}
-
-.miniatura--classic {
-  grid-template-rows: 22px 1fr;
-}
-
-.miniatura--classic span:last-child {
-  background: var(--maya-border);
-}
-
-.miniatura--focus {
-  grid-template-rows: 14px 14px 1fr;
-  justify-items: center;
-}
-
-.miniatura--focus span {
-  width: 70%;
-}
-
-.miniatura--grid {
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 1fr 1fr;
-}
-
-.seccion-fila {
+.ajustes__titulo {
   display: flex;
   align-items: center;
-  gap: var(--maya-space-3);
-  padding: var(--maya-space-3);
-  border: 1px solid var(--maya-border);
-  border-radius: var(--maya-radius-md);
-  background: var(--maya-surface);
-}
-
-.seccion-fila--apagada {
-  opacity: 0.55;
-}
-
-.seccion-fila__texto {
-  flex: 1;
-  min-width: 0;
-}
-
-.seccion-editor {
-  border: 1px solid var(--maya-primary-soft);
-  border-top: none;
-  border-radius: 0 0 var(--maya-radius-md) var(--maya-radius-md);
+  gap: var(--maya-space-2);
   padding: var(--maya-space-4);
-  background: var(--maya-primary-softer);
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+
+  &::-webkit-details-marker { display: none; }
+}
+
+.ajustes__cuerpo {
+  display: grid;
+  gap: var(--maya-space-4);
+  padding: 0 var(--maya-space-4) var(--maya-space-4);
+}
+
+.ajustes__rejilla {
   display: grid;
   gap: var(--maya-space-3);
+  grid-template-columns: 1fr;
 }
 
-.barra-guardar {
-  position: sticky;
-  bottom: 0;
+@include from($maya-bp-md) {
+  .ajustes__rejilla { grid-template-columns: 1fr 1fr; }
+}
+
+/* --- Cursos -------------------------------------------------------------- */
+
+.cursos {
+  display: grid;
+  gap: var(--maya-space-3);
+  margin-top: var(--maya-space-4);
+}
+
+.curso {
+  display: grid;
+  gap: var(--maya-space-3);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-4);
+}
+
+.curso--listado { border-color: var(--maya-primary-soft); }
+
+.curso__cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--maya-space-3);
-  padding: var(--maya-space-3);
-  margin-top: var(--maya-space-5);
+  flex-wrap: wrap;
+}
+
+.curso__identidad {
+  display: grid;
+  min-width: 0;
+}
+
+.curso__campos {
+  display: grid;
+  gap: var(--maya-space-3);
+  grid-template-columns: 1fr 1fr;
+}
+
+@include from($maya-bp-md) {
+  .curso__campos { grid-template-columns: repeat(4, 1fr); }
+}
+
+.curso__pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+  padding-top: var(--maya-space-3);
+  border-top: 1px solid var(--maya-border);
+}
+
+/* --- Listas de pedidos y solicitudes ------------------------------------- */
+
+.lista {
+  display: grid;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-4);
+}
+
+.fila {
+  display: grid;
+  gap: var(--maya-space-3);
   background: var(--maya-surface);
   border: 1px solid var(--maya-border);
-  border-radius: var(--maya-radius-md);
-  box-shadow: var(--maya-shadow-md);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-4);
+}
+
+@include from($maya-bp-md) {
+  .fila {
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+  }
+}
+
+.fila__principal {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+
+  code {
+    font-family: var(--maya-font-mono);
+    background: var(--maya-surface-3);
+    padding: 1px 6px;
+    border-radius: var(--maya-radius-xs);
+  }
+}
+
+.fila__lateral {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+}
+
+.fila__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
 }

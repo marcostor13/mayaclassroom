@@ -18,6 +18,43 @@
   </div>
 </section>
 
+<!-- Guías interactivas: el camino corto para quien acaba de llegar -->
+@if (guiasPendientes().length) {
+  <section class="guias" aria-label="Guías para empezar">
+    <header class="guias__cabecera">
+      <div>
+        <h2 class="guias__titulo">Primeros pasos</h2>
+        <p class="maya-small maya-subtle">
+          Recorridos guiados sobre la propia plataforma. Puede pararlos cuando quiera.
+        </p>
+      </div>
+    </header>
+
+    <div class="guias__lista">
+      @for (guide of guiasPendientes(); track guide.id) {
+        <article class="guia">
+          <span class="guia__icono"><maya-icon [name]="guide.icon" [size]="20" /></span>
+          <div class="guia__texto">
+            <b>{{ guide.title }}</b>
+            <span class="maya-small maya-subtle">{{ guide.description }}</span>
+            <span class="maya-tiny maya-subtle">
+              {{ pasosHechos(guide) }} de {{ guide.steps.length }} pasos
+            </span>
+          </div>
+          <button
+            type="button"
+            class="maya-btn maya-btn--primary maya-btn--sm"
+            (click)="empezarGuia(guide.id)"
+          >
+            {{ pasosHechos(guide) ? 'Seguir' : 'Empezar' }}
+            <maya-icon name="chevron-right" [size]="15" />
+          </button>
+        </article>
+      }
+    </div>
+  </section>
+}
+
 <!-- Indicadores -->
 <section class="maya-stats" aria-label="Resumen de actividad">
   @if (loading()) {

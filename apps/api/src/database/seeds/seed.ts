@@ -2,7 +2,9 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import type { Model } from 'mongoose';
 import {
   ContextLevel,
   CourseFormat,
@@ -30,6 +32,13 @@ import { CalendarService } from '../../modules/calendar/calendar.service';
 import { CohortsService } from '../../modules/cohorts/cohorts.service';
 import { CompetenciesService } from '../../modules/competencies/competencies.service';
 import { BadgesService } from '../../modules/badges/badges.service';
+import { SiteService } from '../../modules/site/site.service';
+import { PaymentsService } from '../../modules/commerce/payments.service';
+import { Order } from '../../modules/commerce/schemas/order.schema';
+import type { OrderDocument } from '../../modules/commerce/schemas/order.schema';
+import { Course } from '../../modules/courses/schemas/course.schema';
+import type { CourseDocument } from '../../modules/courses/schemas/course.schema';
+import { seedStorefront } from './demo-storefront';
 
 const logger = new Logger('Seed');
 
@@ -60,12 +69,16 @@ async function seed(): Promise<void> {
   const cohorts = app.get(CohortsService);
   const competencies = app.get(CompetenciesService);
   const badges = app.get(BadgesService);
+  const site = app.get(SiteService);
+  const payments = app.get(PaymentsService);
+  const orderModel = app.get<Model<OrderDocument>>(getModelToken(Order.name));
+  const courseModel = app.get<Model<CourseDocument>>(getModelToken(Course.name));
 
-  logger.log('1/8 · Contexto de sistema y roles globales');
+  logger.log('1/9 · Contexto de sistema y roles globales');
   const systemContext = await contexts.getSystemContext();
   await roles.provisionPresetRoles(null);
 
-  logger.log('2/8 · Empresa del sistema y empresa de demostración');
+  logger.log('2/9 · Empresa del sistema y empresa de demostración');
   let systemTenant = await tenants.findBySlug(SYSTEM_TENANT_SLUG);
   if (!systemTenant) {
     systemTenant = await tenants.create({
@@ -103,7 +116,7 @@ async function seed(): Promise<void> {
 
   const tenantContext = await contexts.requireByInstance(ContextLevel.Tenant, demo._id);
 
-  logger.log('3/8 · Usuarios de demostración');
+  logger.log('3/9 · Usuarios de demostración');
   const password = process.env.SEED_PASSWORD ?? 'Maya2026!';
 
   const ensureUser = async (data: {
@@ -193,7 +206,7 @@ async function seed(): Promise<void> {
     );
   }
 
-  logger.log('4/8 · Categorías y cursos');
+  logger.log('4/9 · Categorías y cursos');
   const existingCategories = await categories.list(demo._id, { includeHidden: true });
   const rootCategory =
     existingCategories.find((c) => c.name === 'Formación profesional') ??
@@ -246,7 +259,7 @@ async function seed(): Promise<void> {
     '<p>Diseño de APIs REST escalables con NestJS 11, MongoDB Atlas y buenas prácticas de seguridad.</p>',
   );
 
-  logger.log('5/8 · Matriculación');
+  logger.log('5/9 · Matriculación');
   await enrolments.enrol({
     courseId: angularCourse._id,
     tenantId: demo._id,
@@ -277,7 +290,7 @@ async function seed(): Promise<void> {
     });
   }
 
-  logger.log('6/8 · Contenido del curso');
+  logger.log('6/9 · Contenido del curso');
   const sections = await courses.sections(angularCourse._id);
   const intro = sections.find((s) => s.sectionNumber === 1) ?? sections[0];
   const second = sections.find((s) => s.sectionNumber === 2) ?? sections[0];
@@ -421,7 +434,7 @@ async function seed(): Promise<void> {
     void forum;
   }
 
-  logger.log('7/8 · Cohortes y competencias');
+  logger.log('7/9 · Cohortes y competencias');
   const cohortList = await cohorts.paginate(demo._id, { page: 1, limit: 10, order: 'desc' } as never);
   if (!cohortList.items.length) {
     const cohort = await cohorts.create(demo._id, {
@@ -454,7 +467,7 @@ async function seed(): Promise<void> {
     });
   }
 
-  logger.log('8/8 · Insignias');
+  logger.log('8/9 · Insignias');
   const badgeList = await badges.list(demo._id, angularCourse.id);
   if (!badgeList.length) {
     await badges.create(demo._id, {
@@ -467,6 +480,24 @@ async function seed(): Promise<void> {
     });
   }
 
+  logger.log('9/9 · Escaparate, catálogo de venta y pedidos');
+  await seedStorefront({
+    tenantId: demo._id,
+    tenantName: demo.name,
+    teacherId: teacher._id,
+    studentIds: students.map((student) => student._id),
+    courses,
+    categories,
+    enrolments,
+    grades,
+    site,
+    payments,
+    orderModel,
+    courseModel,
+    angularCourseId: angularCourse._id,
+    nestCourseId: nestCourse._id,
+  });
+
   console.log('\n──────────────────────────────────────────────');
   console.log(' Maya Classroom · datos de demostración listos');
   console.log('──────────────────────────────────────────────');
@@ -475,6 +506,9 @@ async function seed(): Promise<void> {
   console.log(` Gestora:            ${manager.email} / ${password}`);
   console.log(` Profesor:           ${teacher.email} / ${password}`);
   console.log(` Alumnado:           ${students[0].email} … / ${password}`);
+  console.log('──────────────────────────────────────────────');
+  console.log(` Escaparate público: /p/demo`);
+  console.log(` Curso gratuito:     /p/demo/c/ia-101`);
   console.log('──────────────────────────────────────────────\n');
 
   await app.close();

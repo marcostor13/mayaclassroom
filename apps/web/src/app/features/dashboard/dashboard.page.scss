@@ -219,3 +219,58 @@
 
   &:hover { background: var(--maya-surface-3); text-decoration: none; color: var(--maya-primary-deep); }
 }
+
+/* --- Guías interactivas ---------------------------------------------------
+   Van justo bajo el saludo porque su público es quien acaba de llegar: más
+   abajo competirían con los datos de quien ya sabe moverse. */
+
+.guias {
+  display: grid;
+  gap: var(--maya-space-3);
+  background: var(--maya-primary-softer);
+  border: 1px solid var(--maya-primary-soft);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-4);
+  margin-bottom: var(--maya-space-5);
+}
+
+.guias__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-lg);
+  font-weight: 800;
+}
+
+.guias__lista {
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+@media (min-width: 64rem) {
+  .guias__lista { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+}
+
+.guia {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  background: var(--maya-surface);
+  border-radius: var(--maya-radius-md);
+  padding: var(--maya-space-3);
+}
+
+.guia__icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--maya-radius-sm);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+}
+
+.guia__texto {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}

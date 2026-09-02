@@ -1,0 +1,90 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--maya-bg);
+  color: var(--maya-text);
+}
+
+.pedido {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--maya-space-6) var(--maya-space-4);
+}
+
+.tarjeta {
+  display: grid;
+  justify-items: center;
+  gap: var(--maya-space-3);
+  width: 100%;
+  max-width: 480px;
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-xl);
+  box-shadow: var(--maya-shadow-md);
+  padding: var(--maya-space-8) var(--maya-space-5);
+  text-align: center;
+
+  h1 {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-xl);
+    font-weight: 800;
+  }
+}
+
+.marca {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: var(--maya-radius-pill);
+}
+
+.marca--exito { background: var(--maya-success-soft); color: var(--maya-success); }
+.marca--error { background: var(--maya-danger-soft); color: var(--maya-danger); }
+.marca--aviso { background: var(--maya-warning-soft); color: var(--maya-warning); }
+.marca--espera { background: var(--maya-info-soft); color: var(--maya-info); }
+
+.detalle {
+  display: grid;
+  gap: var(--maya-space-2);
+  width: 100%;
+  margin: var(--maya-space-3) 0 0;
+  padding-top: var(--maya-space-4);
+  border-top: 1px solid var(--maya-border);
+  text-align: start;
+
+  > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--maya-space-3);
+  }
+
+  dt {
+    color: var(--maya-text-subtle);
+    font-size: var(--maya-text-sm);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-size: var(--maya-text-sm);
+    text-align: end;
+  }
+
+  code {
+    font-family: var(--maya-font-mono);
+    background: var(--maya-surface-3);
+    padding: 2px 8px;
+    border-radius: var(--maya-radius-xs);
+  }
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-2);
+}

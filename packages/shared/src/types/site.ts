@@ -27,7 +27,49 @@ export enum SiteSectionType {
   Faq = 'faq',
   Contact = 'contact',
   Cta = 'cta',
+  /** Un vídeo de presentación, alojado fuera (YouTube o Vimeo). */
+  Video = 'video',
+  /** Rejilla de ventajas con icono, título y texto. */
+  Features = 'features',
+  /** Cifras que respaldan la oferta: alumnado, horas, valoración. */
+  Stats = 'stats',
+  /** Pasos numerados: cómo funciona la formación. */
+  Steps = 'steps',
+  /** Galería de imágenes. */
+  Gallery = 'gallery',
+  /** Ficha de quien imparte el curso. Solo en la página de venta de un curso. */
+  Instructor = 'instructor',
+  /** Temario resumido del curso. Solo en la página de venta de un curso. */
+  Curriculum = 'curriculum',
+  /** Bloque de compra con el precio y el botón de pago. */
+  Pricing = 'pricing',
+  /** Texto libre con formato. */
+  RichText = 'richtext',
 }
+
+/**
+ * Ajustes de aspecto de una sección.
+ *
+ * Son cuatro decisiones cerradas y no CSS libre: quien diseña su página elige
+ * entre opciones que la plantilla sabe pintar bien en cualquier anchura, de
+ * modo que no hay forma de dejar la página rota desde el editor.
+ */
+export interface SiteSectionStyle {
+  /** Fondo del bloque. `image` usa `imageUrl` como fondo a pantalla completa. */
+  background: 'plain' | 'soft' | 'brand' | 'dark' | 'image';
+  align: 'start' | 'center';
+  /** Aire vertical. */
+  spacing: 'compact' | 'normal' | 'roomy';
+  /** Columnas de las rejillas (ventajas, cifras, galería, testimonios). */
+  columns: 2 | 3 | 4;
+}
+
+export const DEFAULT_SECTION_STYLE: SiteSectionStyle = {
+  background: 'plain',
+  align: 'start',
+  spacing: 'normal',
+  columns: 3,
+};
 
 /** Elemento repetible dentro de una sección: un testimonio, una pregunta… */
 export interface SiteSectionItem {
@@ -36,6 +78,12 @@ export interface SiteSectionItem {
   imageUrl?: string | null;
   /** Autor del testimonio, o su cargo. Solo lo usan los testimonios. */
   author?: string | null;
+  /** Nombre de icono del catálogo de la aplicación. Ventajas y pasos. */
+  icon?: string | null;
+  /** Cifra destacada («+1.200», «4,8/5»). Solo las estadísticas. */
+  value?: string | null;
+  /** Enlace propio del elemento, cuando la tarjeta lleva a algún sitio. */
+  url?: string | null;
 }
 
 /**
@@ -59,6 +107,13 @@ export interface SiteSection {
   items?: SiteSectionItem[];
   /** Cuántos cursos mostrar. Solo en las secciones de catálogo. */
   limit?: number | null;
+  /** Segundo botón, secundario, junto al principal. */
+  ctaSecondaryLabel?: string | null;
+  ctaSecondaryUrl?: string | null;
+  /** Dirección del vídeo (YouTube o Vimeo) de la portada o del bloque de vídeo. */
+  videoUrl?: string | null;
+  /** Aspecto del bloque. Ausente equivale a `DEFAULT_SECTION_STYLE`. */
+  style?: SiteSectionStyle | null;
 }
 
 export interface SiteSeo {
@@ -97,11 +152,32 @@ export interface CourseCatalog {
   highlights?: string[];
   level?: string | null;
   durationHours?: number | null;
+  /** Precio tachado: si es mayor que `priceCents`, se muestra la rebaja. */
+  compareAtPriceCents?: number | null;
+  /** Vídeo de presentación que se ve sin haber comprado. */
+  promoVideoUrl?: string | null;
+  /** Qué hace falta saber antes de empezar. */
+  requirements?: string[];
+  /** A quién va dirigido. */
+  audience?: string[];
+  instructorName?: string | null;
+  instructorRole?: string | null;
+  instructorBio?: string | null;
+  instructorAvatarUrl?: string | null;
+  /** Valoración media sobre 5 y número de opiniones, para la ficha de venta. */
+  ratingAverage?: number | null;
+  ratingCount?: number | null;
+  /** Si la formación entrega certificado al terminar. */
+  certificate?: boolean;
+  /** Página de venta propia del curso. Vacía usa la maqueta por defecto. */
+  landing?: SiteSection[];
 }
 
 /** Curso tal como se ve desde fuera, sin nada de la parte lectiva. */
 export interface PublicCourseDto {
   id: string;
+  /** Referencia legible para la dirección pública; es el nombre corto. */
+  slug: string;
   title: string;
   summary?: string | null;
   imageUrl?: string | null;
@@ -203,4 +279,39 @@ export interface EnrolmentRequestResult {
   enrolled: boolean;
   status: EnrolmentRequestStatus;
   message: string;
+}
+
+/* --------------------- Página de venta de un curso ------------------------ */
+
+/** Una unidad del temario, tal como se enseña antes de comprar. */
+export interface PublicCurriculumItem {
+  title: string;
+  /** Tipo de módulo, para el icono: `page`, `quiz`, `assign`… */
+  type: string;
+  /** `true` si el material se puede ver sin haber comprado. */
+  preview: boolean;
+}
+
+export interface PublicCurriculumSection {
+  title: string;
+  items: PublicCurriculumItem[];
+}
+
+/**
+ * Ficha de venta de un curso concreto.
+ *
+ * Va aparte de `PublicSiteDto` porque es otra página con otro público: quien
+ * llega aquí ya ha elegido curso y lo que necesita es el temario, el precio y
+ * el botón de compra, no el catálogo entero de la empresa.
+ */
+export interface PublicCourseDetailDto {
+  tenant: PublicSiteDto['tenant'];
+  /** Plantilla y datos de contacto, para que cabecera y pie sean los mismos. */
+  site: { template: SiteTemplate; contact: SiteContact; seo: SiteSeo };
+  course: PublicCourseDto;
+  /** Secciones de la página de venta, ya resueltas (propias o por defecto). */
+  landing: SiteSection[];
+  curriculum: PublicCurriculumSection[];
+  /** Otros cursos de la misma empresa, para no dejar la página sin salida. */
+  related: PublicCourseDto[];
 }

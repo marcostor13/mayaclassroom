@@ -1,0 +1,232 @@
+<header class="maya-page-header">
+  <div>
+    <h1>Cobros</h1>
+    <p class="maya-muted">
+      Conecte una pasarela y sus cursos de pago podrán comprarse desde la página pública.
+    </p>
+  </div>
+
+  @if (settings()) {
+    <button type="button" class="maya-btn maya-btn--primary" [disabled]="saving()" (click)="guardar()">
+      <maya-icon name="check" [size]="16" />
+      {{ saving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  }
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 50vh; border-radius: var(--maya-radius-lg)"></div>
+} @else if (settings(); as s) {
+  <div class="ajustes" data-guia="ajustes-cobro">
+    <section class="tarjeta">
+      <div class="maya-field">
+        <label class="maya-label" for="moneda">Moneda</label>
+        <select
+          id="moneda"
+          class="maya-select"
+          [value]="s.currency"
+          (change)="patch({ currency: $any($event.target).value })"
+        >
+          @for (m of monedas; track m.code) {
+            <option [value]="m.code">{{ m.label }}</option>
+          }
+        </select>
+        <span class="maya-hint">
+          Es la moneda por defecto. Mercado Pago solo cobra en la moneda del país de su cuenta.
+        </span>
+      </div>
+    </section>
+
+    <div class="pasarelas" data-guia="pasarelas">
+      <!-- ---------------------------- Mercado Pago ---------------------------- -->
+      <section class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <div class="tarjeta__identidad">
+            <span class="tarjeta__icono"><maya-icon name="credit-card" [size]="20" /></span>
+            <div>
+              <b>Mercado Pago</b>
+              <span class="maya-tiny maya-subtle">Tarjeta, saldo y efectivo en Latinoamérica.</span>
+            </div>
+          </div>
+          <label class="maya-switch">
+            <input
+              type="checkbox"
+              [checked]="s.mercadoPago.enabled"
+              (change)="patch({ mercadoPago: { enabled: $any($event.target).checked } })"
+            />
+            <span></span>
+          </label>
+        </header>
+
+        @if (s.mercadoPago.enabled) {
+          <div class="tarjeta__cuerpo">
+            <div class="maya-field">
+              <label class="maya-label" for="mp-public">Clave pública</label>
+              <input
+                id="mp-public"
+                class="maya-input"
+                placeholder="APP_USR-…"
+                [value]="s.mercadoPago.publicKey ?? ''"
+                (input)="patch({ mercadoPago: { publicKey: $any($event.target).value } })"
+              />
+            </div>
+
+            <div class="maya-field">
+              <label class="maya-label" for="mp-token">Token de acceso</label>
+              <input
+                id="mp-token"
+                class="maya-input"
+                type="password"
+                autocomplete="off"
+                [placeholder]="s.mercadoPago.hasAccessToken ? '•••••••• (guardado)' : 'APP_USR-…'"
+                [value]="mpToken()"
+                (input)="mpToken.set($any($event.target).value)"
+              />
+              <span class="maya-hint">
+                Se guarda cifrado y no vuelve a mostrarse. Déjelo en blanco para conservar el actual.
+              </span>
+              @if (s.mercadoPago.hasAccessToken) {
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  (click)="borrarCredencial('mercadoPago')"
+                >
+                  Borrar el token guardado
+                </button>
+              }
+            </div>
+
+            <label class="maya-checkbox" data-guia="modo-prueba">
+              <input
+                type="checkbox"
+                [checked]="s.mercadoPago.sandbox"
+                (change)="patch({ mercadoPago: { sandbox: $any($event.target).checked } })"
+              />
+              <span>Modo de prueba (no se mueve dinero real)</span>
+            </label>
+          </div>
+        }
+      </section>
+
+      <!-- ------------------------------- PayPal ------------------------------- -->
+      <section class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <div class="tarjeta__identidad">
+            <span class="tarjeta__icono"><maya-icon name="shopping-bag" [size]="20" /></span>
+            <div>
+              <b>PayPal</b>
+              <span class="maya-tiny maya-subtle">Con cuenta de PayPal o con tarjeta.</span>
+            </div>
+          </div>
+          <label class="maya-switch">
+            <input
+              type="checkbox"
+              [checked]="s.paypal.enabled"
+              (change)="patch({ paypal: { enabled: $any($event.target).checked } })"
+            />
+            <span></span>
+          </label>
+        </header>
+
+        @if (s.paypal.enabled) {
+          <div class="tarjeta__cuerpo">
+            <div class="maya-field">
+              <label class="maya-label" for="pp-client">Identificador de cliente</label>
+              <input
+                id="pp-client"
+                class="maya-input"
+                placeholder="A21…"
+                [value]="s.paypal.clientId ?? ''"
+                (input)="patch({ paypal: { clientId: $any($event.target).value } })"
+              />
+            </div>
+
+            <div class="maya-field">
+              <label class="maya-label" for="pp-secret">Secreto</label>
+              <input
+                id="pp-secret"
+                class="maya-input"
+                type="password"
+                autocomplete="off"
+                [placeholder]="s.paypal.hasSecret ? '•••••••• (guardado)' : 'EL…'"
+                [value]="ppSecret()"
+                (input)="ppSecret.set($any($event.target).value)"
+              />
+              <span class="maya-hint">
+                Se guarda cifrado y no vuelve a mostrarse. Déjelo en blanco para conservar el actual.
+              </span>
+              @if (s.paypal.hasSecret) {
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  (click)="borrarCredencial('paypal')"
+                >
+                  Borrar el secreto guardado
+                </button>
+              }
+            </div>
+
+            <label class="maya-checkbox">
+              <input
+                type="checkbox"
+                [checked]="s.paypal.sandbox"
+                (change)="patch({ paypal: { sandbox: $any($event.target).checked } })"
+              />
+              <span>Modo de prueba (cuenta <i>sandbox</i>)</span>
+            </label>
+          </div>
+        }
+      </section>
+
+      <!-- ---------------------------- Transferencia --------------------------- -->
+      <section class="tarjeta">
+        <header class="tarjeta__cabecera">
+          <div class="tarjeta__identidad">
+            <span class="tarjeta__icono"><maya-icon name="building" [size]="20" /></span>
+            <div>
+              <b>Transferencia</b>
+              <span class="maya-tiny maya-subtle">Usted confirma el pago a mano desde Pedidos.</span>
+            </div>
+          </div>
+          <label class="maya-switch">
+            <input
+              type="checkbox"
+              [checked]="s.manual.enabled"
+              (change)="patch({ manual: { enabled: $any($event.target).checked } })"
+            />
+            <span></span>
+          </label>
+        </header>
+
+        @if (s.manual.enabled) {
+          <div class="tarjeta__cuerpo">
+            <div class="maya-field">
+              <label class="maya-label" for="man-inst">Instrucciones para el comprador</label>
+              <textarea
+                id="man-inst"
+                class="maya-input maya-textarea"
+                rows="3"
+                placeholder="Número de cuenta, concepto que debe poner…"
+                [value]="s.manual.instructions ?? ''"
+                (input)="patch({ manual: { instructions: $any($event.target).value } })"
+              ></textarea>
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="tarjeta">
+      <b>Aviso automático de la pasarela</b>
+      <p class="maya-small maya-subtle">
+        Pegue esta dirección en el panel de su pasarela para que nos avise en cuanto un pago se
+        confirme. Sin ella, la matrícula se hace igualmente cuando el comprador vuelve a la
+        plataforma, pero puede tardar si cierra la pestaña antes.
+      </p>
+      <div class="webhooks">
+        <code>{{ webhookUrl() }}/mercadopago</code>
+        <code>{{ webhookUrl() }}/paypal</code>
+      </div>
+    </section>
+  </div>
+}

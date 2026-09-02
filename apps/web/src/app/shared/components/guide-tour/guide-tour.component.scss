@@ -1,0 +1,149 @@
+@use '../../../../styles/tokens' as *;
+
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: var(--maya-z-modal);
+  /* El anfitrión no intercepta pulsaciones: solo lo hacen el velo y la
+     tarjeta, de modo que el elemento iluminado se sigue pudiendo usar. */
+  pointer-events: none;
+}
+
+.velo {
+  position: fixed;
+  border-radius: var(--maya-radius-md);
+  /* La sombra gigante es el velo; el recuadro es el hueco. */
+  box-shadow: 0 0 0 9999px var(--maya-overlay);
+  outline: 2px solid var(--maya-primary);
+  outline-offset: 2px;
+  pointer-events: auto;
+  transition:
+    top var(--maya-duration-slow) var(--maya-ease-out),
+    left var(--maya-duration-slow) var(--maya-ease-out),
+    width var(--maya-duration-slow) var(--maya-ease-out),
+    height var(--maya-duration-slow) var(--maya-ease-out);
+}
+
+/* Un paso que no señala nada: velo entero y tarjeta en el centro. */
+.velo--sin-foco {
+  inset: 0;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+  background: var(--maya-overlay);
+}
+
+.tarjeta {
+  position: fixed;
+  z-index: 1;
+  width: min(360px, calc(100vw - var(--maya-space-8)));
+  background: var(--maya-surface);
+  border-radius: var(--maya-radius-lg);
+  box-shadow: var(--maya-shadow-lg);
+  padding: var(--maya-space-4);
+  pointer-events: auto;
+  margin-top: var(--maya-space-4);
+  transition: top var(--maya-duration-slow) var(--maya-ease-out);
+}
+
+.tarjeta--arriba {
+  transform: translateY(-100%);
+  margin-top: calc(var(--maya-space-4) * -1);
+}
+
+.tarjeta--centrada {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 0;
+}
+
+/* En móvil la tarjeta se ancla abajo: perseguir al elemento en una pantalla
+   estrecha la deja medio fuera con demasiada facilidad. */
+@include app-only {
+  .tarjeta {
+    top: auto !important;
+    bottom: calc(var(--maya-space-4) + var(--maya-safe-bottom));
+    left: var(--maya-space-4);
+    right: var(--maya-space-4);
+    width: auto;
+    transform: none !important;
+    margin-top: 0;
+  }
+}
+
+@include desktop-only {
+  .tarjeta:not(.tarjeta--centrada) {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .tarjeta--arriba:not(.tarjeta--centrada) {
+    transform: translate(-50%, -100%);
+  }
+}
+
+.tarjeta__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+}
+
+.tarjeta__contador {
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+  color: var(--maya-primary-ink);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tarjeta__cerrar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--maya-radius-pill);
+  color: var(--maya-text-subtle);
+
+  &:hover { background: var(--maya-surface-3); color: var(--maya-text); }
+}
+
+.tarjeta__progreso {
+  height: 4px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface-3);
+  overflow: hidden;
+  margin-block: var(--maya-space-2);
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--maya-primary);
+    border-radius: inherit;
+    transition: width var(--maya-duration) var(--maya-ease);
+  }
+}
+
+.tarjeta__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-md);
+  font-weight: 800;
+  margin-bottom: var(--maya-space-1);
+}
+
+.tarjeta__texto {
+  color: var(--maya-text-muted);
+  font-size: var(--maya-text-sm);
+  line-height: var(--maya-leading-normal);
+}
+
+.tarjeta__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-4);
+}

@@ -1,0 +1,373 @@
+@use '../../../../../styles/tokens' as *;
+
+/**
+ * Constructor visual.
+ *
+ * Dos zonas: el lienzo, que es la página de verdad, y el inspector del bloque
+ * elegido. En escritorio conviven en columnas; en móvil el inspector es una
+ * hoja que sube desde abajo y deja ver la página por encima, que es lo que
+ * permite comprobar el cambio sin cerrarlo.
+ */
+:host {
+  display: block;
+}
+
+.constructor {
+  display: grid;
+  gap: var(--maya-space-4);
+}
+
+@include desktop-only {
+  .constructor--con-panel {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+  }
+}
+
+/* --- Lienzo -------------------------------------------------------------- */
+
+.lienzo {
+  min-width: 0;
+}
+
+/* Los tramos del selector de anchura llevan icono y etiqueta en la misma
+   línea; el control del sistema no fija la disposición de su contenido. */
+.lienzo__barra .maya-segmented__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lienzo__barra {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+  flex-wrap: wrap;
+  padding-block: var(--maya-space-2);
+  background: var(--maya-bg);
+}
+
+.lienzo__area {
+  display: grid;
+  justify-items: center;
+  background: var(--maya-bg-alt);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-3);
+  overflow-x: auto;
+}
+
+.lienzo__marco {
+  width: 100%;
+  max-width: 100%;
+  background: var(--maya-surface);
+  border-radius: var(--maya-radius-md);
+  overflow: hidden;
+}
+
+/* El marco de dispositivo es solo una anchura: la maqueta responde por
+   consultas de contenedor, así que a 390 px se comporta como un móvil de
+   verdad sin necesidad de un `iframe`. */
+.lienzo__marco--dispositivo {
+  flex-shrink: 0;
+  border: 1px solid var(--maya-border-strong);
+  box-shadow: var(--maya-shadow-md);
+}
+
+/* --- Inspector ----------------------------------------------------------- */
+
+.panel {
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  box-shadow: var(--maya-shadow-sm);
+  overflow: hidden;
+}
+
+@include app-only {
+  /* Hoja inferior: cae bajo el pulgar y deja ver la página encima. */
+  .panel {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: var(--maya-z-drawer);
+    max-height: 66vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--maya-radius-xl) var(--maya-radius-xl) 0 0;
+    box-shadow: var(--maya-shadow-lg);
+    padding-bottom: var(--maya-safe-bottom);
+  }
+}
+
+@include desktop-only {
+  .panel {
+    position: sticky;
+    top: var(--maya-space-4);
+    max-height: calc(100vh - var(--maya-topbar-height) - var(--maya-space-8));
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.panel__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-4);
+  border-bottom: 1px solid var(--maya-border);
+  flex-shrink: 0;
+}
+
+.panel__titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  min-width: 0;
+
+  maya-icon { color: var(--maya-primary); margin-top: 2px; }
+
+  div { display: grid; min-width: 0; }
+}
+
+.panel__cuerpo {
+  display: grid;
+  gap: var(--maya-space-4);
+  padding: var(--maya-space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.panel__pareja {
+  display: grid;
+  gap: var(--maya-space-3);
+  grid-template-columns: 1fr;
+}
+
+@include from($maya-bp-sm) {
+  .panel__pareja { grid-template-columns: 1fr 1fr; }
+}
+
+.panel__pie {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+  padding-top: var(--maya-space-3);
+  border-top: 1px solid var(--maya-border);
+}
+
+/* --- Elementos repetibles ------------------------------------------------ */
+
+.elementos {
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+.elementos__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+}
+
+.elemento {
+  display: grid;
+  gap: var(--maya-space-2);
+  background: var(--maya-surface-2);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  padding: var(--maya-space-3);
+}
+
+.elemento__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.elemento__mandos {
+  display: flex;
+  gap: 2px;
+}
+
+.iconos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.iconos__opcion {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--maya-radius-sm);
+  border: 1.5px solid var(--maya-border);
+  background: var(--maya-surface);
+  color: var(--maya-text-muted);
+
+  &.is-active {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary-ink);
+  }
+
+  &:active { transform: scale(0.94); }
+}
+
+/* --- Aspecto ------------------------------------------------------------- */
+
+.aspecto {
+  display: grid;
+  gap: var(--maya-space-3);
+  padding-top: var(--maya-space-3);
+  border-top: 1px solid var(--maya-border);
+}
+
+.aspecto__grupo {
+  display: grid;
+  gap: var(--maya-space-1);
+
+  /* El control ocupa el ancho del panel y reparte los tramos: con el ancho
+     natural, «Liso» y «Suave» quedan pegados y «Imagen» se sale. */
+  .maya-segmented { width: 100%; }
+  .maya-segmented__item { flex: 1; text-align: center; }
+}
+
+/* El fondo se elige en rejilla, con una muestra del color al lado: cinco
+   tramos no caben en el ancho del panel y el nombre solo no dice cómo queda. */
+.aspecto__opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--maya-space-2);
+}
+
+.aspecto__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  /* 40 px de alto: objetivo táctil cómodo dentro de la hoja del móvil. */
+  min-height: 40px;
+  padding: 0 var(--maya-space-3);
+  border: 1.5px solid var(--maya-border);
+  border-radius: var(--maya-radius-sm);
+  background: var(--maya-surface);
+  color: var(--maya-text-muted);
+  font-size: var(--maya-text-sm);
+  font-weight: 600;
+
+  &.is-active {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-softer);
+    color: var(--maya-primary-ink);
+  }
+
+  &:active { transform: scale(0.98); }
+}
+
+.muestra {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  border: 1px solid var(--maya-border-strong);
+}
+
+.muestra--plain { background: var(--maya-surface); }
+.muestra--soft { background: var(--maya-surface-3); }
+.muestra--brand { background: var(--maya-gradient); border-color: transparent; }
+.muestra--dark { background: #14151a; border-color: transparent; }
+.muestra--image {
+  background: repeating-conic-gradient(var(--maya-surface-3) 0% 25%, var(--maya-surface) 0% 50%)
+    50% / 8px 8px;
+}
+
+/* --- Paleta -------------------------------------------------------------- */
+
+.paleta {
+  position: fixed;
+  z-index: var(--maya-z-modal);
+  display: flex;
+  flex-direction: column;
+  background: var(--maya-surface);
+  box-shadow: var(--maya-shadow-lg);
+  overflow: hidden;
+}
+
+@include app-only {
+  .paleta {
+    inset-inline: 0;
+    bottom: 0;
+    max-height: 80vh;
+    border-radius: var(--maya-radius-xl) var(--maya-radius-xl) 0 0;
+    padding-bottom: var(--maya-safe-bottom);
+  }
+}
+
+@include desktop-only {
+  .paleta {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, 92vw);
+    max-height: 78vh;
+    border-radius: var(--maya-radius-xl);
+  }
+}
+
+.paleta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-4);
+  border-bottom: 1px solid var(--maya-border);
+
+  div { display: grid; }
+}
+
+.paleta__lista {
+  display: grid;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@include from($maya-bp-sm) {
+  .paleta__lista { grid-template-columns: 1fr 1fr; }
+}
+
+.paleta__opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3);
+  border: 1.5px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface);
+  text-align: start;
+  /* Objetivo táctil holgado: es una lista larga que se recorre con el pulgar. */
+  min-height: 62px;
+
+  span { display: grid; min-width: 0; }
+
+  &:hover { border-color: var(--maya-primary); background: var(--maya-primary-softer); }
+  &:active { transform: scale(0.99); }
+}
+
+.paleta__icono {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--maya-radius-sm);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+}

@@ -65,6 +65,10 @@ export const CAP = {
   SITE_MANAGE: 'maya/site:manage',
   /** Resolver las solicitudes de matrícula que llegan por la página. */
   SITE_MANAGE_REQUESTS: 'maya/site:managerequests',
+  /** Configurar las pasarelas de cobro de la empresa. */
+  PAYMENT_MANAGE: 'maya/payment:manage',
+  /** Consultar los pedidos y confirmar los pagos manuales. */
+  ORDER_MANAGE: 'maya/order:manage',
 
   // --- Usuarios ------------------------------------------------------------
   USER_CREATE: 'moodle/user:create',
@@ -285,6 +289,12 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
   cap(CAP.TENANT_VIEW_REPORTS, 'Ver informes de la empresa', L.Tenant, 'core', R.PersonalData),
   cap(CAP.TENANT_MANAGE_WEBSERVICES, 'Gestionar servicios web', L.Tenant, 'core', R.Config),
   cap(CAP.TENANT_MANAGE_POLICIES, 'Gestionar políticas del sitio', L.Tenant, 'core', R.Config),
+
+  // Escaparate y venta
+  cap(CAP.SITE_MANAGE, 'Diseñar la página pública', L.Tenant, 'core', R.Xss),
+  cap(CAP.SITE_MANAGE_REQUESTS, 'Resolver solicitudes de plaza', L.Tenant, 'core', R.ManageTrust),
+  cap(CAP.PAYMENT_MANAGE, 'Configurar las pasarelas de cobro', L.Tenant, 'core', R.Config),
+  cap(CAP.ORDER_MANAGE, 'Gestionar los pedidos de cursos', L.Tenant, 'core', R.PersonalData),
 
   // Usuarios
   cap(CAP.USER_CREATE, 'Crear usuarios', L.Tenant, 'core', R.ManageTrust),

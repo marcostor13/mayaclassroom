@@ -7,6 +7,7 @@ import {
   IsEnum,
   IsInt,
   IsMongoId,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -20,6 +21,7 @@ import {
 } from 'class-validator';
 import { CourseFormat, CourseVisibility, GroupMode, ModuleType } from '@maya/shared';
 import { PaginationQueryDto } from '../../../common/dto';
+import { SiteSectionDto } from '../../site/dto/site.dto';
 
 export class CreateCourseDto {
   @ApiProperty({ example: 'MAT-101' })
@@ -129,6 +131,56 @@ export class CourseCatalogDto {
   @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(40) level?: string | null;
 
   @ApiPropertyOptional() @IsInt() @Min(0) @IsOptional() durationHours?: number | null;
+
+  @ApiPropertyOptional({ description: 'Precio tachado, para mostrar una rebaja' })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  compareAtPriceCents?: number | null;
+
+  @ApiPropertyOptional({ description: 'Vídeo de presentación (YouTube o Vimeo)' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  promoVideoUrl?: string | null;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  requirements?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  audience?: string[];
+
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(120) instructorName?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(120) instructorRole?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() @MaxLength(1500) instructorBio?: string | null;
+  @ApiPropertyOptional() @IsString() @IsOptional() instructorAvatarUrl?: string | null;
+
+  @ApiPropertyOptional({ description: 'Valoración media sobre 5' })
+  @IsNumber()
+  @Min(0)
+  @Max(5)
+  @IsOptional()
+  ratingAverage?: number | null;
+
+  @ApiPropertyOptional() @IsInt() @Min(0) @IsOptional() ratingCount?: number | null;
+
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() certificate?: boolean;
+
+  @ApiPropertyOptional({
+    type: [SiteSectionDto],
+    description: 'Página de venta propia del curso; vacía usa la maqueta por defecto',
+  })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => SiteSectionDto)
+  landing?: SiteSectionDto[];
 }
 
 export class UpdateCourseDto extends PartialType(CreateCourseDto) {

@@ -7,4 +7,6 @@ export * from './communication';
 export * from './advanced';
 export * from './tenant';
 export * from './site';
+export * from './commerce';
+export * from './guide';
 export * from './user';

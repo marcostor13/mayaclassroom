@@ -17,3 +17,7 @@ export * from './pipes/safe-html.pipe';
 export * from './pipes/safe-resource.pipe';
 export * from './components/lesson-editor.component';
 export * from './components/lesson-view.component';
+export * from './components/site-render/site-render.component';
+export * from './utils/embed';
+export * from './components/guide-tour/guide-tour.component';
+export * from './components/guide-host/guide-host.component';

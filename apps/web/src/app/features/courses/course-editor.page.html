@@ -26,7 +26,12 @@
   </div>
 </header>
 
-<form [formGroup]="form" class="maya-card" style="margin-bottom: var(--maya-space-6)">
+<form
+  [formGroup]="form"
+  class="maya-card"
+  data-guia="form-curso"
+  style="margin-bottom: var(--maya-space-6)"
+>
   <div class="maya-card__header">
     <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Datos del curso</h2>
   </div>
@@ -111,7 +116,7 @@
 
   <div class="maya-stack" style="gap: var(--maya-space-4)">
     @for (section of sections(); track section.id) {
-      <section class="maya-card">
+      <section class="maya-card" data-guia="editor-curso">
         <div class="maya-card__header">
           <!-- El título de la sección se edita en el sitio: entrar en otra
                pantalla para cambiar una palabra rompe el ritmo de montar el

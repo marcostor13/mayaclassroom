@@ -7,73 +7,104 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Title } from '@angular/platform-browser';
-import {
-  PublicCourseDto,
-  PublicSiteDto,
-  SiteSection,
-  SiteSectionType,
-} from '@maya/shared';
+import { Router } from '@angular/router';
+import { Title, Meta } from '@angular/platform-browser';
+import type { PublicCourseDto, PublicSiteDto } from '@maya/shared';
 import { SiteService } from '../../core/services/site.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { ToastService } from '../../core/services/toast.service';
-import { IconComponent } from '../../shared';
+import { GuideTourComponent, IconComponent, SiteRenderComponent } from '../../shared';
+import type { SiteRenderData } from '../../shared';
+import { DEMO_TOUR, DEMO_TOUR_KEY } from './demo-tour';
 
 /**
  * Escaparate público de una empresa.
  *
  * Vive fuera del armazón de la aplicación —sin barra lateral ni sesión— porque
  * su público es quien todavía no es alumno. Lo que se pinta y en qué orden lo
- * decide la propia empresa desde el editor: aquí solo se recorre la lista de
- * secciones activas.
+ * decide la propia empresa desde el editor: aquí solo se cargan los datos y se
+ * entregan al renderizador, que es el mismo componente que usa el editor.
  */
 @Component({
   selector: 'maya-site-public',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [IconComponent, SiteRenderComponent, GuideTourComponent],
   templateUrl: './site-public.page.html',
   styleUrl: './site-public.page.scss',
 })
 export class SitePublicPage implements OnInit {
   private readonly site = inject(SiteService);
   private readonly theme = inject(ThemeService);
-  private readonly toast = inject(ToastService);
   private readonly title = inject(Title);
-  private readonly fb = inject(FormBuilder);
+  private readonly meta = inject(Meta);
+  private readonly router = inject(Router);
 
   readonly slug = input.required<string>();
-
-  readonly SectionType = SiteSectionType;
 
   readonly data = signal<PublicSiteDto | null>(null);
   readonly loading = signal(true);
   readonly notFound = signal(false);
-  readonly submitting = signal(false);
-  readonly sent = signal<string | null>(null);
-
-  /** Curso cuya solicitud está abierta. Nulo mientras no se pide plaza. */
-  readonly selectedCourse = signal<PublicCourseDto | null>(null);
-
-  /** Categoría por la que se filtra el catálogo; vacío es «todas». */
   readonly categoryFilter = signal('');
 
-  readonly sections = computed(() =>
-    (this.data()?.site.sections ?? []).filter((section) => section.enabled),
-  );
+  /* --------------------------- Recorrido guiado --------------------------- */
 
-  readonly visibleCourses = computed(() => {
-    const courses = this.data()?.courses ?? [];
-    const category = this.categoryFilter();
-    return category ? courses.filter((course) => course.categoryId === category) : courses;
-  });
+  readonly tour = DEMO_TOUR;
+  readonly tourAbierto = signal(false);
+  readonly tourPaso = signal(0);
 
-  readonly form = this.fb.nonNullable.group({
-    firstName: ['', [Validators.required]],
-    lastName: ['', [Validators.required]],
-    email: ['', [Validators.required, Validators.email]],
-    phone: [''],
-    message: [''],
+  /**
+   * Se ofrece, no se impone.
+   *
+   * Arranca solo la primera visita de este navegador y con un pequeño retraso
+   * —lo justo para que la página haya pintado— y a partir de ahí queda en el
+   * botón flotante. Un recorrido que se abre en cada visita es un recorrido
+   * que se cierra sin leer.
+   */
+  private ofrecerTour(): void {
+    let visto = true;
+    try {
+      visto = localStorage.getItem(DEMO_TOUR_KEY) === '1';
+    } catch {
+      // Almacenamiento bloqueado (navegación privada, ajustes estrictos): se
+      // trata como «ya visto» para no insistir en cada carga.
+    }
+    if (visto) return;
+    setTimeout(() => this.abrirTour(), 1200);
+  }
+
+  abrirTour(): void {
+    this.tourPaso.set(0);
+    this.tourAbierto.set(true);
+  }
+
+  siguientePaso(): void {
+    const siguiente = this.tourPaso() + 1;
+    if (siguiente >= this.tour.length) return this.cerrarTour();
+    this.tourPaso.set(siguiente);
+  }
+
+  pasoAnterior(): void {
+    this.tourPaso.update((paso) => Math.max(0, paso - 1));
+  }
+
+  cerrarTour(): void {
+    this.tourAbierto.set(false);
+    try {
+      localStorage.setItem(DEMO_TOUR_KEY, '1');
+    } catch {
+      // Sin almacenamiento el recorrido se volverá a ofrecer; es inofensivo.
+    }
+  }
+
+  readonly render = computed<SiteRenderData | null>(() => {
+    const d = this.data();
+    if (!d) return null;
+    return {
+      tenant: d.tenant,
+      template: d.site.template,
+      contact: d.site.contact,
+      courses: d.courses,
+      categories: d.categories,
+    };
   });
 
   ngOnInit(): void {
@@ -82,6 +113,9 @@ export class SitePublicPage implements OnInit {
         this.data.set(data);
         this.loading.set(false);
         this.title.setTitle(data.site.seo.title || data.tenant.name);
+        if (data.site.seo.description) {
+          this.meta.updateTag({ name: 'description', content: data.site.seo.description });
+        }
         // La marca de la empresa manda también fuera del aula: es su página.
         if (data.tenant.primaryColor) {
           this.theme.applyBranding({
@@ -90,6 +124,7 @@ export class SitePublicPage implements OnInit {
             logoUrl: data.tenant.logoUrl,
           });
         }
+        this.ofrecerTour();
       },
       error: () => {
         this.notFound.set(true);
@@ -98,65 +133,14 @@ export class SitePublicPage implements OnInit {
     });
   }
 
-  /** Cuántos cursos mostrar en una sección de catálogo. */
-  coursesFor(section: SiteSection): PublicCourseDto[] {
-    const courses = this.visibleCourses();
-    return section.limit ? courses.slice(0, section.limit) : courses;
-  }
-
-  price(course: PublicCourseDto): string {
-    if (course.catalog.priceCents <= 0) return 'Gratuito';
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: course.catalog.currency || 'EUR',
-    }).format(course.catalog.priceCents / 100);
-  }
-
-  openRequest(course: PublicCourseDto): void {
-    this.selectedCourse.set(course);
-    this.sent.set(null);
-    // El formulario se desplaza a la vista: en móvil queda fuera de pantalla y
-    // pulsar el botón parecería no hacer nada.
-    queueMicrotask(() => {
-      document.getElementById('solicitud')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }
-
-  closeRequest(): void {
-    this.selectedCourse.set(null);
-  }
-
-  submitRequest(): void {
-    const course = this.selectedCourse();
-    if (!course || this.form.invalid || this.submitting()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    this.submitting.set(true);
-    const value = this.form.getRawValue();
-    this.site
-      .requestPlace(this.slug(), {
-        courseId: course.id,
-        firstName: value.firstName,
-        lastName: value.lastName,
-        email: value.email,
-        phone: value.phone || undefined,
-        message: value.message || undefined,
-      })
-      .subscribe({
-        next: (result) => {
-          this.submitting.set(false);
-          this.sent.set(result.message);
-          this.selectedCourse.set(null);
-          this.form.reset();
-          this.toast.success('Solicitud enviada', result.message);
-        },
-        error: () => this.submitting.set(false),
-      });
-  }
-
-  invalid(control: 'firstName' | 'lastName' | 'email'): boolean {
-    const field = this.form.controls[control];
-    return field.invalid && (field.dirty || field.touched);
+  /**
+   * Abre la ficha de venta del curso.
+   *
+   * Se navega por el nombre corto y no por el identificador: la dirección se
+   * comparte por mensajería y por redes, y `…/c/ang-22` dice de qué va mientras
+   * que veinticuatro caracteres hexadecimales no dicen nada.
+   */
+  abrirCurso(course: PublicCourseDto): void {
+    void this.router.navigate(['/p', this.slug(), 'c', course.slug || course.id]);
   }
 }

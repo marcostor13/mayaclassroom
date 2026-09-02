@@ -10,54 +10,35 @@ import {
 import type {
   EnrolmentRequestDto,
   EnrolmentRequestResult,
+  PublicCourseDetailDto,
   PublicCourseDto,
+  PublicCurriculumSection,
   PublicSiteDto,
   TenantSiteDto,
 } from '@maya/shared';
-import { TenantSite, TenantSiteDocument, SiteSectionSchema } from './schemas/tenant-site.schema';
+import { TenantSite, TenantSiteDocument } from './schemas/tenant-site.schema';
 import {
   EnrolmentRequest,
   EnrolmentRequestDocument,
 } from './schemas/enrolment-request.schema';
 import { Course, CourseDocument } from '../courses/schemas/course.schema';
+import {
+  CourseSection,
+  CourseSectionDocument,
+} from '../courses/schemas/course-section.schema';
+import {
+  CourseModule as CourseModuleSchemaClass,
+  CourseModuleDocument,
+} from '../courses/schemas/course-module.schema';
 import { Category, CategoryDocument } from '../categories/schemas/category.schema';
 import { TenantsService } from '../tenants/tenants.service';
 import { UsersService } from '../users/users.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';
 import { toObjectId } from '../../common/utils';
-import { DEFAULT_TEMPLATE, defaultSections } from './site.defaults';
-import type {
-  CreateEnrolmentRequestDto,
-  ResolveRequestDto,
-  SiteSectionDto,
-  UpdateSiteDto,
-} from './dto/site.dto';
-
-/**
- * Un campo que el editor no envía es un campo que se vacía, no uno que se
- * conserva: `undefined` en Mongoose deja el valor anterior, y al desactivar un
- * subtítulo volvería a aparecer el de antes.
- */
-function normalizeSection(section: SiteSectionDto): SiteSectionSchema {
-  return {
-    id: section.id,
-    type: section.type,
-    enabled: section.enabled,
-    title: section.title ?? null,
-    subtitle: section.subtitle ?? null,
-    body: section.body ?? null,
-    imageUrl: section.imageUrl ?? null,
-    ctaLabel: section.ctaLabel ?? null,
-    ctaUrl: section.ctaUrl ?? null,
-    items: (section.items ?? []).map((item) => ({
-      title: item.title,
-      body: item.body ?? null,
-      imageUrl: item.imageUrl ?? null,
-      author: item.author ?? null,
-    })),
-    limit: section.limit ?? null,
-  };
-}
+import { DEFAULT_TEMPLATE, defaultLandingSections, defaultSections } from './site.defaults';
+import { courseSlug } from './site.slug';
+import { assertUniqueSectionIds, normalizeSection } from './site.normalize';
+import type { CreateEnrolmentRequestDto, ResolveRequestDto, UpdateSiteDto } from './dto/site.dto';
 
 @Injectable()
 export class SiteService {
@@ -68,6 +49,10 @@ export class SiteService {
     @InjectModel(EnrolmentRequest.name)
     private readonly requestModel: Model<EnrolmentRequestDocument>,
     @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
+    @InjectModel(CourseSection.name)
+    private readonly sectionModel: Model<CourseSectionDocument>,
+    @InjectModel(CourseModuleSchemaClass.name)
+    private readonly moduleModel: Model<CourseModuleDocument>,
     @InjectModel(Category.name) private readonly categoryModel: Model<CategoryDocument>,
     private readonly tenants: TenantsService,
     private readonly users: UsersService,
@@ -111,18 +96,11 @@ export class SiteService {
     return site;
   }
 
-  /**
-   * El identificador de sección es el ancla del enlace («#cursos») y la clave
-   * de `track` al reordenar en el editor. Repetido, el navegador salta a la
-   * primera y el editor mezcla dos secciones al arrastrar.
-   */
   private assertUniqueIds(ids: string[]): void {
-    const seen = new Set<string>();
-    for (const id of ids) {
-      if (seen.has(id)) {
-        throw new BadRequestException(`Hay dos secciones con el identificador «${id}».`);
-      }
-      seen.add(id);
+    try {
+      assertUniqueSectionIds(ids);
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -193,25 +171,173 @@ export class SiteService {
     // documento sigue siendo un `CourseDocument` corriente.
     const names = await this.categoryNames(courses.map((course) => course.category));
 
-    return courses.map((course) => ({
+    return courses.map((course) =>
+      this.toPublicCourse(course, names.get(course.category?.toString() ?? '') ?? null),
+    );
+  }
+
+  /**
+   * El curso tal como se ve desde fuera.
+   *
+   * La página de venta (`landing`) se deja fuera del catálogo y solo viaja en
+   * la ficha del curso: son secciones enteras y multiplicarlas por todos los
+   * cursos engordaría la primera petición sin que nadie las mire.
+   */
+  private toPublicCourse(
+    course: CourseDocument,
+    categoryName: string | null,
+    options: { withLanding?: boolean } = {},
+  ): PublicCourseDto {
+    const catalog = course.catalog;
+    return {
       id: course.id as string,
+      slug: courseSlug(course.shortName),
       title: course.fullName,
       summary: course.summary,
       imageUrl: course.imageUrl,
       categoryId: course.category?.toString() ?? null,
-      categoryName: names.get(course.category?.toString() ?? '') ?? null,
+      categoryName,
       tags: course.tags,
       catalog: {
-        listed: course.catalog.listed,
-        priceCents: course.catalog.priceCents,
-        currency: course.catalog.currency,
-        headline: course.catalog.headline,
-        highlights: course.catalog.highlights,
-        level: course.catalog.level,
-        durationHours: course.catalog.durationHours,
+        listed: catalog.listed,
+        priceCents: catalog.priceCents,
+        currency: catalog.currency,
+        headline: catalog.headline,
+        highlights: catalog.highlights,
+        level: catalog.level,
+        durationHours: catalog.durationHours,
+        compareAtPriceCents: catalog.compareAtPriceCents,
+        promoVideoUrl: catalog.promoVideoUrl,
+        requirements: catalog.requirements,
+        audience: catalog.audience,
+        instructorName: catalog.instructorName,
+        instructorRole: catalog.instructorRole,
+        instructorBio: catalog.instructorBio,
+        instructorAvatarUrl: catalog.instructorAvatarUrl,
+        ratingAverage: catalog.ratingAverage,
+        ratingCount: catalog.ratingCount,
+        certificate: catalog.certificate,
+        ...(options.withLanding ? { landing: catalog.landing } : {}),
       },
       enrolledCount: course.enrolledCount,
-    }));
+    };
+  }
+
+  /**
+   * Ficha de venta de un curso concreto.
+   *
+   * `ref` admite el identificador o el nombre corto, porque la dirección
+   * pública usa el segundo —`/p/academia/c/ang-22` se comparte mucho mejor que
+   * un identificador de veinticuatro caracteres— pero el editor enlaza por el
+   * primero, que es el que tiene a mano.
+   */
+  async publicCourse(slug: string, ref: string): Promise<PublicCourseDetailDto> {
+    const tenant = await this.tenants.requireBySlug(slug);
+    if (tenant.status === TenantStatus.Suspended || tenant.status === TenantStatus.Archived) {
+      throw new NotFoundException('Esta página no está disponible.');
+    }
+
+    const site = await this.siteModel.findOne({ tenant: tenant._id }).exec();
+    if (!site?.published) throw new NotFoundException('Esta página no está disponible.');
+
+    const course = await this.findListedCourse(tenant._id, ref);
+    const names = await this.categoryNames([course.category]);
+    const dto = this.toPublicCourse(
+      course,
+      names.get(course.category?.toString() ?? '') ?? null,
+      { withLanding: true },
+    );
+
+    const landing = course.catalog.landing?.length
+      ? course.catalog.landing
+      : defaultLandingSections({
+          title: dto.title,
+          headline: dto.catalog.headline,
+          promoVideoUrl: dto.catalog.promoVideoUrl,
+        });
+
+    const related = (await this.listedCourses(tenant._id))
+      .filter((item) => item.id !== dto.id)
+      .slice(0, 3);
+
+    return {
+      tenant: {
+        id: tenant.id as string,
+        slug: tenant.slug,
+        name: tenant.name,
+        logoUrl: tenant.branding?.logoUrl ?? null,
+        primaryColor: tenant.branding?.primaryColor ?? null,
+        accentColor: tenant.branding?.accentColor ?? null,
+      },
+      site: { template: site.template, contact: site.contact, seo: site.seo },
+      course: dto,
+      landing,
+      curriculum: await this.curriculumOf(course._id),
+      related,
+    };
+  }
+
+  /**
+   * Localiza un curso a la venta por identificador o por nombre corto.
+   *
+   * El filtro por empresa va en la consulta y no después: sin él, adivinar un
+   * identificador bastaría para leer el curso de otra empresa.
+   */
+  async findListedCourse(tenantId: Types.ObjectId, ref: string): Promise<CourseDocument> {
+    const base = {
+      tenant: tenantId,
+      'catalog.listed': true,
+      visibility: CourseVisibility.Visible,
+      deletedAt: null,
+    };
+
+    const byId = Types.ObjectId.isValid(ref)
+      ? await this.courseModel.findOne({ ...base, _id: toObjectId(ref) }).exec()
+      : null;
+    if (byId) return byId;
+
+    // El nombre corto es único por empresa, pero la dirección pública llega en
+    // minúsculas y con guiones: se compara sobre la forma normalizada.
+    const candidates = await this.courseModel.find(base).select('shortName').exec();
+    const match = candidates.find((item) => courseSlug(item.shortName) === ref.toLowerCase());
+    if (!match) throw new NotFoundException('Ese curso no está disponible.');
+
+    const course = await this.courseModel.findOne({ ...base, _id: match._id }).exec();
+    if (!course) throw new NotFoundException('Ese curso no está disponible.');
+    return course;
+  }
+
+  /**
+   * Temario que se enseña antes de comprar.
+   *
+   * Solo títulos: qué hay dentro de cada unidad es justamente lo que se está
+   * vendiendo. Las secciones ocultas y los módulos invisibles no salen, porque
+   * fuera no existen.
+   */
+  private async curriculumOf(courseId: Types.ObjectId): Promise<PublicCurriculumSection[]> {
+    const sections = await this.sectionModel
+      .find({ course: courseId, visible: true, deletedAt: null })
+      .sort({ sectionNumber: 1 })
+      .exec();
+    const modules = await this.moduleModel
+      .find({ course: courseId, visible: true, stealth: false, deletedAt: null })
+      .sort({ sortOrder: 1 })
+      .exec();
+
+    return sections
+      .map((section, index) => ({
+        title: section.name?.trim() || `Tema ${index + 1}`,
+        items: modules
+          .filter((module) => module.section.toString() === section._id.toString())
+          .map((module) => ({
+            title: module.name,
+            type: module.moduleType as string,
+            // La primera unidad del primer tema se deja como muestra: enseñar
+            // algo real convence más que describirlo.
+            preview: index === 0,
+          })),
+      }))
+      .filter((section) => section.items.length > 0);
   }
 
   private async categoryNames(ids: (Types.ObjectId | null)[]): Promise<Map<string, string>> {

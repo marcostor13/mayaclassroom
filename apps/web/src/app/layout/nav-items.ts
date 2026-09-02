@@ -101,6 +101,13 @@ export const NAV_ITEMS: NavItem[] = [
     capabilities: [CAP.SITE_MANAGE, CAP.SITE_MANAGE_REQUESTS],
   },
   {
+    label: 'Cobros',
+    icon: 'credit-card',
+    route: '/admin/payments',
+    group: 'administración',
+    capabilities: [CAP.PAYMENT_MANAGE],
+  },
+  {
     label: 'Sitio',
     icon: 'sliders',
     route: '/admin/site',

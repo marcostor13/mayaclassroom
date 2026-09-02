@@ -1,0 +1,675 @@
+<div class="sitio" [class]="'sitio sitio--' + data().template">
+  @if (chrome()) {
+    <header class="barra">
+      <div class="contenedor barra__interior">
+        <a class="barra__marca" [href]="href('/p/' + data().tenant.slug)">
+          @if (data().tenant.logoUrl) {
+            <img class="barra__logo" [src]="data().tenant.logoUrl!" [alt]="data().tenant.name" />
+          }
+          <span>{{ data().tenant.name }}</span>
+        </a>
+        <nav class="barra__acciones" data-guia="barra-acciones">
+          <a class="maya-btn maya-btn--ghost maya-btn--sm" [href]="href('/auth/login')">Acceder</a>
+          <a class="maya-btn maya-btn--primary maya-btn--sm" [href]="href('#cursos')">Ver cursos</a>
+        </nav>
+      </div>
+    </header>
+  }
+
+  @for (section of visibles(); track section.id; let first = $first; let last = $last) {
+    <section
+      [id]="section.id"
+      [attr.data-guia]="'seccion-' + section.type"
+      [class]="clases(section)"
+      [style.background-image]="fondo(section)"
+      (click)="onSectionClick(section, $event)"
+    >
+      @if (editable()) {
+        <!-- Los controles van sobre la sección, no dentro: así el marcado que
+             se ve es exactamente el que se publica. -->
+        <div class="mandos" (click)="$event.stopPropagation()">
+          <span class="mandos__nombre">{{ section.title || section.type }}</span>
+          <button
+            type="button"
+            class="mandos__boton"
+            title="Subir"
+            aria-label="Subir el bloque"
+            [disabled]="first"
+            (click)="sectionMove.emit({ id: section.id, delta: -1 })"
+          >
+            <maya-icon name="chevron-up" [size]="15" />
+          </button>
+          <button
+            type="button"
+            class="mandos__boton"
+            title="Bajar"
+            aria-label="Bajar el bloque"
+            [disabled]="last"
+            (click)="sectionMove.emit({ id: section.id, delta: 1 })"
+          >
+            <maya-icon name="chevron-down" [size]="15" />
+          </button>
+          <button
+            type="button"
+            class="mandos__boton"
+            [title]="section.enabled ? 'Ocultar' : 'Mostrar'"
+            [attr.aria-label]="section.enabled ? 'Ocultar el bloque' : 'Mostrar el bloque'"
+            (click)="sectionToggle.emit(section.id)"
+          >
+            <maya-icon [name]="section.enabled ? 'eye' : 'eye-off'" [size]="15" />
+          </button>
+          <button
+            type="button"
+            class="mandos__boton"
+            title="Duplicar"
+            aria-label="Duplicar el bloque"
+            (click)="sectionDuplicate.emit(section.id)"
+          >
+            <maya-icon name="copy" [size]="15" />
+          </button>
+          <button
+            type="button"
+            class="mandos__boton mandos__boton--peligro"
+            title="Eliminar"
+            aria-label="Eliminar el bloque"
+            (click)="sectionRemove.emit(section.id)"
+          >
+            <maya-icon name="trash" [size]="15" />
+          </button>
+        </div>
+
+        @if (!section.enabled) {
+          <span class="etiqueta-oculta">Oculto en la página publicada</span>
+        }
+      }
+
+      <div class="contenedor">
+        @switch (section.type) {
+          <!-- ------------------------------ Portada ------------------------ -->
+          @case (Tipo.Hero) {
+            <div class="portada">
+              <div class="portada__texto">
+                @if (data().course; as curso) {
+                  @if (curso.categoryName) {
+                    <span class="maya-badge maya-badge--primary">{{ curso.categoryName }}</span>
+                  }
+                }
+                <h1 class="portada__titulo">{{ section.title }}</h1>
+                @if (section.subtitle) {
+                  <p class="portada__entrada">{{ section.subtitle }}</p>
+                }
+                @if (section.body) {
+                  <div class="prosa maya-rich" [innerHTML]="section.body | safeHtml"></div>
+                }
+
+                @if (data().course; as curso) {
+                  <div class="portada__datos">
+                    @if (curso.catalog.ratingAverage) {
+                      <span class="valoracion">
+                        @for (on of estrellas(curso.catalog.ratingAverage); track $index) {
+                          <maya-icon
+                            name="star"
+                            [size]="15"
+                            [variant]="on ? 'solid' : 'outline'"
+                          />
+                        }
+                        <b>{{ curso.catalog.ratingAverage }}</b>
+                        @if (curso.catalog.ratingCount) {
+                          <span class="maya-subtle">({{ curso.catalog.ratingCount }})</span>
+                        }
+                      </span>
+                    }
+                    @if (curso.catalog.durationHours) {
+                      <span><maya-icon name="clock" [size]="15" /> {{ curso.catalog.durationHours }} h</span>
+                    }
+                    @if (curso.catalog.level) {
+                      <span><maya-icon name="target" [size]="15" /> {{ curso.catalog.level }}</span>
+                    }
+                    @if (curso.enrolledCount) {
+                      <span><maya-icon name="users" [size]="15" /> {{ curso.enrolledCount }} matriculados</span>
+                    }
+                  </div>
+                }
+
+                <div class="portada__botones">
+                  @if (section.ctaLabel) {
+                    <a
+                      class="maya-btn maya-btn--primary maya-btn--lg"
+                      [href]="href(section.ctaUrl)"
+                      (click)="data().course ? onBuy($event) : null"
+                    >
+                      {{ section.ctaLabel }}
+                    </a>
+                  }
+                  @if (section.ctaSecondaryLabel) {
+                    <a class="maya-btn maya-btn--ghost maya-btn--lg" [href]="href(section.ctaSecondaryUrl)">
+                      {{ section.ctaSecondaryLabel }}
+                    </a>
+                  }
+                </div>
+              </div>
+
+              @if (incrustar(section.videoUrl); as video) {
+                <div class="marco">
+                  @if (video | safeResource; as src) {
+                    <iframe
+                      [src]="src"
+                      title="Vídeo de presentación"
+                      loading="lazy"
+                      allowfullscreen
+                      referrerpolicy="strict-origin-when-cross-origin"
+                    ></iframe>
+                  }
+                </div>
+              } @else if (section.imageUrl && estilo(section).background !== 'image') {
+                <img class="portada__imagen" [src]="section.imageUrl" alt="" loading="lazy" />
+              } @else if (data().course?.imageUrl && estilo(section).background !== 'image') {
+                <img class="portada__imagen" [src]="data().course!.imageUrl!" alt="" loading="lazy" />
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Catálogo ----------------------- -->
+          @case (Tipo.Courses) {
+            <header class="cabecera">
+              @if (section.title) {
+                <h2 class="seccion__titulo">{{ section.title }}</h2>
+              }
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+
+            @if (data().categories.length > 1) {
+              <div class="filtros">
+                <button
+                  type="button"
+                  class="maya-chip"
+                  [class.is-active]="activeCategory() === ''"
+                  (click)="categoryFilter.emit('')"
+                >
+                  Todas
+                </button>
+                @for (category of data().categories; track category.id) {
+                  <button
+                    type="button"
+                    class="maya-chip"
+                    [class.is-active]="activeCategory() === category.id"
+                    (click)="categoryFilter.emit(category.id)"
+                  >
+                    {{ category.name }} ({{ category.courseCount }})
+                  </button>
+                }
+              </div>
+            }
+
+            @if (cursosDe(section).length) {
+              <div class="cursos">
+                @for (course of cursosDe(section); track course.id) {
+                  <a class="curso" [href]="'#'" (click)="onCourseClick(course, $event)">
+                    <div class="curso__imagen">
+                      @if (course.imageUrl) {
+                        <img [src]="course.imageUrl" [alt]="course.title" loading="lazy" />
+                      } @else {
+                        <maya-icon name="book-open" [size]="34" />
+                      }
+                      @if (descuento(course); as porcentaje) {
+                        <span class="curso__rebaja">−{{ porcentaje }}%</span>
+                      }
+                    </div>
+                    <div class="curso__cuerpo">
+                      @if (course.categoryName) {
+                        <span class="maya-tiny maya-subtle">{{ course.categoryName }}</span>
+                      }
+                      <h3 class="curso__titulo">{{ course.title }}</h3>
+                      <p class="curso__gancho maya-clamp-3">
+                        {{ course.catalog.headline || course.summary }}
+                      </p>
+
+                      <div class="curso__meta">
+                        @if (course.catalog.durationHours) {
+                          <span><maya-icon name="clock" [size]="14" /> {{ course.catalog.durationHours }} h</span>
+                        }
+                        @if (course.catalog.level) {
+                          <span><maya-icon name="target" [size]="14" /> {{ course.catalog.level }}</span>
+                        }
+                        @if (course.catalog.certificate) {
+                          <span><maya-icon name="award" [size]="14" /> Certificado</span>
+                        }
+                      </div>
+
+                      <div class="curso__pie">
+                        <span class="curso__precio" [class.curso__precio--gratis]="course.catalog.priceCents <= 0">
+                          {{ precio(course) }}
+                          @if (precioAntes(course); as antes) {
+                            <s class="curso__antes">{{ antes }}</s>
+                          }
+                        </span>
+                        <span class="maya-btn maya-btn--primary maya-btn--sm">
+                          Ver curso
+                          <maya-icon name="arrow-right" [size]="15" />
+                        </span>
+                      </div>
+                    </div>
+                  </a>
+                }
+              </div>
+            } @else {
+              <p class="maya-muted">Todavía no hay cursos publicados en esta categoría.</p>
+            }
+          }
+
+          <!-- ------------------------------ Categorías --------------------- -->
+          @case (Tipo.Categories) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <div class="rejilla">
+              @for (category of data().categories; track category.id) {
+                <button type="button" class="tarjeta tarjeta--pulsable" (click)="categoryFilter.emit(category.id)">
+                  <maya-icon name="layers" [size]="22" />
+                  <h3 class="tarjeta__titulo">{{ category.name }}</h3>
+                  <p class="maya-small maya-subtle">
+                    {{ category.courseCount }} {{ category.courseCount === 1 ? 'curso' : 'cursos' }}
+                  </p>
+                </button>
+              } @empty {
+                <p class="maya-muted">Aún no hay áreas con cursos publicados.</p>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Ventajas ----------------------- -->
+          @case (Tipo.Features) {
+            <header class="cabecera">
+              @if (section.title) {
+                <h2 class="seccion__titulo">{{ section.title }}</h2>
+              }
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <div class="rejilla">
+              @for (item of ventajas(section); track item.title) {
+                <div class="ventaja">
+                  <span class="ventaja__icono">
+                    <maya-icon [name]="item.icon || 'check'" [size]="20" />
+                  </span>
+                  <div>
+                    <h3 class="tarjeta__titulo">{{ item.title }}</h3>
+                    @if (item.body) {
+                      <p class="maya-small maya-subtle">{{ item.body }}</p>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <p class="maya-muted">Añada las ventajas de su formación desde el panel.</p>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Cifras ------------------------- -->
+          @case (Tipo.Stats) {
+            @if (section.title) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+            }
+            <div class="cifras">
+              @for (item of section.items ?? []; track item.title) {
+                <div class="cifra">
+                  <b class="cifra__valor">{{ item.value }}</b>
+                  <span class="cifra__texto">{{ item.title }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Pasos -------------------------- -->
+          @case (Tipo.Steps) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <ol class="pasos">
+              @for (item of section.items ?? []; track item.title; let i = $index) {
+                <li class="paso">
+                  <span class="paso__numero">{{ i + 1 }}</span>
+                  <div>
+                    <h3 class="tarjeta__titulo">{{ item.title }}</h3>
+                    @if (item.body) {
+                      <p class="maya-small maya-subtle">{{ item.body }}</p>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          }
+
+          <!-- ------------------------------ Vídeo -------------------------- -->
+          @case (Tipo.Video) {
+            <header class="cabecera">
+              @if (section.title) {
+                <h2 class="seccion__titulo">{{ section.title }}</h2>
+              }
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            @if (incrustar(section.videoUrl); as video) {
+              <div class="marco marco--ancho">
+                @if (video | safeResource; as src) {
+                  <iframe
+                    [src]="src"
+                    [title]="section.title || 'Vídeo'"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"
+                  ></iframe>
+                }
+              </div>
+            } @else {
+              <p class="maya-muted">Pegue el enlace de un vídeo de YouTube o Vimeo.</p>
+            }
+          }
+
+          <!-- ------------------------------ Galería ------------------------ -->
+          @case (Tipo.Gallery) {
+            <header class="cabecera">
+              @if (section.title) {
+                <h2 class="seccion__titulo">{{ section.title }}</h2>
+              }
+            </header>
+            <div class="rejilla">
+              @for (item of section.items ?? []; track item.title) {
+                <figure class="galeria">
+                  @if (item.imageUrl) {
+                    <img [src]="item.imageUrl" [alt]="item.title" loading="lazy" />
+                  }
+                  @if (item.title) {
+                    <figcaption class="maya-tiny maya-subtle">{{ item.title }}</figcaption>
+                  }
+                </figure>
+              } @empty {
+                <p class="maya-muted">Añada imágenes desde el panel.</p>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Temario ------------------------ -->
+          @case (Tipo.Curriculum) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <div class="temario">
+              @for (tema of data().curriculum ?? []; track tema.title; let i = $index) {
+                <details class="tema" [open]="i === 0">
+                  <summary class="tema__titulo">
+                    <maya-icon name="chevron-right" [size]="16" />
+                    <span>{{ tema.title }}</span>
+                    <span class="maya-tiny maya-subtle">{{ tema.items.length }} materiales</span>
+                  </summary>
+                  <ul class="tema__lista">
+                    @for (item of tema.items; track item.title) {
+                      <li>
+                        <maya-icon [name]="iconoModulo(item.type)" [size]="16" />
+                        <span>{{ item.title }}</span>
+                        @if (item.preview) {
+                          <span class="maya-badge maya-badge--success">Muestra gratuita</span>
+                        }
+                      </li>
+                    }
+                  </ul>
+                </details>
+              } @empty {
+                <p class="maya-muted">El temario se rellena solo con los temas del curso.</p>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Profesorado -------------------- -->
+          @case (Tipo.Instructor) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+            </header>
+            <div class="docente">
+              @if (data().course?.catalog?.instructorAvatarUrl; as avatar) {
+                <img class="docente__foto" [src]="avatar" alt="" loading="lazy" />
+              } @else {
+                <span class="docente__foto docente__foto--vacia">
+                  <maya-icon name="user" [size]="30" />
+                </span>
+              }
+              <div>
+                <h3 class="tarjeta__titulo">
+                  {{ data().course?.catalog?.instructorName || section.subtitle || 'Equipo docente' }}
+                </h3>
+                @if (data().course?.catalog?.instructorRole; as cargo) {
+                  <p class="maya-small maya-subtle">{{ cargo }}</p>
+                }
+                <p class="prosa">
+                  {{ data().course?.catalog?.instructorBio || section.body }}
+                </p>
+              </div>
+            </div>
+          }
+
+          <!-- ------------------------------ Compra ------------------------- -->
+          @case (Tipo.Pricing) {
+            @if (data().course; as curso) {
+              <div class="compra">
+                <div class="compra__precio">
+                  <span class="compra__importe" [class.compra__importe--gratis]="curso.catalog.priceCents <= 0">
+                    {{ precio(curso) }}
+                  </span>
+                  @if (precioAntes(curso); as antes) {
+                    <s class="compra__antes">{{ antes }}</s>
+                    <span class="maya-badge maya-badge--success">−{{ descuento(curso) }}%</span>
+                  }
+                </div>
+                @if (section.title) {
+                  <h2 class="seccion__titulo">{{ section.title }}</h2>
+                }
+                @if (section.subtitle) {
+                  <p class="seccion__entrada">{{ section.subtitle }}</p>
+                }
+
+                <ul class="compra__incluye">
+                  @if (curso.catalog.durationHours) {
+                    <li><maya-icon name="clock" [size]="16" /> {{ curso.catalog.durationHours }} horas de contenido</li>
+                  }
+                  <li><maya-icon name="refresh" [size]="16" /> Acceso ilimitado, también desde el móvil</li>
+                  @if (curso.catalog.certificate) {
+                    <li><maya-icon name="award" [size]="16" /> Certificado al completarlo</li>
+                  }
+                  <li><maya-icon name="message-square" [size]="16" /> Dudas resueltas por el profesorado</li>
+                </ul>
+
+                <button type="button" class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block" (click)="onBuy($event)">
+                  {{ curso.catalog.priceCents > 0 ? (section.ctaLabel || 'Comprar ahora') : 'Matricularme gratis' }}
+                </button>
+
+                @if (data().paymentMethods?.length) {
+                  <p class="compra__pagos">
+                    <maya-icon name="shield-check" [size]="15" />
+                    Pago seguro con
+                    {{ formaDePagoTexto() }}
+                  </p>
+                }
+              </div>
+            } @else {
+              <div class="llamada">
+                <h2 class="seccion__titulo">{{ section.title }}</h2>
+                @if (section.subtitle) {
+                  <p class="maya-muted">{{ section.subtitle }}</p>
+                }
+              </div>
+            }
+          }
+
+          <!-- ------------------------------ Texto -------------------------- -->
+          @case (Tipo.About) {
+            <h2 class="seccion__titulo">{{ section.title }}</h2>
+            @if (section.subtitle) {
+              <p class="seccion__entrada">{{ section.subtitle }}</p>
+            }
+            <div class="prosa">{{ section.body }}</div>
+          }
+
+          @case (Tipo.RichText) {
+            @if (section.title) {
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+            }
+            <div class="prosa maya-rich" [innerHTML]="section.body ?? '' | safeHtml"></div>
+          }
+
+          <!-- ------------------------------ Testimonios -------------------- -->
+          @case (Tipo.Testimonials) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <div class="rejilla">
+              @for (item of section.items ?? []; track item.title) {
+                <blockquote class="tarjeta">
+                  <div class="valoracion">
+                    @for (on of estrellas(5); track $index) {
+                      <maya-icon name="star" [size]="14" variant="solid" />
+                    }
+                  </div>
+                  <p class="tarjeta__titulo">{{ item.title }}</p>
+                  <p class="maya-small maya-subtle">{{ item.body }}</p>
+                  @if (item.author) {
+                    <footer class="tarjeta__autor">— {{ item.author }}</footer>
+                  }
+                </blockquote>
+              } @empty {
+                <p class="maya-muted">Añada testimonios de su alumnado desde el panel.</p>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Preguntas ---------------------- -->
+          @case (Tipo.Faq) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <div class="temario">
+              @for (item of section.items ?? []; track item.title) {
+                <details class="tema">
+                  <summary class="tema__titulo">
+                    <maya-icon name="chevron-right" [size]="16" />
+                    <span>{{ item.title }}</span>
+                  </summary>
+                  <p class="tema__respuesta">{{ item.body }}</p>
+                </details>
+              } @empty {
+                <p class="maya-muted">Añada las dudas más frecuentes desde el panel.</p>
+              }
+            </div>
+          }
+
+          <!-- ------------------------------ Llamada ------------------------ -->
+          @case (Tipo.Cta) {
+            <div class="llamada">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+              <div class="portada__botones">
+                @if (section.ctaLabel) {
+                  <a class="maya-btn maya-btn--primary maya-btn--lg" [href]="href(section.ctaUrl)">
+                    {{ section.ctaLabel }}
+                  </a>
+                }
+                @if (section.ctaSecondaryLabel) {
+                  <a class="maya-btn maya-btn--ghost maya-btn--lg" [href]="href(section.ctaSecondaryUrl)">
+                    {{ section.ctaSecondaryLabel }}
+                  </a>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- ------------------------------ Contacto ----------------------- -->
+          @case (Tipo.Contact) {
+            <header class="cabecera">
+              <h2 class="seccion__titulo">{{ section.title }}</h2>
+              @if (section.subtitle) {
+                <p class="seccion__entrada">{{ section.subtitle }}</p>
+              }
+            </header>
+            <div class="contacto">
+              @if (data().contact.email) {
+                <a class="contacto__dato" [href]="'mailto:' + data().contact.email">
+                  <maya-icon name="mail" [size]="18" />
+                  <span>{{ data().contact.email }}</span>
+                </a>
+              }
+              @if (data().contact.phone) {
+                <a class="contacto__dato" [href]="'tel:' + data().contact.phone">
+                  <maya-icon name="phone" [size]="18" />
+                  <span>{{ data().contact.phone }}</span>
+                </a>
+              }
+              @if (data().contact.address) {
+                <span class="contacto__dato">
+                  <maya-icon name="map-pin" [size]="18" />
+                  <span>{{ data().contact.address }}</span>
+                </span>
+              }
+              @if (data().contact.website) {
+                <a class="contacto__dato" [href]="href(data().contact.website)">
+                  <maya-icon name="globe" [size]="18" />
+                  <span>{{ data().contact.website }}</span>
+                </a>
+              }
+            </div>
+          }
+        }
+      </div>
+    </section>
+
+    @if (editable()) {
+      <div class="insertar">
+        <button type="button" class="insertar__boton" (click)="sectionAdd.emit(section.id)">
+          <maya-icon name="plus" [size]="15" />
+          Añadir bloque aquí
+        </button>
+      </div>
+    }
+  } @empty {
+    @if (editable()) {
+      <div class="vacio">
+        <maya-icon name="layers" [size]="34" />
+        <p class="maya-muted">Su página está vacía. Empiece añadiendo un bloque.</p>
+        <button type="button" class="maya-btn maya-btn--primary" (click)="sectionAdd.emit(null)">
+          Añadir el primer bloque
+        </button>
+      </div>
+    }
+  }
+
+  @if (chrome()) {
+    <footer class="pie">
+      <div class="contenedor pie__interior">
+        <span>© {{ anio }} {{ data().tenant.name }}</span>
+        @if (data().contact.website) {
+          <a [href]="href(data().contact.website)">{{ data().contact.website }}</a>
+        }
+        <span class="maya-tiny maya-subtle">Formación en línea con Maya Classroom</span>
+      </div>
+    </footer>
+  }
+</div>

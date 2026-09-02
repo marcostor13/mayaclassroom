@@ -23,6 +23,16 @@ export class SiteController {
   }
 
   @Public()
+  @Get('public/:slug/courses/:ref')
+  @ApiOperation({
+    summary: 'Ficha de venta de un curso',
+    description: 'La referencia admite el identificador del curso o su nombre corto.',
+  })
+  publicCourse(@Param('slug') slug: string, @Param('ref') ref: string) {
+    return this.site.publicCourse(slug, ref);
+  }
+
+  @Public()
   // Sin sesión detrás y con envío de correo por medio: el límite evita que la
   // página se convierta en un formulario para inundar buzones ajenos.
   @Throttle({ default: { limit: 5, ttl: 60_000 } })

@@ -1,0 +1,158 @@
+/**
+ * Ficha de venta. Casi toda la página la pinta `maya-site-render`; lo que hay
+ * aquí es la zona de compra, que no es contenido diseñable sino la pasarela.
+ */
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--maya-bg);
+  color: var(--maya-text);
+}
+
+.cargando {
+  display: grid;
+  gap: var(--maya-space-4);
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: var(--maya-space-6) var(--maya-space-4);
+}
+
+.no-disponible {
+  display: grid;
+  place-items: center;
+  gap: var(--maya-space-3);
+  min-height: 100vh;
+  padding: var(--maya-space-8) var(--maya-space-4);
+  text-align: center;
+  color: var(--maya-text-subtle);
+
+  h1 {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-2xl);
+    color: var(--maya-text);
+  }
+}
+
+.compra-zona {
+  background: var(--maya-surface-3);
+  padding-block: var(--maya-space-10);
+  padding-bottom: calc(var(--maya-space-10) + var(--maya-safe-bottom));
+  scroll-margin-top: 80px;
+}
+
+.compra-zona__interior {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  padding-inline: var(--maya-space-4);
+}
+
+.resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-4);
+  flex-wrap: wrap;
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-xl);
+  box-shadow: var(--maya-shadow-md);
+  padding: var(--maya-space-5);
+}
+
+.resumen__precio {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.formulario {
+  display: grid;
+  gap: var(--maya-space-4);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-xl);
+  box-shadow: var(--maya-shadow-md);
+  padding: var(--maya-space-5);
+}
+
+.formulario__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+}
+
+.formulario__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-lg);
+  font-weight: 800;
+}
+
+.formulario__fila {
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+@media (min-width: 30rem) {
+  .formulario__fila { grid-template-columns: 1fr 1fr; }
+}
+
+.formulario__aviso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: var(--maya-text-xs);
+  color: var(--maya-text-subtle);
+  text-align: center;
+}
+
+/* --- Formas de pago ------------------------------------------------------ */
+
+.pagos {
+  display: grid;
+  gap: var(--maya-space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.pago {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3);
+  border: 1.5px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  cursor: pointer;
+  /* 44 px de alto mínimo: es un objetivo táctil. */
+  min-height: 56px;
+
+  input { position: absolute; opacity: 0; pointer-events: none; }
+
+  &:active { transform: scale(0.99); }
+}
+
+.pago--activo {
+  border-color: var(--maya-primary);
+  background: var(--maya-primary-softer);
+}
+
+.pago__icono {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--maya-radius-sm);
+  background: var(--maya-surface-3);
+  color: var(--maya-primary-ink);
+}
+
+.pago__texto {
+  display: grid;
+  flex: 1;
+  font-size: var(--maya-text-sm);
+}

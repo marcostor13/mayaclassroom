@@ -27,3 +27,4 @@ export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 export const SUPPORTED_LANGUAGES = ['es', 'en'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+export * from './guides';

@@ -21,6 +21,18 @@ MongoDB Atlas y un cliente Angular 22 sin zonas, basado en señales.
 Cada **empresa** (*tenant*) es un espacio completamente aislado, con su propia
 marca, sus usuarios, sus roles y su oferta formativa.
 
+Además del aula, cada empresa tiene su propio **escaparate público**: una página
+de venta que diseña ella misma bloque a bloque, con una ficha por curso, cobro
+con Mercado Pago o PayPal y matrícula automática en cuanto el pago se confirma.
+
+| Dirección | Qué es |
+|---|---|
+| `/p/:empresa` | Escaparate público con el catálogo a la venta |
+| `/p/:empresa/c/:curso` | Ficha de venta de un curso: temario, profesorado y compra |
+| `/p/:empresa/pedido/:referencia` | Estado de la compra al volver de la pasarela |
+| `/admin/storefront` | Constructor visual de la página, catálogo, pedidos y solicitudes |
+| `/admin/payments` | Conexión de las pasarelas de cobro |
+
 ---
 
 ## Instalación rápida
@@ -40,7 +52,8 @@ cp .env.example .env          # y edite MONGODB_URI con su clúster de Atlas
 # 4 · Compilar los contratos compartidos
 bun run build:shared
 
-# 5 · Datos de demostración (crea empresa, usuarios y cursos de ejemplo)
+# 5 · Datos de demostración (empresa, usuarios, tres cursos con vídeo,
+#     escaparate publicado, cobros configurados y pedidos de ejemplo)
 bun run seed
 
 # 6 · Arrancar API (:3000) y cliente (:4205) a la vez
@@ -142,6 +155,7 @@ update(@Param('id') id: string, @Body() dto: UpdateCourseDto) { … }
 | **1** | Arquitectura, autenticación, multiempresa, RBAC, usuarios, sistema de diseño | ✅ |
 | **2** | Categorías, cursos, secciones, actividades, matriculación, grupos, calificaciones, finalización, calendario, mensajería, panel | ✅ |
 | **3** | Competencias, insignias, certificados, cohortes, actividades avanzadas, analíticas, copias de seguridad, RGPD, servicios web, tareas programadas | ✅ |
+| **4** | Escaparate público, constructor visual de páginas, venta de cursos con Mercado Pago y PayPal, pedidos y guías interactivas | ✅ |
 
 El detalle está en [`PLAN.md`](./PLAN.md) y la arquitectura técnica en
 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Para poner el almacenamiento

@@ -1,0 +1,77 @@
+<div class="pedido">
+  @if (loading() && !result()) {
+    <div class="maya-skeleton" style="height: 220px; border-radius: var(--maya-radius-xl)"></div>
+  } @else if (notFound()) {
+    <div class="tarjeta">
+      <span class="marca marca--aviso"><maya-icon name="alert" [size]="26" /></span>
+      <h1>No encontramos ese pedido</h1>
+      <p class="maya-muted">Compruebe el enlace del correo de confirmación.</p>
+      <a class="maya-btn maya-btn--primary" [href]="'/p/' + slug()">Volver a los cursos</a>
+    </div>
+  } @else if (result(); as r) {
+    <div class="tarjeta">
+      @switch (r.order.status) {
+        @case (Estado.Paid) {
+          <span class="marca marca--exito"><maya-icon name="circle-check" [size]="28" /></span>
+          <h1>¡Ya está dentro!</h1>
+          <p class="maya-muted">{{ r.message }}</p>
+        }
+        @case (Estado.Failed) {
+          <span class="marca marca--error"><maya-icon name="x" [size]="26" /></span>
+          <h1>El pago no se completó</h1>
+          <p class="maya-muted">{{ r.message }}</p>
+        }
+        @case (Estado.Cancelled) {
+          <span class="marca marca--aviso"><maya-icon name="x" [size]="26" /></span>
+          <h1>Compra cancelada</h1>
+          <p class="maya-muted">{{ r.message }}</p>
+        }
+        @default {
+          <span class="marca marca--espera"><maya-icon name="clock" [size]="26" /></span>
+          <h1>Estamos confirmando su pago</h1>
+          <p class="maya-muted">{{ r.message }}</p>
+        }
+      }
+
+      <dl class="detalle">
+        <div>
+          <dt>Curso</dt>
+          <dd>{{ r.order.courseTitle }}</dd>
+        </div>
+        <div>
+          <dt>Referencia</dt>
+          <dd><code>{{ r.order.reference }}</code></dd>
+        </div>
+        <div>
+          <dt>Importe</dt>
+          <dd>{{ importe() }}</dd>
+        </div>
+        <div>
+          <dt>Correo</dt>
+          <dd>{{ r.email }}</dd>
+        </div>
+      </dl>
+
+      <div class="acciones">
+        @if (r.enrolled) {
+          <a class="maya-btn maya-btn--primary maya-btn--lg" [href]="'/auth/login?tenant=' + slug()">
+            Entrar en mi curso
+          </a>
+        } @else if (pendiente()) {
+          <button type="button" class="maya-btn maya-btn--secondary" (click)="reintentar()">
+            <maya-icon name="refresh" [size]="16" />
+            Comprobar de nuevo
+          </button>
+        }
+        <a class="maya-btn maya-btn--ghost" [href]="'/p/' + slug()">Ver más cursos</a>
+      </div>
+
+      @if (pendiente()) {
+        <p class="maya-tiny maya-subtle">
+          Puede cerrar esta página: en cuanto la pasarela confirme el pago le llegará un correo
+          con su acceso.
+        </p>
+      }
+    </div>
+  }
+</div>

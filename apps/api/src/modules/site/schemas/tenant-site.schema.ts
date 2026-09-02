@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { SiteSectionType, SiteTemplate } from '@maya/shared';
+import { DEFAULT_SECTION_STYLE, SiteSectionType, SiteTemplate } from '@maya/shared';
+import type { SiteSectionStyle } from '@maya/shared';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
 
 @Schema({ _id: false })
@@ -9,6 +10,18 @@ export class SiteSectionItemSchema {
   @Prop({ type: String, default: null }) body!: string | null;
   @Prop({ type: String, default: null }) imageUrl!: string | null;
   @Prop({ type: String, default: null }) author!: string | null;
+  @Prop({ type: String, default: null }) icon!: string | null;
+  @Prop({ type: String, default: null }) value!: string | null;
+  @Prop({ type: String, default: null }) url!: string | null;
+}
+
+/** Aspecto del bloque: opciones cerradas, nunca CSS libre. */
+@Schema({ _id: false })
+export class SiteSectionStyleSchema {
+  @Prop({ type: String, default: 'plain' }) background!: SiteSectionStyle['background'];
+  @Prop({ type: String, default: 'start' }) align!: SiteSectionStyle['align'];
+  @Prop({ type: String, default: 'normal' }) spacing!: SiteSectionStyle['spacing'];
+  @Prop({ type: Number, default: 3 }) columns!: SiteSectionStyle['columns'];
 }
 
 @Schema({ _id: false })
@@ -27,6 +40,12 @@ export class SiteSectionSchema {
   @Prop({ type: String, default: null }) ctaUrl!: string | null;
   @Prop({ type: [SiteSectionItemSchema], default: [] }) items!: SiteSectionItemSchema[];
   @Prop({ type: Number, default: null }) limit!: number | null;
+  @Prop({ type: String, default: null }) ctaSecondaryLabel!: string | null;
+  @Prop({ type: String, default: null }) ctaSecondaryUrl!: string | null;
+  @Prop({ type: String, default: null }) videoUrl!: string | null;
+
+  @Prop({ type: SiteSectionStyleSchema, default: () => ({ ...DEFAULT_SECTION_STYLE }) })
+  style!: SiteSectionStyleSchema;
 }
 
 @Schema({ _id: false })

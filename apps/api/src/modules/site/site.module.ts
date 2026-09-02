@@ -8,8 +8,9 @@ import { SiteController } from './site.controller';
 /**
  * El escaparate público de cada empresa.
  *
- * No registra los esquemas de curso ni de categoría: los aportan sus módulos,
- * que son globales. Aquí solo se leen para armar el catálogo.
+ * No registra los esquemas de curso, sección, módulo ni categoría: los aportan
+ * sus módulos, que son globales. Aquí solo se leen para armar el catálogo y el
+ * temario que se enseña antes de comprar.
  */
 @Module({
   imports: [

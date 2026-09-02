@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { CourseFormat, CourseVisibility, GroupMode, MAX_UPLOAD_BYTES } from '@maya/shared';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
+import { SiteSectionSchema } from '../../site/schemas/tenant-site.schema';
 
 /** Datos de venta de un curso. Ver `catalog` más abajo. */
 @Schema({ _id: false })
@@ -14,6 +15,26 @@ export class CourseCatalogSchema {
   @Prop({ type: [String], default: [] }) highlights!: string[];
   @Prop({ type: String, default: null }) level!: string | null;
   @Prop({ type: Number, default: null }) durationHours!: number | null;
+  @Prop({ type: Number, default: null, min: 0 }) compareAtPriceCents!: number | null;
+  @Prop({ type: String, default: null }) promoVideoUrl!: string | null;
+  @Prop({ type: [String], default: [] }) requirements!: string[];
+  @Prop({ type: [String], default: [] }) audience!: string[];
+  @Prop({ type: String, default: null }) instructorName!: string | null;
+  @Prop({ type: String, default: null }) instructorRole!: string | null;
+  @Prop({ type: String, default: null }) instructorBio!: string | null;
+  @Prop({ type: String, default: null }) instructorAvatarUrl!: string | null;
+  @Prop({ type: Number, default: null, min: 0, max: 5 }) ratingAverage!: number | null;
+  @Prop({ type: Number, default: null, min: 0 }) ratingCount!: number | null;
+  @Prop({ default: false }) certificate!: boolean;
+
+  /**
+   * Página de venta propia del curso.
+   *
+   * Vacía significa «usa la maqueta por defecto», que se compone a partir de
+   * los datos de arriba. Así un curso vende desde el primer día sin pasar por
+   * el editor, y quien quiera afinarlo lo hace sección a sección.
+   */
+  @Prop({ type: [SiteSectionSchema], default: [] }) landing!: SiteSectionSchema[];
 }
 
 @Schema({ collection: 'courses', timestamps: true })
