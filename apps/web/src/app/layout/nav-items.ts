@@ -94,7 +94,10 @@ export const NAV_ITEMS: NavItem[] = [
     capabilities: [CAP.TENANT_UPDATE, CAP.TENANT_MANAGE_BRANDING],
   },
   {
-    label: 'Página pública',
+    // «Página de venta» y no «Página pública»: es como la llama quien la
+    // busca, y lo que se hace ahí es venderse, no publicar por publicar.
+    label: 'Página de venta',
+    shortLabel: 'Mi página',
     icon: 'globe',
     route: '/admin/storefront',
     group: 'administración',

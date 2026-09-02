@@ -43,6 +43,7 @@ export class AdminPaymentsPage implements OnInit {
   readonly settings = signal<PaymentSettingsDto | null>(null);
   readonly loading = signal(true);
   readonly saving = signal(false);
+  readonly error = signal(false);
 
   /** Credenciales escritas en esta sesión; vacías significan «no la toques». */
   readonly mpToken = signal('');
@@ -52,16 +53,24 @@ export class AdminPaymentsPage implements OnInit {
   readonly webhookUrl = signal('');
 
   ngOnInit(): void {
+    const slug = this.auth.tenantSlug();
+    if (slug) this.webhookUrl.set(`${location.origin}/api/v1/site/public/${slug}/webhooks`);
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.loading.set(true);
+    this.error.set(false);
     this.commerce.settings().subscribe({
       next: (settings) => {
         this.settings.set(settings);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.error.set(true);
+      },
     });
-
-    const slug = this.auth.tenantSlug();
-    if (slug) this.webhookUrl.set(`${location.origin}/api/v1/site/public/${slug}/webhooks`);
   }
 
   patch(cambio: PaymentSettingsPayload): void {

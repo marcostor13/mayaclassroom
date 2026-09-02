@@ -27,6 +27,16 @@ export class AdminRolesPage {
 
   readonly components = computed(() => Object.keys(this.catalog()).sort());
 
+  /**
+   * Un rol de la plataforma se puede mirar pero no tocar desde una empresa: es
+   * el mismo documento para todas, y editarlo desde aquí se las cambiaría a
+   * todas a la vez. La API lo rechaza; la pantalla lo dice antes de intentarlo.
+   */
+  readonly soloLectura = computed(() => {
+    const role = this.selectedRole();
+    return !!role && !role.tenant;
+  });
+
   readonly visibleCatalog = computed(() => {
     const term = this.filter().trim().toLowerCase();
     const catalog = this.catalog();
@@ -71,7 +81,7 @@ export class AdminRolesPage {
 
   setPermission(capability: string, permission: number): void {
     const role = this.selectedRole();
-    if (!role) return;
+    if (!role || this.soloLectura()) return;
     this.admin.setRoleCapability(role.id, capability, permission).subscribe({
       next: () => {
         this.permissions.update((map) => ({ ...map, [capability]: permission }));

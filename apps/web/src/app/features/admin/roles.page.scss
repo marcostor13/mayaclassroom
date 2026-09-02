@@ -82,3 +82,10 @@
   &.is-prevent { background: var(--maya-warning); color: #fff; }
   &.is-prohibit { background: var(--maya-danger); color: #fff; }
 }
+
+/* Un rol de la plataforma se consulta pero no se edita desde una empresa: los
+   controles se ven, para que se entienda qué tiene concedido, pero no responden. */
+.permission:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

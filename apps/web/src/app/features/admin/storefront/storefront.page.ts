@@ -61,6 +61,8 @@ export class AdminStorefrontPage implements OnInit {
   readonly saving = signal(false);
   readonly dirty = signal(false);
   readonly copiado = signal(false);
+  /** La carga falló. Sin esto la pantalla se quedaba en blanco, sin explicar nada. */
+  readonly error = signal(false);
 
   readonly data = signal<TenantSiteDto | null>(null);
   readonly catalogue = signal<CourseSummary[]>([]);
@@ -147,13 +149,23 @@ export class AdminStorefrontPage implements OnInit {
   }
 
   ngOnInit(): void {
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.loading.set(true);
+    this.error.set(false);
+
     this.site.mine().subscribe({
       next: (site) => {
         this.data.set(site);
         this.secciones.set(site.sections);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.error.set(true);
+      },
     });
     this.courses.list({ limit: 100 }).subscribe({
       next: (result) => this.catalogue.set(result.items),

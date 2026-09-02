@@ -266,6 +266,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/users.page').then((m) => m.AdminUsersPage),
       },
       {
+        path: 'admin/users/:id',
+        title: 'Ficha de usuario · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.USER_VIEW_DETAILS, CAP.USER_VIEW_ALL_DETAILS] },
+        loadComponent: () =>
+          import('./features/admin/user-detail/user-detail.page').then(
+            (m) => m.AdminUserDetailPage,
+          ),
+      },
+      {
         path: 'admin/roles',
         title: 'Roles y permisos · Maya Classroom',
         canActivate: [capabilityGuard],

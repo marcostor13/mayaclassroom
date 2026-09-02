@@ -46,12 +46,16 @@ export class RbacController {
   @Get('roles')
   @ApiOperation({ summary: 'Roles disponibles en la empresa' })
   listRoles(@CurrentUser() user: RequestUser) {
-    return this.roles.list(user.tenantId);
+    return this.roles.list(user.tenantId, { isPlatformAdmin: user.isPlatformAdmin });
   }
 
   @Get('roles/:id')
-  getRole(@Param('id') id: string) {
-    return this.roles.findById(id);
+  @ApiOperation({ summary: 'Un rol de la empresa' })
+  getRole(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.roles.findForTenant(id, user.tenantId, {
+      isPlatformAdmin: user.isPlatformAdmin,
+      forAssignment: true,
+    });
   }
 
   @Post('roles')
@@ -63,64 +67,81 @@ export class RbacController {
 
   @Patch('roles/:id')
   @RequireCapability(CAP.ROLE_MANAGE, { contextLevel: ContextLevel.Tenant })
-  updateRole(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    return this.roles.update(id, dto);
+  updateRole(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateRoleDto,
+  ) {
+    return this.roles.update(id, dto, this.scope(user));
   }
 
   @Delete('roles/:id')
   @RequireCapability(CAP.ROLE_MANAGE, { contextLevel: ContextLevel.Tenant })
-  async removeRole(@Param('id') id: string) {
-    await this.roles.remove(id);
+  async removeRole(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    await this.roles.remove(id, this.scope(user));
     return { deleted: true };
   }
 
   @Get('roles/:id/capabilities')
   @ApiOperation({ summary: 'Matriz de capacidades de un rol' })
-  roleCapabilities(@Param('id') id: string, @Query('contextId') contextId?: string) {
-    return this.roles.capabilitiesOf(id, contextId);
+  roleCapabilities(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Query('contextId') contextId?: string,
+  ) {
+    return this.roles.capabilitiesOf(id, this.scope(user), contextId);
   }
 
   @Patch('roles/:id/capabilities')
   @RequireCapability([CAP.ROLE_MANAGE, CAP.ROLE_OVERRIDE], { contextLevel: ContextLevel.Tenant })
-  async setRoleCapability(@Param('id') id: string, @Body() dto: SetCapabilityDto) {
-    await this.roles.setCapability(id, dto);
+  async setRoleCapability(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: SetCapabilityDto,
+  ) {
+    await this.roles.setCapability(id, dto, this.scope(user));
     return { updated: true };
   }
 
   @Post('roles/:id/capabilities/bulk')
   @RequireCapability([CAP.ROLE_MANAGE, CAP.ROLE_OVERRIDE], { contextLevel: ContextLevel.Tenant })
-  async setRoleCapabilities(@Param('id') id: string, @Body() dto: BulkSetCapabilitiesDto) {
-    await this.roles.setCapabilities(id, dto.items, dto.contextId);
+  async setRoleCapabilities(
+    @CurrentUser() user: RequestUser,
+    @Param('id') id: string,
+    @Body() dto: BulkSetCapabilitiesDto,
+  ) {
+    await this.roles.setCapabilities(id, dto.items, this.scope(user), dto.contextId);
     return { updated: dto.items.length };
   }
 
   @Get('assignments')
   @ApiOperation({ summary: 'Asignaciones de rol en un contexto' })
-  assignments(@Query('contextId') contextId: string) {
-    return this.roles.assignmentsInContext(contextId);
+  assignments(@CurrentUser() user: RequestUser, @Query('contextId') contextId: string) {
+    return this.roles.assignmentsInContext(contextId, this.scope(user));
   }
 
   @Post('assignments')
   @RequireCapability(CAP.ROLE_ASSIGN, { contextLevel: ContextLevel.Tenant })
-  assign(@Body() dto: AssignRoleDto) {
-    return this.roles.assign(dto);
+  assign(@CurrentUser() user: RequestUser, @Body() dto: AssignRoleDto) {
+    return this.roles.assign(dto, this.scope(user));
   }
 
   @Post('assignments/bulk')
   @RequireCapability(CAP.ROLE_ASSIGN, { contextLevel: ContextLevel.Tenant })
-  async assignMany(@Body() dto: BulkAssignRoleDto) {
-    const count = await this.roles.assignMany(dto);
+  async assignMany(@CurrentUser() user: RequestUser, @Body() dto: BulkAssignRoleDto) {
+    const count = await this.roles.assignMany(dto, this.scope(user));
     return { assigned: count };
   }
 
   @Delete('assignments')
   @RequireCapability(CAP.ROLE_ASSIGN, { contextLevel: ContextLevel.Tenant })
   async unassign(
+    @CurrentUser() user: RequestUser,
     @Query('userId') userId: string,
     @Query('roleId') roleId: string,
     @Query('contextId') contextId: string,
   ) {
-    await this.roles.unassign({ userId, roleId, contextId });
+    await this.roles.unassign({ userId, roleId, contextId, scope: this.scope(user) });
     return { deleted: true };
   }
 
@@ -132,6 +153,16 @@ export class RbacController {
       ? await this.access.hasAll(input, dto.capabilities, dto.contextId)
       : await this.access.hasAny(input, dto.capabilities, dto.contextId);
     return { granted };
+  }
+
+  /**
+   * La empresa de quien pregunta.
+   *
+   * Todas las rutas que tocan roles o asignaciones lo pasan al servicio: la
+   * capacidad dice *qué* puede hacer, y esto *sobre qué* puede hacerlo.
+   */
+  private scope(user: RequestUser) {
+    return { tenantId: user.tenantId, isPlatformAdmin: user.isPlatformAdmin };
   }
 
   @Get('my-capabilities')

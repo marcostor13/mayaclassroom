@@ -9,7 +9,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import * as argon2 from 'argon2';
 import { ContextLevel, UserStatus, fullName } from '@maya/shared';
+import type { UserProfileDto } from '@maya/shared';
 import { User, UserDocument } from './schemas/user.schema';
+import { RoleAssignment, RoleAssignmentDocument } from '../rbac/schemas/role-assignment.schema';
+import type { RoleDocument } from '../rbac/schemas/role.schema';
+import type { ContextDocument } from '../contexts/schemas/context.schema';
+import { Enrolment, EnrolmentDocument } from '../enrolments/schemas/enrolment.schema';
+import { Course, CourseDocument } from '../courses/schemas/course.schema';
+import { IssuedBadge, IssuedBadgeDocument } from '../badges/schemas/badge.schema';
 import { PaginatedResult } from '../../common/dto';
 import { notDeleted, searchRegex, toObjectId } from '../../common/utils';
 import { ContextsService } from '../contexts/contexts.service';
@@ -30,10 +37,92 @@ export class UsersService {
 
   constructor(
     @InjectModel(User.name) private readonly model: Model<UserDocument>,
+    // Estos cuatro se inyectan como modelos y no a través de sus servicios: la
+    // ficha de usuario los necesita solo para leer, y depender de los
+    // servicios enredaría este módulo —que es global— con media plataforma.
+    @InjectModel(RoleAssignment.name)
+    private readonly assignmentModel: Model<RoleAssignmentDocument>,
+    @InjectModel(Enrolment.name) private readonly enrolmentModel: Model<EnrolmentDocument>,
+    @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
+    @InjectModel(IssuedBadge.name) private readonly issuedBadgeModel: Model<IssuedBadgeDocument>,
     private readonly contexts: ContextsService,
     private readonly roles: RolesService,
     private readonly tenants: TenantsService,
   ) {}
+
+  /**
+   * Ficha completa de un usuario de la empresa.
+   *
+   * Va en una sola respuesta porque las tres partes se miran juntas: la ficha
+   * se abre justamente para entender por qué alguien ve o no ve algo, y eso se
+   * responde cruzando sus roles con sus matrículas.
+   */
+  async profile(
+    id: string | Types.ObjectId,
+    tenantId: string | Types.ObjectId,
+  ): Promise<UserProfileDto> {
+    const user = await this.findByIdInTenant(id, tenantId);
+    const tenant = toObjectId(tenantId);
+
+    const assignments = await this.assignmentModel
+      .find({ user: user._id, tenant })
+      .populate<{ role: RoleDocument | null }>('role')
+      .populate<{ context: ContextDocument | null }>('context')
+      .exec();
+
+    // Una asignación cuyo rol o contexto ya no existen es basura de un borrado
+    // a medias: se ignora en lugar de reventar la ficha entera.
+    const vivas = assignments.filter((row) => row.role && row.context);
+
+    const roles = vivas.map((row) => ({
+      id: String(row.role!._id),
+      name: row.role!.name,
+      shortName: row.role!.shortName,
+      contextLabel: row.context!.label,
+      contextLevel: row.context!.level,
+    }));
+
+    /** Qué papel tiene en cada curso, según el contexto de ese curso. */
+    const rolePorCurso = new Map<string, string>();
+    for (const row of vivas) {
+      if (row.context!.level !== ContextLevel.Course || !row.context!.instanceId) continue;
+      rolePorCurso.set(String(row.context!.instanceId), row.role!.name);
+    }
+
+    const enrolments = await this.enrolmentModel.find({ user: user._id, tenant }).exec();
+    const cursos = await this.courseModel
+      .find({ _id: { $in: enrolments.map((row) => row.course) }, tenant })
+      .select('shortName fullName')
+      .exec();
+    const porId = new Map(cursos.map((course) => [String(course._id), course]));
+
+    const courses = enrolments
+      .map((row) => {
+        const course = porId.get(String(row.course));
+        if (!course) return null;
+        return {
+          id: String(course._id),
+          fullName: course.fullName,
+          shortName: course.shortName,
+          roleName: rolePorCurso.get(String(course._id)) ?? '',
+          status: row.status,
+          progress: row.progress,
+          lastAccess: row.lastAccess?.toISOString() ?? null,
+        };
+      })
+      .filter((course): course is NonNullable<typeof course> => course !== null);
+
+    const badgeCount = await this.issuedBadgeModel
+      .countDocuments({ user: user._id, tenant })
+      .exec();
+
+    return {
+      ...(user.toJSON() as unknown as UserProfileDto),
+      roles,
+      courses,
+      badgeCount,
+    };
+  }
 
   /* ------------------------------ Lectura -------------------------------- */
 

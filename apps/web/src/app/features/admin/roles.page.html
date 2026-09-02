@@ -42,6 +42,11 @@
           {{ selectedRole()?.name ?? 'Seleccione un rol' }}
         </h2>
         <p class="maya-tiny maya-muted">{{ grantedCount() }} capacidades concedidas</p>
+        @if (soloLectura()) {
+          <span class="maya-badge maya-badge--warning">
+            Rol de la plataforma · solo lectura
+          </span>
+        }
       </div>
       <input
         type="search"
@@ -76,6 +81,7 @@
                       <button
                         type="button"
                         class="permission"
+                        [disabled]="soloLectura()"
                         [class.is-allow]="valueOf(capability.name) === PermissionValue.Allow"
                         (click)="setPermission(capability.name, PermissionValue.Allow)"
                         title="Permitir"
@@ -85,6 +91,7 @@
                       <button
                         type="button"
                         class="permission"
+                        [disabled]="soloLectura()"
                         [class.is-notset]="valueOf(capability.name) === PermissionValue.NotSet"
                         (click)="setPermission(capability.name, PermissionValue.NotSet)"
                         title="No establecido"
@@ -94,6 +101,7 @@
                       <button
                         type="button"
                         class="permission"
+                        [disabled]="soloLectura()"
                         [class.is-prevent]="valueOf(capability.name) === PermissionValue.Prevent"
                         (click)="setPermission(capability.name, PermissionValue.Prevent)"
                         title="Impedir"
@@ -103,6 +111,7 @@
                       <button
                         type="button"
                         class="permission"
+                        [disabled]="soloLectura()"
                         [class.is-prohibit]="valueOf(capability.name) === PermissionValue.Prohibit"
                         (click)="setPermission(capability.name, PermissionValue.Prohibit)"
                         title="Prohibir (no se puede sobrescribir)"

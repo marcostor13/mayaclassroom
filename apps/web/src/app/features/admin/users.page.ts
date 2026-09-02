@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { UserDto, UserStatus } from '@maya/shared';
 import { AdminService, RoleSummary } from '../../core/services/admin.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -17,12 +18,32 @@ import {
   imports: [
     FormsModule,
     ReactiveFormsModule,
+    RouterLink,
     IconComponent,
     AvatarComponent,
     EmptyStateComponent,
     FormatDatePipe,
   ],
   templateUrl: './users.page.html',
+  styles: `
+    /* El nombre lleva a la ficha, pero dentro de una tabla no debe parecer un
+       enlace suelto: se comporta como la fila entera. */
+    .usuario {
+      display: flex;
+      align-items: center;
+      gap: var(--maya-space-3);
+      color: inherit;
+      min-width: 0;
+    }
+
+    .usuario:hover {
+      text-decoration: none;
+
+      .maya-bold {
+        color: var(--maya-primary-ink);
+      }
+    }
+  `,
 })
 export class AdminUsersPage {
   private readonly admin = inject(AdminService);

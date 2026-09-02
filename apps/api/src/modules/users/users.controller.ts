@@ -59,6 +59,18 @@ export class UsersController {
     return this.users.findByIdInTenant(id, user.tenantId);
   }
 
+  @Get(':id/profile')
+  @RequireCapability([CAP.USER_VIEW_DETAILS, CAP.USER_VIEW_ALL_DETAILS], {
+    contextLevel: ContextLevel.Tenant,
+  })
+  @ApiOperation({
+    summary: 'Ficha completa de un usuario',
+    description: 'Sus datos, los roles que tiene y dónde, y los cursos en los que participa.',
+  })
+  profile(@CurrentUser() user: RequestUser, @Param('id') id: string) {
+    return this.users.profile(id, user.tenantId);
+  }
+
   @Post()
   @RequireCapability(CAP.USER_CREATE, { contextLevel: ContextLevel.Tenant })
   @Audit(LogAction.Created, 'user')

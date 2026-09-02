@@ -1,0 +1,171 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 60vh; border-radius: var(--maya-radius-lg)"></div>
+} @else if (notFound()) {
+  <div class="maya-empty">
+    <maya-icon name="users" [size]="30" />
+    <p>No encontramos ese usuario en su empresa.</p>
+    <a class="maya-btn maya-btn--primary" routerLink="/admin/users">Volver a los usuarios</a>
+  </div>
+} @else if (data(); as user) {
+  <header class="maya-page-header">
+    <div class="cabecera">
+      <button
+        type="button"
+        class="maya-btn maya-btn--icon maya-btn--ghost"
+        aria-label="Volver"
+        (click)="volver()"
+      >
+        <maya-icon name="arrow-left" [size]="18" />
+      </button>
+      <maya-avatar size="lg" [name]="user.fullName" [src]="user.avatarUrl ?? null" />
+      <div class="cabecera__texto">
+        <h1>{{ user.fullName }}</h1>
+        <p class="maya-muted">{{ user.email }}</p>
+        <div class="cabecera__marcas">
+          <span
+            class="maya-badge"
+            [class.maya-badge--success]="user.status === UserStatus.Active"
+            [class.maya-badge--warning]="user.status === UserStatus.Pending"
+            [class.maya-badge--danger]="user.status === UserStatus.Suspended"
+          >
+            {{ estadoLegible(user.status) }}
+          </span>
+          @if (user.isPlatformAdmin) {
+            <span class="maya-badge maya-badge--primary">Administración de plataforma</span>
+          }
+          @if (user.mustChangePassword) {
+            <span class="maya-badge maya-badge--warning">Debe cambiar la contraseña</span>
+          }
+          @if (!user.emailVerified) {
+            <span class="maya-badge">Correo sin verificar</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="cabecera__acciones">
+      @if (user.status === UserStatus.Active) {
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost"
+          (click)="cambiarEstado(UserStatus.Suspended)"
+        >
+          Suspender
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="maya-btn maya-btn--secondary"
+          (click)="cambiarEstado(UserStatus.Active)"
+        >
+          Activar
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="ficha">
+    <!-- Datos de la cuenta -->
+    <section class="tarjeta">
+      <h2 class="tarjeta__titulo">Cuenta</h2>
+      <dl class="datos">
+        <div><dt>Usuario</dt><dd>{{ user.username }}</dd></div>
+        <div><dt>Alta</dt><dd>{{ user.createdAt | mayaDate: 'short' }}</dd></div>
+        <div>
+          <dt>Último acceso</dt>
+          <dd>{{ user.lastAccessAt ? (user.lastAccessAt | mayaDate: 'short') : 'Nunca' }}</dd>
+        </div>
+        <div><dt>Autenticación</dt><dd>{{ user.provider }}</dd></div>
+        <div><dt>Idioma</dt><dd>{{ user.language }}</dd></div>
+        <div><dt>Zona horaria</dt><dd>{{ user.timezone }}</dd></div>
+        @if (user.phone) {
+          <div><dt>Teléfono</dt><dd>{{ user.phone }}</dd></div>
+        }
+        @if (user.department) {
+          <div><dt>Departamento</dt><dd>{{ user.department }}</dd></div>
+        }
+        <div><dt>Insignias</dt><dd>{{ user.badgeCount }}</dd></div>
+      </dl>
+    </section>
+
+    <!-- Roles: es la respuesta a «por qué ve o no ve tal cosa» -->
+    <section class="tarjeta">
+      <h2 class="tarjeta__titulo">Roles</h2>
+
+      @if (rolesDeEmpresa().length) {
+        <ul class="lista">
+          @for (role of rolesDeEmpresa(); track role.id + role.contextLabel) {
+            <li class="fila">
+              <span class="fila__icono"><maya-icon name="shield" [size]="17" /></span>
+              <div>
+                <b>{{ role.name }}</b>
+                <span class="maya-tiny maya-subtle">
+                  {{ nivelLegible(role.contextLevel) }}
+                  @if (role.contextLabel) {
+                    · {{ role.contextLabel }}
+                  }
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="maya-hint">Sin roles a nivel de empresa.</p>
+      }
+
+      @if (rolesDeCurso().length) {
+        <h3 class="tarjeta__subtitulo">En cursos concretos</h3>
+        <ul class="lista">
+          @for (role of rolesDeCurso(); track role.id + role.contextLabel) {
+            <li class="fila">
+              <span class="fila__icono"><maya-icon name="book" [size]="17" /></span>
+              <div>
+                <b>{{ role.name }}</b>
+                <span class="maya-tiny maya-subtle">{{ role.contextLabel }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Cursos en los que participa -->
+    <section class="tarjeta tarjeta--ancha">
+      <h2 class="tarjeta__titulo">Cursos ({{ user.courses.length }})</h2>
+
+      @if (user.courses.length) {
+        <div class="maya-table-wrap">
+          <table class="maya-table">
+            <thead>
+              <tr>
+                <th scope="col">Curso</th>
+                <th scope="col">Papel</th>
+                <th scope="col">Avance</th>
+                <th scope="col">Último acceso</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (course of user.courses; track course.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/courses', course.id]" class="maya-bold maya-small">
+                      {{ course.fullName }}
+                    </a>
+                    <p class="maya-tiny maya-subtle">{{ course.shortName }}</p>
+                  </td>
+                  <td class="maya-small">{{ course.roleName || '—' }}</td>
+                  <td class="maya-small">{{ course.progress }} %</td>
+                  <td class="maya-small">
+                    {{ course.lastAccess ? (course.lastAccess | mayaDate: 'short') : 'Nunca' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="maya-hint">Todavía no participa en ningún curso.</p>
+      }
+    </section>
+  </div>
+}

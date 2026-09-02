@@ -16,6 +16,15 @@
 
 @if (loading()) {
   <div class="maya-skeleton" style="height: 50vh; border-radius: var(--maya-radius-lg)"></div>
+} @else if (error()) {
+  <div class="maya-empty">
+    <maya-icon name="credit-card" [size]="30" />
+    <p>No hemos podido cargar sus ajustes de cobro.</p>
+    <button type="button" class="maya-btn maya-btn--primary" (click)="cargar()">
+      <maya-icon name="refresh" [size]="16" />
+      Reintentar
+    </button>
+  </div>
 } @else if (settings(); as s) {
   <div class="ajustes" data-guia="ajustes-cobro">
     <section class="tarjeta">

@@ -101,13 +101,13 @@
         @for (user of users(); track user.id) {
           <tr>
             <td>
-              <div class="maya-row">
+              <a class="usuario" [routerLink]="['/admin/users', user.id]">
                 <maya-avatar size="sm" [name]="user.fullName" [src]="user.avatarUrl ?? null" />
                 <div>
                   <p class="maya-bold maya-small">{{ user.fullName }}</p>
                   <p class="maya-tiny maya-subtle">{{ user.email }}</p>
                 </div>
-              </div>
+              </a>
             </td>
             <td>
               <span
@@ -140,6 +140,12 @@
                     Activar
                   </button>
                 }
+                <a
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  [routerLink]="['/admin/users', user.id]"
+                >
+                  Ver ficha
+                </a>
                 <button
                   type="button"
                   class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"

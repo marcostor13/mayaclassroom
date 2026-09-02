@@ -415,4 +415,13 @@
   }
 } @else if (loading()) {
   <div class="maya-skeleton" style="height: 60vh; border-radius: var(--maya-radius-lg)"></div>
+} @else {
+  <div class="maya-empty">
+    <maya-icon name="globe" [size]="30" />
+    <p>No hemos podido cargar su página. Puede volver a intentarlo.</p>
+    <button type="button" class="maya-btn maya-btn--primary" (click)="cargar()">
+      <maya-icon name="refresh" [size]="16" />
+      Reintentar
+    </button>
+  </div>
 }

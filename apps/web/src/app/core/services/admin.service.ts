@@ -13,6 +13,7 @@ import {
   TenantDto,
   TenantStatus,
   UserDto,
+  UserProfileDto,
 } from '../models';
 import { ApiService } from './api.service';
 
@@ -23,6 +24,12 @@ export interface RoleSummary {
   description: string;
   assignableAt: string[];
   isSystem: boolean;
+  /**
+   * Empresa a la que pertenece. Nulo significa que es un rol de la plataforma:
+   * la empresa lo puede usar y consultar, pero no editarlo, porque el cambio
+   * afectaría a todas las demás.
+   */
+  tenant?: string | null;
 }
 
 export interface CohortMember {
@@ -46,6 +53,11 @@ export class AdminService {
 
   user(id: string): Observable<UserDto> {
     return this.api.get<UserDto>(`/users/${id}`);
+  }
+
+  /** Ficha completa: datos, roles y cursos en una sola petición. */
+  userProfile(id: string): Observable<UserProfileDto> {
+    return this.api.get<UserProfileDto>(`/users/${id}/profile`);
   }
 
   createUser(payload: Record<string, unknown>): Observable<UserDto> {

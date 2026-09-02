@@ -1,0 +1,137 @@
+@use '../../../../styles/tokens' as *;
+
+/* Arriba y no centrado: en móvil el correo parte en dos líneas y el bloque
+   crece, dejando la flecha de volver flotando a media altura. */
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  min-width: 0;
+}
+
+@include from($maya-bp-md) {
+  .cabecera { align-items: center; }
+}
+
+.cabecera__texto {
+  min-width: 0;
+
+  h1 {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-lg);
+    font-weight: 800;
+    line-height: var(--maya-leading-snug);
+  }
+
+  /* Un correo largo no tiene espacios donde partir: sin esto desborda la
+     tarjeta en las pantallas estrechas. */
+  p {
+    overflow-wrap: anywhere;
+  }
+}
+
+@include from($maya-bp-md) {
+  .cabecera__texto h1 { font-size: var(--maya-text-xl); }
+}
+
+.cabecera__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-2);
+}
+
+.cabecera__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+}
+
+.ficha {
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+@include from($maya-bp-lg) {
+  .ficha {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .tarjeta--ancha { grid-column: 1 / -1; }
+}
+
+.tarjeta {
+  display: grid;
+  gap: var(--maya-space-3);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  padding: var(--maya-space-4);
+}
+
+.tarjeta__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-md);
+  font-weight: 800;
+}
+
+.tarjeta__subtitulo {
+  font-size: var(--maya-text-sm);
+  font-weight: 700;
+  color: var(--maya-text-muted);
+  margin-top: var(--maya-space-2);
+}
+
+.datos {
+  display: grid;
+  gap: var(--maya-space-2);
+  margin: 0;
+
+  > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--maya-space-3);
+  }
+
+  dt {
+    color: var(--maya-text-subtle);
+    font-size: var(--maya-text-sm);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-size: var(--maya-text-sm);
+    text-align: end;
+    word-break: break-word;
+  }
+}
+
+.lista {
+  display: grid;
+  gap: var(--maya-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+
+  div { display: grid; min-width: 0; }
+}
+
+.fila__icono {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--maya-radius-sm);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+}
