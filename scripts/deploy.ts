@@ -410,6 +410,7 @@ async function sincronizarCoolify(): Promise<void> {
     'WEB_URL',
     'CORS_ORIGINS',
     'API_URL',
+    'MAIL_FROM',
   ]);
   const c = coolify();
   const frontal = exigir('FRONTEND_DOMAIN');
@@ -431,6 +432,10 @@ async function sincronizarCoolify(): Promise<void> {
         WEB_URL: exigir('WEB_URL'),
         CORS_ORIGINS: exigir('CORS_ORIGINS'),
         API_URL: exigir('API_URL'),
+        // También va aquí, aunque su dominio sea el verificado en Resend y no
+        // el del sitio: es lo bastante fácil de desincronizar como para no
+        // dejarla suelta en la interfaz de Coolify.
+        MAIL_FROM: exigir('MAIL_FROM'),
       },
     },
   ] as const;
