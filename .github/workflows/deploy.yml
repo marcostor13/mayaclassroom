@@ -85,7 +85,7 @@ jobs:
           BACKEND_DOMAIN: ${{ vars.BACKEND_DOMAIN }}
         run: bun run deploy --dns
 
-      - name: Sincronizar dominios en Coolify
+      - name: Sincronizar la configuración en Coolify
         # Idempotente, como el paso anterior. Deja el FQDN de cada aplicación y
         # las variables que dependen del dominio (API_URL, WEB_URL,
         # CORS_ORIGINS) alineadas con la configuración antes de reconstruir:
@@ -102,6 +102,18 @@ jobs:
           WEB_URL: ${{ vars.WEB_URL }}
           CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
           API_URL: ${{ vars.API_URL }}
+          MAIL_FROM: ${{ vars.MAIL_FROM }}
+          # Correo y almacenamiento. El guion las trata como opcionales: si no
+          # están definidas aquí, deja intacto lo que ya haya en Coolify en
+          # lugar de escribirlas vacías, que sí llegarían al contenedor y
+          # pisarían el valor bueno.
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          STORAGE_DRIVER: ${{ vars.STORAGE_DRIVER }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
         run: bun run deploy --coolify
 
       - name: Desplegar

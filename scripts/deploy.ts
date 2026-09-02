@@ -399,6 +399,23 @@ interface EnvCoolify {
  * llamando a la API anterior, porque API_URL se incrusta en el paquete al
  * compilar y no se lee en ejecución.
  */
+/**
+ * Recoge las variables que estén definidas y omite las que no.
+ *
+ * Se usa para lo que no todas las instalaciones necesitan —el correo, el
+ * almacenamiento remoto—: exigirlas abortaría el despliegue de quien guarda en
+ * disco y no manda correos, y ponerlas vacías sería peor, porque una cadena
+ * vacía sí llega al contenedor y pisa el valor por defecto del código.
+ */
+function opcionales(claves: readonly string[]): Record<string, string> {
+  const salida: Record<string, string> = {};
+  for (const clave of claves) {
+    const valor = process.env[clave];
+    if (valor) salida[clave] = valor;
+  }
+  return salida;
+}
+
 async function sincronizarCoolify(): Promise<void> {
   exigirTodas([
     'COOLIFY_URL',
@@ -410,7 +427,6 @@ async function sincronizarCoolify(): Promise<void> {
     'WEB_URL',
     'CORS_ORIGINS',
     'API_URL',
-    'MAIL_FROM',
   ]);
   const c = coolify();
   const frontal = exigir('FRONTEND_DOMAIN');
@@ -432,10 +448,23 @@ async function sincronizarCoolify(): Promise<void> {
         WEB_URL: exigir('WEB_URL'),
         CORS_ORIGINS: exigir('CORS_ORIGINS'),
         API_URL: exigir('API_URL'),
-        // También va aquí, aunque su dominio sea el verificado en Resend y no
-        // el del sitio: es lo bastante fácil de desincronizar como para no
-        // dejarla suelta en la interfaz de Coolify.
-        MAIL_FROM: exigir('MAIL_FROM'),
+        ...opcionales([
+          // El remitente va aquí aunque su dominio sea el verificado en Resend
+          // y no el del sitio: es fácil de desincronizar si se deja suelto en
+          // la interfaz de Coolify.
+          'MAIL_FROM',
+          // Sin la clave de Resend no sale ningún correo, y el fallo es mudo:
+          // la aplicación sigue funcionando y nadie recibe nada.
+          'RESEND_API_KEY',
+          // Almacenamiento. Si falta cualquiera de estas, la API guarda en el
+          // disco del contenedor y los ficheros se pierden al redesplegar.
+          'STORAGE_DRIVER',
+          'R2_ACCOUNT_ID',
+          'R2_BUCKET',
+          'R2_ACCESS_KEY_ID',
+          'R2_SECRET_ACCESS_KEY',
+          'R2_PUBLIC_URL',
+        ]),
       },
     },
   ] as const;
