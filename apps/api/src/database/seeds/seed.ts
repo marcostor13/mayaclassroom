@@ -509,6 +509,10 @@ async function seed(): Promise<void> {
   console.log('──────────────────────────────────────────────');
   console.log(` Escaparate público: /p/demo`);
   console.log(` Curso gratuito:     /p/demo/c/ia-101`);
+  console.log('──────────────────────────────────────────────');
+  console.log(' Para que la pantalla de acceso ofrezca la demostración');
+  console.log(' (ver el escaparate y entrar como administrador o estudiante),');
+  console.log(' arranque la API con DEMO_ENABLED=true.');
   console.log('──────────────────────────────────────────────\n');
 
   await app.close();

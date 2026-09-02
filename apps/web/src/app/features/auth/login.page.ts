@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { LoginResponse, TenantChoice } from '@maya/shared';
+import { DemoRole } from '@maya/shared';
+import type { DemoAccessDto, LoginResponse, TenantChoice } from '@maya/shared';
 import { AuthService, PublicTenantProfile } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -12,6 +13,7 @@ import { IconComponent } from '../../shared';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink, IconComponent],
   templateUrl: './login.page.html',
+  styleUrl: './login.page.scss',
 })
 export class LoginPage {
   private readonly fb = inject(FormBuilder);
@@ -34,6 +36,50 @@ export class LoginPage {
    */
   readonly tenantChoices = signal<TenantChoice[]>([]);
   private tenantChoiceToken = '';
+
+  /* --------------------------- Demostración ------------------------------- */
+
+  readonly Papel = DemoRole;
+
+  /**
+   * Acceso de demostración.
+   *
+   * Se pregunta a la API y no se decide aquí: quien lo abre es el despliegue.
+   * En la instalación de un cliente llega apagado y esta parte de la pantalla
+   * no se pinta.
+   */
+  readonly demo = signal<DemoAccessDto | null>(null);
+  readonly entrandoComo = signal<DemoRole | null>(null);
+
+  constructor() {
+    this.auth.demoAccess().subscribe({
+      next: (demo) => this.demo.set(demo.enabled ? demo : null),
+      // Sin demostración disponible la pantalla es la de siempre.
+      error: () => this.demo.set(null),
+    });
+  }
+
+  /** Dirección del escaparate de la empresa de demostración. */
+  enlaceDemo(): string {
+    const slug = this.demo()?.tenantSlug;
+    return slug ? `/p/${slug}` : '/';
+  }
+
+  ofrece(role: DemoRole): boolean {
+    return this.demo()?.roles.includes(role) ?? false;
+  }
+
+  entrarEnDemo(role: DemoRole): void {
+    if (this.entrandoComo()) return;
+    this.entrandoComo.set(role);
+    this.auth.demoLogin(role).subscribe({
+      next: (response) => {
+        this.entrandoComo.set(null);
+        this.handle(response);
+      },
+      error: () => this.entrandoComo.set(null),
+    });
+  }
 
   readonly form = this.fb.nonNullable.group({
     login: ['', [Validators.required]],

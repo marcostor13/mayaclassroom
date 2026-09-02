@@ -17,13 +17,16 @@ import {
   AuthTokens,
   AuthenticatedUser,
   ContextLevel,
+  DemoRole,
   LoginResponse,
   SessionRoleAssignment,
   TenantStatus,
   UserStatus,
   fullName,
 } from '@maya/shared';
+import type { DemoAccessDto } from '@maya/shared';
 import { JwtConfig, SecurityConfig, AppConfig } from '../../config';
+import type { DemoConfig } from '../../config';
 import { RefreshToken, RefreshTokenDocument } from './schemas/refresh-token.schema';
 import { UsersService } from '../users/users.service';
 import { TenantsService } from '../tenants/tenants.service';
@@ -268,6 +271,91 @@ export class AuthService {
     const sessionUser = await this.buildSessionUser(user._id);
     const tokens = await this.issueTokens(user, client, randomUUID());
     return { user: sessionUser, tokens };
+  }
+
+  /* -------------------------- Acceso de demostración ---------------------- */
+
+  private get demo(): DemoConfig {
+    return this.config.getOrThrow<DemoConfig>('demo');
+  }
+
+  /**
+   * Qué papeles de la demostración tienen de verdad una cuenta detrás.
+   *
+   * Se comprueba en lugar de darlo por hecho porque la pantalla de acceso
+   * ofrece un botón por papel, y un botón que lleva a un error es peor que no
+   * tener botón: quien lo pulsa es justo quien todavía no conoce el producto.
+   */
+  async demoAccess(): Promise<DemoAccessDto> {
+    const { enabled, tenantSlug } = this.demo;
+    if (!enabled) return { enabled: false, tenantSlug, roles: [] };
+
+    const roles: DemoRole[] = [];
+    for (const role of [DemoRole.Admin, DemoRole.Student]) {
+      if (await this.findDemoUser(role).catch(() => null)) roles.push(role);
+    }
+    return { enabled: roles.length > 0, tenantSlug, roles };
+  }
+
+  /**
+   * Entra en la demostración sin credenciales.
+   *
+   * No hay contraseña que comprobar: el permiso lo concede la configuración
+   * del despliegue, no quien llama. Por eso todo lo que decide quién entra
+   * está aquí y no en la petición —el papel es lo único que llega de fuera, y
+   * se traduce a una cuenta concreta de una empresa concreta—.
+   */
+  async demoLogin(role: DemoRole, client: ClientInfo): Promise<LoginResponse> {
+    if (!this.demo.enabled) {
+      throw new NotFoundException('El acceso de demostración no está disponible.');
+    }
+    // El papel llega en la dirección, así que se comprueba contra la lista en
+    // vez de confiar en el tipo: cualquier otra cosa caería en el `else` y
+    // entraría como estudiante sin haberlo pedido.
+    if (!Object.values(DemoRole).includes(role)) {
+      throw new NotFoundException('Ese papel no existe en la demostración.');
+    }
+
+    const user = await this.findDemoUser(role);
+    await this.users.touchLogin(user._id, client.ip);
+
+    return {
+      user: await this.buildSessionUser(user._id),
+      tokens: await this.issueTokens(user, client, randomUUID()),
+    };
+  }
+
+  /**
+   * La cuenta que representa a ese papel en la empresa de demostración.
+   *
+   * Se resuelve por rol y no por un correo fijo en la configuración: así la
+   * siembra puede cambiar los nombres sin dejar la demostración rota.
+   *
+   * Se descartan las cuentas de administración de plataforma aunque tengan el
+   * rol pedido: entrar como ellas daría a un visitante anónimo el control de
+   * todas las empresas del despliegue, no solo de la de demostración.
+   */
+  private async findDemoUser(role: DemoRole): Promise<UserDocument> {
+    const tenant = await this.tenants.requireBySlug(this.demo.tenantSlug);
+    const context = await this.contexts.requireByInstance(ContextLevel.Tenant, tenant._id);
+    const shortName = role === DemoRole.Admin ? 'manager' : 'student';
+
+    const candidatos = await this.roles.assigneesByShortName(shortName, context._id, tenant._id);
+
+    for (const id of candidatos) {
+      const user = await this.users.findById(id).catch(() => null);
+      if (!user) continue;
+      if (user.isPlatformAdmin) continue;
+      if (user.status !== UserStatus.Active) continue;
+      // Una cuenta con contraseña temporal entra y rebota a la pantalla de
+      // cambio de contraseña: no sirve para enseñar nada.
+      if (user.mustChangePassword) continue;
+      return user;
+    }
+
+    throw new NotFoundException(
+      `La empresa de demostración no tiene ninguna cuenta con el rol «${shortName}».`,
+    );
   }
 
   /* ------------------------------ Registro ------------------------------- */

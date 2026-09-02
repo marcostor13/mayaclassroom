@@ -1,0 +1,79 @@
+/**
+ * Acceso de demostración.
+ *
+ * Se separa del formulario con una línea y un rótulo en lugar de competir con
+ * él: quien ya tiene cuenta viene a entrar, y quien no la tiene necesita ver
+ * que hay una puerta antes de plantearse registrarse.
+ */
+.demo {
+  display: grid;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-6);
+  padding-top: var(--maya-space-5);
+  border-top: 1px solid var(--maya-border);
+}
+
+.demo__cabecera {
+  display: grid;
+  gap: var(--maya-space-1);
+  margin-bottom: var(--maya-space-1);
+}
+
+.demo__marca {
+  justify-self: start;
+  padding: 3px 10px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+  font-size: var(--maya-text-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.demo__opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  width: 100%;
+  /* Objetivo táctil holgado: son las tres acciones que se pulsan desde el
+     móvil sin tener cuenta todavía. */
+  min-height: 60px;
+  padding: var(--maya-space-3);
+  border: 1.5px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface);
+  color: var(--maya-text);
+  text-align: start;
+
+  &:hover {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-softer);
+    text-decoration: none;
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.demo__icono {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: var(--maya-radius-sm);
+  background: var(--maya-surface-3);
+  color: var(--maya-primary-ink);
+}
+
+.demo__texto {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}

@@ -141,4 +141,64 @@
   </button>
 
   </form>
+
+  <!-- Demostración. Va después del formulario y no antes: quien ya tiene
+       cuenta viene a entrar, no a mirar. -->
+  @if (demo(); as demostracion) {
+    <section class="demo">
+      <div class="demo__cabecera">
+        <span class="demo__marca">Demostración</span>
+        <p class="maya-small maya-subtle">
+          Vea la plataforma con datos reales, sin registrarse ni dejar ningún dato.
+        </p>
+      </div>
+
+      <a class="demo__opcion" [href]="enlaceDemo()" target="_blank" rel="noopener">
+        <span class="demo__icono"><maya-icon name="globe" [size]="18" /></span>
+        <span class="demo__texto">
+          <b>Ver la página de cursos</b>
+          <span class="maya-tiny maya-subtle">
+            El escaparate público completo: catálogo, fichas de venta y compra.
+          </span>
+        </span>
+        <maya-icon name="arrow-up-right" [size]="16" />
+      </a>
+
+      @if (ofrece(Papel.Admin)) {
+        <button
+          type="button"
+          class="demo__opcion"
+          [disabled]="entrandoComo() !== null"
+          (click)="entrarEnDemo(Papel.Admin)"
+        >
+          <span class="demo__icono"><maya-icon name="sliders" [size]="18" /></span>
+          <span class="demo__texto">
+            <b>{{ entrandoComo() === Papel.Admin ? 'Entrando…' : 'Entrar como administrador' }}</b>
+            <span class="maya-tiny maya-subtle">
+              Diseñe la página de venta, cree cursos y consulte los pedidos.
+            </span>
+          </span>
+          <maya-icon name="arrow-right" [size]="16" />
+        </button>
+      }
+
+      @if (ofrece(Papel.Student)) {
+        <button
+          type="button"
+          class="demo__opcion"
+          [disabled]="entrandoComo() !== null"
+          (click)="entrarEnDemo(Papel.Student)"
+        >
+          <span class="demo__icono"><maya-icon name="graduation-cap" [size]="18" /></span>
+          <span class="demo__texto">
+            <b>{{ entrandoComo() === Papel.Student ? 'Entrando…' : 'Entrar como estudiante' }}</b>
+            <span class="maya-tiny maya-subtle">
+              Vea sus cursos, el temario en vídeo y los cuestionarios.
+            </span>
+          </span>
+          <maya-icon name="arrow-right" [size]="16" />
+        </button>
+      }
+    </section>
+  }
 }

@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { DemoRole } from '@maya/shared';
 import { AllowPasswordChangePending, CurrentUser, Public } from '../../common/decorators';
 import type { MayaRequest, RequestUser } from '../../common/types/request-context';
 import { AuthService } from './auth.service';
@@ -41,6 +42,31 @@ export class AuthController {
   })
   login(@Body() dto: LoginDto, @Req() req: MayaRequest) {
     return this.auth.login(dto, this.client(req));
+  }
+
+  @Public()
+  @Get('demo')
+  @ApiOperation({
+    summary: 'Si el despliegue ofrece acceso de demostración',
+    description:
+      'Apagado salvo que el despliegue lo encienda. La pantalla de acceso lo consulta para ' +
+      'decidir si enseña los botones de la demostración.',
+  })
+  demoAccess() {
+    return this.auth.demoAccess();
+  }
+
+  @Public()
+  // Sin credenciales de por medio: el límite evita que se use como una fuente
+  // barata de sesiones válidas.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('demo/:role')
+  @ApiOperation({
+    summary: 'Entrar en la demostración con un papel concreto',
+    description: 'Solo funciona en la empresa de demostración y con el acceso encendido.',
+  })
+  demoLogin(@Param('role') role: DemoRole, @Req() req: MayaRequest) {
+    return this.auth.demoLogin(role, this.client(req));
   }
 
   @Public()

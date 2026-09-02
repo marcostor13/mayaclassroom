@@ -5,6 +5,8 @@ import {
   AuthTokens,
   AuthenticatedUser,
   ContextLevel,
+  DemoAccessDto,
+  DemoRole,
   LoginResponse,
   TenantBranding,
 } from '../models';
@@ -120,6 +122,28 @@ export class AuthService {
   }): Observable<LoginResponse> {
     this.loadingSignal.set(true);
     return this.api.post<LoginResponse>('/auth/login', credentials).pipe(
+      tap({
+        next: (response) => this.afterLogin(response),
+        error: () => this.loadingSignal.set(false),
+      }),
+    );
+  }
+
+  /** Si este despliegue ofrece acceso de demostración, y con qué papeles. */
+  demoAccess(): Observable<DemoAccessDto> {
+    return this.api.get<DemoAccessDto>('/auth/demo');
+  }
+
+  /**
+   * Entra en la demostración sin credenciales.
+   *
+   * Quien concede el acceso es la configuración del despliegue, no esta
+   * llamada: aquí no viaja ninguna contraseña, y en una instalación con el
+   * acceso apagado la API responde que no existe.
+   */
+  demoLogin(role: DemoRole): Observable<LoginResponse> {
+    this.loadingSignal.set(true);
+    return this.api.post<LoginResponse>(`/auth/demo/${role}`).pipe(
       tap({
         next: (response) => this.afterLogin(response),
         error: () => this.loadingSignal.set(false),

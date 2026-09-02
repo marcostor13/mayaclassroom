@@ -33,6 +33,11 @@ con Mercado Pago o PayPal y matrícula automática en cuanto el pago se confirma
 | `/admin/storefront` | Constructor visual de la página, catálogo, pedidos y solicitudes |
 | `/admin/payments` | Conexión de las pasarelas de cobro |
 
+Con `DEMO_ENABLED=true`, la pantalla de acceso ofrece además ver el escaparate
+y entrar en la empresa de demostración como administrador o como estudiante,
+sin credenciales. Apagado por defecto: es para el despliegue que enseña la
+plataforma, no para el de un cliente.
+
 ---
 
 ## Instalación rápida

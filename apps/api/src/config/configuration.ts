@@ -61,6 +61,21 @@ export interface StorageConfig {
   };
 }
 
+/**
+ * Acceso de demostración.
+ *
+ * Va tras un interruptor de configuración y apagado por defecto: mientras esté
+ * encendido, cualquiera que llegue a la pantalla de acceso entra en la empresa
+ * de demostración sin credenciales. Eso es exactamente lo que se quiere en el
+ * despliegue que enseña la plataforma, y lo último que se quiere en el de un
+ * cliente.
+ */
+export interface DemoConfig {
+  enabled: boolean;
+  /** Empresa que se enseña. Solo se entra a esta, nunca a otra. */
+  tenantSlug: string;
+}
+
 export interface SecurityConfig {
   bcryptRounds: number;
   throttleTtl: number;
@@ -173,6 +188,14 @@ export const storageConfig = registerAs('storage', (): StorageConfig => {
   };
 });
 
+export const demoConfig = registerAs(
+  'demo',
+  (): DemoConfig => ({
+    enabled: toBool(process.env.DEMO_ENABLED, false),
+    tenantSlug: process.env.DEMO_TENANT_SLUG ?? 'demo',
+  }),
+);
+
 export const securityConfig = registerAs(
   'security',
   (): SecurityConfig => ({
@@ -192,4 +215,5 @@ export const configurations = [
   mailConfig,
   storageConfig,
   securityConfig,
+  demoConfig,
 ];

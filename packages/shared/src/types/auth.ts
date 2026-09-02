@@ -65,3 +65,26 @@ export interface LoginResponse {
   /** Testigo corto que autoriza el segundo paso sin repetir la contraseña. */
   tenantChoiceToken?: string;
 }
+
+/* ------------------------- Acceso de demostración ------------------------- */
+
+/** Papeles con los que se puede entrar en la demostración. */
+export enum DemoRole {
+  Admin = 'admin',
+  Student = 'student',
+}
+
+/**
+ * Lo que la pantalla de acceso necesita saber sobre la demostración.
+ *
+ * Se pregunta a la API en lugar de decidirlo en el cliente porque el acceso lo
+ * abre el despliegue, no el navegador: en la instalación de un cliente esto
+ * llega apagado y la pantalla no enseña nada.
+ */
+export interface DemoAccessDto {
+  enabled: boolean;
+  /** Empresa que se enseña; con ella se arma el enlace al escaparate. */
+  tenantSlug: string;
+  /** Papeles que de verdad tienen una cuenta detrás. */
+  roles: DemoRole[];
+}
