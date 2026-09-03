@@ -4,76 +4,74 @@
     {
       "id": "01",
       "tipo": "gancho",
-      "dur": 5.0,
-      "kicker": "Para quien vende cursos por internet",
-      "titular": "Vendes tus cursos.\nPero la plataforma no es tuya.",
-      "sub": "Si vendes cursos por internet, hay algo que casi nadie te dice."
+      "dur": 6.5,
+      "kicker": "Si enseñas por internet",
+      "titular": "Tus clases en Zoom.\nTu material en Drive.\nTus alumnos en WhatsApp.",
+      "sub": "Si enseñas por internet, tu curso vive hoy en cinco sitios a la vez."
     },
     {
       "id": "02",
-      "tipo": "dato",
-      "dur": 7.5,
-      "kicker": "Lo que se lleva la plataforma",
-      "cifra": "S/ 990",
-      "cifraPie": "al mes, si vendes S/ 10 000",
-      "titular": "Cada venta paga peaje.",
-      "sub": "De cada diez mil soles que vendes, la plataforma se queda con casi mil. Todos los meses."
+      "tipo": "gancho",
+      "dur": 6.5,
+      "kicker": "Y al final del mes",
+      "titular": "Nadie sabe\nquién aprendió.",
+      "sub": "Sabes quién se conectó. No sabes quién avanzó, quién entregó ni quién se quedó atrás."
     },
     {
       "id": "03",
-      "tipo": "dato",
-      "dur": 6.0,
-      "kicker": "Y lo más caro no es el dinero",
-      "titular": "Tu marca, tu dominio\ny tus alumnos viven\nen casa ajena.",
-      "sub": "Tu marca, tu dominio y tus alumnos viven en casa ajena. Si cambian las reglas, cambian para ti."
+      "tipo": "marca",
+      "dur": 5.5,
+      "titular": "Maya Classroom",
+      "kicker": "Tu propia aula virtual",
+      "sub": "Maya Classroom es tu propia aula virtual, con tu marca y tu dominio."
     },
     {
       "id": "04",
-      "tipo": "marca",
-      "dur": 5.0,
-      "titular": "Maya Classroom",
-      "kicker": "Tu propia academia en internet",
-      "sub": "Maya Classroom es tu propia academia en internet. Tuya de verdad."
+      "captura": "08-panel-alumno.png",
+      "dur": 7.0,
+      "kicker": "Tu alumno entra a su aula",
+      "titular": "Todo lo suyo,\nen un sitio",
+      "sub": "Tu alumno entra y ahí está todo lo suyo: sus cursos, su avance y lo que tiene pendiente."
     },
     {
       "id": "05",
-      "captura": "01-escaparate.png",
+      "captura": "10-mis-cursos.png",
       "dur": 6.5,
-      "kicker": "Tu página de ventas",
-      "titular": "Con tu marca y tu dominio",
-      "sub": "Tu página de ventas, con tu marca, tu logo y tu dominio propio."
+      "kicker": "Sabe por dónde va",
+      "titular": "Su avance,\nlección a lección",
+      "sub": "Cada lección se marca al completarla. Él sabe siempre por dónde va, y tú también."
     },
     {
       "id": "06",
-      "captura": "03-ficha-curso.png",
+      "captura": "11-calendario.png",
       "dur": 6.5,
-      "kicker": "Ficha de cada curso",
-      "titular": "Temario, precio y compra",
-      "sub": "Cada curso con su temario, su precio en soles y su botón de compra."
+      "kicker": "Nada se le pasa",
+      "titular": "Sus clases y\nsus entregas",
+      "sub": "Sus clases en vivo y sus fechas de entrega, en un calendario con aviso."
     },
     {
       "id": "07",
-      "captura": "07-cobros.png",
+      "tipo": "gancho",
       "dur": 6.5,
-      "kicker": "Cobras tú",
-      "titular": "Mercado Pago, PayPal,\ntransferencia y Yape",
-      "sub": "Cobras con Mercado Pago, PayPal, transferencia o Yape. El dinero entra a tu cuenta."
+      "kicker": "En camino",
+      "titular": "Zoom y Meet,\ndentro del curso",
+      "sub": "Y estamos integrando Zoom y Google Meet: la clase se programa en el curso y la grabación queda en la lección."
     },
     {
       "id": "08",
-      "captura": "05-constructor.png",
+      "captura": "01-escaparate.png",
       "dur": 6.5,
-      "kicker": "Sin depender de nadie",
-      "titular": "La diseñas tú,\nbloque a bloque",
-      "sub": "Y la página la armas tú, bloque a bloque, sin tocar una línea de código."
+      "kicker": "Y si además vendes",
+      "titular": "Tu página,\ncon tu marca",
+      "sub": "Y si además vendes tus cursos, tu página pública lleva tu marca y tu dominio."
     },
     {
       "id": "09",
-      "captura": "08-panel-alumno.png",
-      "dur": 6.0,
-      "kicker": "Del otro lado",
-      "titular": "Un aula de verdad\npara tus alumnos",
-      "sub": "Tus alumnos entran a un aula de verdad: avance, notas, certificados y foro."
+      "captura": "07-cobros.png",
+      "dur": 6.5,
+      "kicker": "Cobras tú",
+      "titular": "Mercado Pago,\nPayPal y Yape",
+      "sub": "Cobras con Mercado Pago, PayPal, transferencia o Yape, y sin comisión por venta."
     },
     {
       "id": "10",
@@ -82,7 +80,7 @@
       "kicker": "Implementación en 7 días",
       "titular": "Te la dejamos\nlista y funcionando",
       "cta": "wa.me/51975760418",
-      "sub": "Nosotros te la dejamos lista en siete días. Escríbenos por WhatsApp y la vemos juntos."
+      "sub": "Nosotros te la dejamos lista en siete días, con tus cursos dentro. Escríbenos por WhatsApp."
     }
   ]
 }

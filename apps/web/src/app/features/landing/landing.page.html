@@ -21,21 +21,21 @@
       <div class="portada__texto">
         <span class="etiqueta">
           <span class="maya-dot"></span>
-          Para quien vende cursos por internet
+          Para academias, institutos y quien forma a su gente
         </span>
         <h1 class="titular">
-          Vendes tus cursos.<br />
-          <em>Pero la plataforma no es tuya.</em>
+          Tus alumnos merecen<br />
+          <em>un aula, no un grupo de WhatsApp.</em>
         </h1>
         <p class="entrada">
-          Monta tu propia academia en internet: tu marca, tu dominio y tus alumnos. Cobra en soles
-          con Mercado Pago, PayPal, transferencia o Yape. <strong>Sin comisión por venta.</strong>
-          Te la dejamos publicada en 7 días.
+          Monta tu propia aula virtual: cursos, clases en vivo, tareas, notas, avance y
+          certificados, con tu marca y tu dominio. Y si vendes, cobras en soles
+          <strong>sin comisión por venta</strong>. Te la dejamos funcionando en 7 días.
         </p>
         <div class="portada__botones">
           <a class="maya-btn maya-btn--primary maya-btn--lg" [href]="whatsappGeneral" target="_blank" rel="noopener">
             <maya-icon name="message-square" [size]="18" />
-            Quiero mi plataforma
+            Quiero mi aula virtual
           </a>
           <a class="maya-btn maya-btn--secondary maya-btn--lg" routerLink="/p/demo">
             <maya-icon name="eye" [size]="18" />
@@ -71,7 +71,7 @@
   <section class="seccion seccion--hueso">
     <div class="contenedor">
       <header class="cabecera">
-        <span class="kicker">Lo que cuesta alquilar</span>
+        <span class="kicker">Lo que cuesta enseñar a trozos</span>
         <h2 class="titulo">Cuatro cosas que pagas sin verlas en la factura</h2>
       </header>
       <div class="rejilla rejilla--2">
@@ -86,14 +86,87 @@
     </div>
   </section>
 
-  <!-- ──────────────────────────── La cuenta ─────────────────────────────── -->
+  <!-- ────────────────────────── El aula por dentro ──────────────────────── -->
+  <section class="seccion" id="aula">
+    <div class="contenedor">
+      <header class="cabecera">
+        <span class="kicker">El aula, por dentro</span>
+        <h2 class="titulo">Un sitio donde de verdad se aprende</h2>
+        <p class="entrada entrada--centrada">
+          No es una carpeta con vídeos. Es un aula: tu alumno entra, avanza, entrega, se
+          equivoca, pregunta y sale con un certificado que puede enseñar.
+        </p>
+      </header>
+
+      <div class="aula">
+        <div class="aula__columna">
+          <h3 class="aula__titulo">
+            <span class="aula__sello"><maya-icon name="graduation-cap" [size]="19" /></span>
+            Lo que se encuentra tu alumno
+          </h3>
+          <ul class="aula__lista">
+            @for (bloque of aulaAlumno; track bloque.titulo) {
+              <li class="aula__item">
+                <span class="aula__icono"><maya-icon [name]="bloque.icono" [size]="18" /></span>
+                <div>
+                  <h4 class="aula__item-titulo">{{ bloque.titulo }}</h4>
+                  <p class="maya-muted maya-small">{{ bloque.texto }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="aula__columna">
+          <h3 class="aula__titulo">
+            <span class="aula__sello"><maya-icon name="sliders" [size]="19" /></span>
+            Lo que te llevas tú y tus docentes
+          </h3>
+          <ul class="aula__lista">
+            @for (bloque of aulaDocente; track bloque.titulo) {
+              <li class="aula__item">
+                <span class="aula__icono"><maya-icon [name]="bloque.icono" [size]="18" /></span>
+                <div>
+                  <h4 class="aula__item-titulo">{{ bloque.titulo }}</h4>
+                  <p class="maya-muted maya-small">{{ bloque.texto }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── Clases en vivo ───────────────────────── -->
+  <section class="seccion seccion--hueso">
+    <div class="contenedor vivo">
+      <div class="vivo__texto">
+        <span class="maya-badge maya-badge--warning vivo__etiqueta">{{ vivo.etiqueta }}</span>
+        <h2 class="titulo titulo--medio">{{ vivo.titulo }}</h2>
+        <p class="entrada">{{ vivo.entrada }}</p>
+        <p class="vivo__hoy maya-small">
+          <maya-icon name="info" [size]="16" />
+          {{ vivo.hoy }}
+        </p>
+      </div>
+      <ul class="vivo__lista">
+        @for (punto of vivo.puntos; track punto) {
+          <li><maya-icon name="check" [size]="17" /> {{ punto }}</li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── Los tres caminos ──────────────────────── -->
   <section class="seccion">
     <div class="contenedor">
       <header class="cabecera">
-        <span class="kicker">La cuenta, con números</span>
-        <h2 class="titulo">Si vendes S/ 10 000 al mes, esto te cuesta cada camino</h2>
+        <span class="kicker">Comparado con lo que ya usas</span>
+        <h2 class="titulo">Tres formas de dar clase por internet</h2>
         <p class="entrada entrada--centrada">
-          Precios de referencia de septiembre de 2026. Los de fuera están convertidos a soles.
+          A la izquierda, el montaje que casi todos tienen hoy. En medio, vender en casa ajena.
+          A la derecha, lo tuyo.
         </p>
       </header>
 
@@ -101,27 +174,19 @@
         <table class="tabla">
           <thead>
             <tr>
-              <th>Plataforma</th>
-              <th>Mensualidad</th>
-              <th>Comisión</th>
-              <th>Te cuesta al mes</th>
-              <th>¿Es tuya?</th>
+              <th></th>
+              <th>Zoom, Drive y WhatsApp</th>
+              <th>Marketplace de cursos</th>
+              <th class="tabla__maya">Maya Classroom</th>
             </tr>
           </thead>
           <tbody>
-            @for (fila of comparativa; track fila.plataforma) {
-              <tr [class.tabla__nuestra]="fila.nuestra">
-                <td class="tabla__nombre">{{ fila.plataforma }}</td>
-                <td>{{ fila.mensual }}</td>
-                <td>{{ fila.comision }}</td>
-                <td class="tabla__coste">{{ fila.costeReal }}</td>
-                <td>
-                  @if (fila.propia) {
-                    <span class="maya-badge maya-badge--success">Sí</span>
-                  } @else {
-                    <span class="maya-badge">No</span>
-                  }
-                </td>
+            @for (fila of comparativa; track fila.concepto) {
+              <tr>
+                <td class="tabla__nombre">{{ fila.concepto }}</td>
+                <td class="maya-subtle">{{ fila.suelto }}</td>
+                <td class="maya-subtle">{{ fila.marketplace }}</td>
+                <td class="tabla__maya tabla__coste">{{ fila.maya }}</td>
               </tr>
             }
           </tbody>
@@ -129,8 +194,8 @@
       </div>
 
       <p class="nota maya-small maya-subtle">
-        La comisión no se nota en la primera venta. Se nota al año: con S/ 10 000 al mes,
-        el 9,9 % son casi <strong>S/ 12 000</strong> que se van sin haber hecho nada por ti.
+        Y si además vendes: con S/ 10 000 al mes, el 9,9 % de comisión son casi
+        <strong>S/ 12 000 al año</strong> que se van sin haber hecho nada por ti.
       </p>
     </div>
   </section>
@@ -140,29 +205,35 @@
     <div class="contenedor demo">
       <div>
         <span class="kicker">No nos creas</span>
-        <h2 class="titulo">Entra a una academia hecha con esto</h2>
+        <h2 class="titulo">Entra a un aula hecha con esto</h2>
         <p class="entrada">
           Dulce Lima es una escuela de pastelería de Barranco montada entera en Maya Classroom.
-          Está publicada y funcionando: mira el catálogo, abre un curso, revisa el temario y el
-          precio. Después entra por dentro, como administrador y como alumno.
+          Está funcionando: entra <strong>como alumna</strong> y mira su aula por dentro —su
+          avance, sus notas, su calendario—, y después entra como administrador para ver el otro
+          lado.
         </p>
         <div class="demo__botones">
-          <a class="maya-btn maya-btn--primary maya-btn--lg" routerLink="/p/demo">
-            <maya-icon name="globe" [size]="18" />
-            Ver la página de cursos
-          </a>
-          <a class="maya-btn maya-btn--ghost maya-btn--lg" routerLink="/auth/login">
+          <a class="maya-btn maya-btn--primary maya-btn--lg" routerLink="/auth/login">
             <maya-icon name="log-in" [size]="18" />
-            Entrar como administrador o alumno
+            Entrar como alumna
+          </a>
+          <a class="maya-btn maya-btn--ghost maya-btn--lg" routerLink="/p/demo">
+            <maya-icon name="globe" [size]="18" />
+            Ver su página pública
           </a>
         </div>
+        <p class="demo__credenciales maya-small">
+          Empresa <code>demo</code> · <code>ana.quispe&#64;dulcelima.pe</code> ·
+          <code>Maya2026!</code>
+        </p>
       </div>
       <ul class="demo__lista">
-        <li><maya-icon name="check" [size]="17" /> Catálogo con precios en soles</li>
-        <li><maya-icon name="check" [size]="17" /> Ficha de venta con temario y compra</li>
-        <li><maya-icon name="check" [size]="17" /> Constructor de páginas por bloques</li>
         <li><maya-icon name="check" [size]="17" /> Panel del alumno con avance y notas</li>
-        <li><maya-icon name="check" [size]="17" /> Pedidos y cobros configurados</li>
+        <li><maya-icon name="check" [size]="17" /> Cursos con temario, vídeo y materiales</li>
+        <li><maya-icon name="check" [size]="17" /> Tareas, cuestionarios y foro</li>
+        <li><maya-icon name="check" [size]="17" /> Calendario con clases y entregas</li>
+        <li><maya-icon name="check" [size]="17" /> Certificados verificables</li>
+        <li><maya-icon name="check" [size]="17" /> Catálogo público y cobros en soles</li>
       </ul>
     </div>
   </section>
@@ -171,7 +242,7 @@
   <section class="seccion seccion--hueso">
     <div class="contenedor">
       <header class="cabecera">
-        <span class="kicker">De la llamada a la primera venta</span>
+        <span class="kicker">De la llamada al primer alumno dentro</span>
         <h2 class="titulo">Siete días hábiles, cuatro pasos</h2>
       </header>
       <ol class="pasos">
@@ -209,7 +280,7 @@
           <p class="maya-small maya-subtle">Contratado por separado</p>
           <p class="desglose__tachado">{{ precio(valorImplementacion()) }}</p>
           <p class="maya-small maya-subtle">Implementación completa desde</p>
-          <p class="desglose__precio">{{ precio(1490) }}</p>
+          <p class="desglose__precio">{{ precio(implementacionDesde) }}</p>
           <a class="maya-btn maya-btn--primary maya-btn--block" [href]="whatsappGeneral" target="_blank" rel="noopener">
             Reservar mi implementación
           </a>
@@ -239,13 +310,26 @@
             <h3 class="plan__nombre">{{ plan.nombre }}</h3>
             <p class="maya-small maya-subtle">{{ plan.para }}</p>
 
+            <!-- El plan de varias sedes no lleva precio de lista: su alcance
+                 nunca es el mismo dos veces, así que va a cotización. -->
             <div class="plan__precio">
-              <span class="plan__setup">{{ precio(plan.setup) }}</span>
-              <span class="maya-small maya-subtle">de implementación, pago único</span>
+              @if (plan.setup !== null) {
+                <span class="plan__setup">{{ precio(plan.setup) }}</span>
+                <span class="maya-small maya-subtle">de implementación, pago único</span>
+              } @else {
+                <span class="plan__setup">A cotizar</span>
+                <span class="maya-small maya-subtle">implementación y alcance a medida</span>
+              }
             </div>
             <div class="plan__mensual">
-              <b>{{ precio(plan.mensual) }}</b>
-              <span class="maya-small maya-subtle">al mes</span>
+              @if (plan.mensual !== null) {
+                <b>{{ precio(plan.mensual) }}</b>
+                <span class="maya-small maya-subtle">al mes</span>
+              } @else {
+                <!-- Sin repetir «A cotizar»: ya lo dice arriba, y dos veces
+                     seguidas se lee como un error de la página. -->
+                <span class="maya-small maya-subtle">Mensualidad según sedes y alumnado</span>
+              }
             </div>
 
             <ul class="plan__incluye">
@@ -262,7 +346,11 @@
               target="_blank"
               rel="noopener"
             >
-              Quiero el plan {{ plan.nombre }}
+              @if (plan.setup === null) {
+                Pedir cotización
+              } @else {
+                Quiero el plan {{ plan.nombre }}
+              }
             </a>
           </article>
         }
@@ -275,10 +363,10 @@
     <div class="contenedor garantia">
       <span class="garantia__sello"><maya-icon name="shield-check" [size]="34" /></span>
       <div>
-        <h2 class="titulo titulo--medio">Publicada en 7 días o te devolvemos la implementación</h2>
+        <h2 class="titulo titulo--medio">Funcionando en 7 días o te devolvemos la implementación</h2>
         <p class="entrada">
-          Contamos desde que nos entregas el contenido y los accesos. Si el día ocho tu academia
-          no está en internet cobrando, te devolvemos íntegro lo que pagaste por la
+          Contamos desde que nos entregas el contenido y los accesos. Si el día ocho tu aula no
+          está en internet con tus alumnos dentro, te devolvemos íntegro lo que pagaste por la
           implementación y te quedas con lo que llevemos hecho.
         </p>
       </div>
@@ -312,7 +400,7 @@
   <section class="seccion cierre">
     <div class="contenedor cierre__interior">
       <span class="kicker">Siguiente paso</span>
-      <h2 class="titulo titulo--grande">Cuéntanos qué vendes y te decimos cómo montarlo</h2>
+      <h2 class="titulo titulo--grande">Cuéntanos qué enseñas y te decimos cómo montarlo</h2>
       <p class="entrada entrada--centrada">
         Treinta minutos por WhatsApp o videollamada. Salimos con el alcance y el precio cerrados,
         o con un «esto no es para ti» dicho a tiempo.

@@ -68,10 +68,12 @@ bun run dev
 ```
 
 En `http://localhost:4205` está la **página de venta de la plataforma**, que es
-lo que ve quien llega sin sesión; quien ya entró va directo a su panel. Los
-precios y los textos viven en
+lo que ve quien llega sin sesión; quien ya entró va directo a su panel. Vende
+el aula virtual —cursos, clases, notas, avance y certificados— y la venta de
+cursos como capacidad añadida, no al revés. Los precios y los textos viven en
 `apps/web/src/app/features/landing/landing.data.ts`, y el razonamiento detrás
-—benchmark del mercado y marco de oferta— en [`docs/OFERTA.md`](docs/OFERTA.md).
+—a quién le habla, benchmark del mercado y marco de oferta— en
+[`docs/OFERTA.md`](docs/OFERTA.md).
 El vídeo de su primera sección lo produce `scripts/video-landing`
 ([cómo](scripts/video-landing/README.md)).
 

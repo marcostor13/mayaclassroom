@@ -6,6 +6,54 @@ cambiarlos sea una decisión y no una corazonada.
 
 ---
 
+## 0 · A quién le hablamos
+
+**El producto que se vende es el aula virtual, no la tienda de cursos.**
+
+La primera versión de la página se dirigía solo a quien ya vende cursos en un
+marketplace y paga comisión. El argumento —«la plataforma no es tuya»— es
+bueno, pero describe a una minoría del mercado peruano y deja fuera a quien
+constituye la mayor parte de la demanda real:
+
+- Academias e institutos que ya dan clase y la dan por Zoom, con el material en
+  Drive y el grupo en WhatsApp.
+- Centros de capacitación y colegios que necesitan constancia: avance,
+  asistencia, notas y certificados.
+- Empresas que forman a su propia gente y no venden nada.
+- Profesores por su cuenta que sí venden, y que además necesitan un aula.
+
+Para todos ellos el dolor no es la comisión: es que **su curso vive en cinco
+sitios a la vez y nadie sabe quién aprendió**. Ese es el gancho de la página, y
+la venta —catálogo público, cobros, cero comisión— entra después, como una
+capacidad más que se enciende si hace falta.
+
+Consecuencias en la página:
+
+| | Antes | Ahora |
+|---|---|---|
+| Titular | «Vendes tus cursos, pero la plataforma no es tuya» | «Tus alumnos merecen un aula, no un grupo de WhatsApp» |
+| Dolores | Comisión, marca, lista de alumnos, reglas | Curso disperso, nadie sabe quién avanzó, sin constancia, marca ajena |
+| Sección central | Comparativa de precios | **El aula por dentro**: seis bloques para el alumno y seis para el docente |
+| Comparativa | Precio y comisión contra marketplaces | Tres caminos: Zoom+Drive+WhatsApp / marketplace / Maya |
+| Demostración | «Mira el catálogo» | «Entra como alumna», con credenciales a la vista |
+| Comisión | El argumento entero | Una fila de la tabla y una nota al pie |
+
+No se ha perdido nada del argumento de propiedad: sigue en los dolores, en la
+tabla y en las preguntas. Solo ha dejado de ser lo primero.
+
+### Zoom y Google Meet
+
+La página anuncia la integración **antes de que exista**, con su etiqueta «En
+camino» y una línea que separa lo que hoy se puede hacer (programar la sesión
+en el calendario del curso y enlazarla desde la lección) de lo que llegará
+(crearla desde el curso, entrar con un botón, grabación en la lección y
+asistencia automática). Prometerlo como presente se descubre en la primera
+demostración y cuesta la venta entera. Cuando se implemente, hay que quitar la
+etiqueta en `VIVO` de `landing.data.ts`, la fila «Clases en vivo» de la
+comparativa, la línea del plan Crece y el guion del vídeo (escena 07).
+
+---
+
 ## 1 · Qué cobra el mercado
 
 Precios de referencia consultados en **septiembre de 2026**. Las cifras en
@@ -19,7 +67,7 @@ soles son conversión aproximada de los precios en dólares.
 | **Kajabi** | US$ 89 – 399 | 0 % | No |
 | **Sabionet** (LatAm) | US$ 0 – 49+ | 9,9 % en el gratuito; 0 % de pago | No |
 | LMS corporativo en Perú | US$ 150 – 240 | — | No |
-| **Maya Classroom** | S/ 179 – 749 | **0 %** | **Sí** |
+| **Maya Classroom** | **S/ 47 – 99** | **0 %** | **Sí** |
 
 ### La cuenta que decide
 
@@ -32,7 +80,7 @@ alguien que factura **S/ 10 000 al mes**:
 | Teachable (entrada) | ≈ S/ 860 | ≈ S/ 10 300 |
 | Thinkific | ≈ S/ 185 – 750 | ≈ S/ 2 200 – 9 000 |
 | Kajabi | ≈ S/ 335 – 1 500 | ≈ S/ 4 000 – 18 000 |
-| **Maya Classroom (plan Crece)** | **S/ 349** | **S/ 4 190** |
+| **Maya Classroom (plan Crece)** | **S/ 99** | **S/ 1 188** |
 
 La comisión no se nota en la primera venta; se nota al año. Ese es el argumento
 central de la página, y por eso la comparativa va con números y no con
@@ -40,10 +88,19 @@ adjetivos.
 
 ### Dónde no competimos
 
-No competimos en precio de entrada: Hotmart es gratis y siempre lo será. Se
-compite en **propiedad**. Quien vende en un marketplace no tiene la marca, ni el
-dominio, ni la lista de sus alumnos, y las reglas se las cambian sin avisar. Es
-la diferencia entre alquilar y comprar, y hay que decirlo en esos términos.
+No competimos en precio de entrada: Hotmart es gratis y siempre lo será, y
+Google Classroom también. Se compite en dos cosas.
+
+**Contra los marketplaces, en propiedad.** Quien vende ahí no tiene la marca, ni
+el dominio, ni la lista de sus alumnos, y las reglas se las cambian sin avisar.
+Es la diferencia entre alquilar y comprar.
+
+**Contra el montaje suelto (Zoom + Drive + WhatsApp) y contra Classroom, en
+constancia.** Repartir tareas no es tener un aula: no hay avance por alumno, ni
+libro de calificaciones con pesos, ni certificados verificables, ni
+itinerarios, ni marca propia. Cuando a alguien le basta con repartir tareas, se
+le dice de frente —está escrito así en las preguntas de la página—, porque
+discutirlo se pierde y decirlo gana credibilidad para el resto.
 
 ---
 
@@ -57,25 +114,27 @@ De *$100M Offers* y *$100M Leads*, lo que se ha usado y dónde.
 
 | Palanca | Cómo se sube o se baja | Dónde se ve en la página |
 |---|---|---|
-| Resultado soñado ↑ | «Tu propia academia», no «un LMS» | Titular y sección de la demostración |
+| Resultado soñado ↑ | «Tu propia aula virtual», no «un LMS» | Titular y sección «El aula, por dentro» |
 | Probabilidad percibida ↑ | Una demostración real y clicable, no capturas | Sección oscura, con dos botones a la demo |
 | Tiempo ↓ | 7 días hábiles, con fecha | «Siete días hábiles, cuatro pasos» |
-| Esfuerzo ↓ | Lo montamos nosotros: dominio, marca, cursos y cobros | Desglose de la implementación |
+| Esfuerzo ↓ | Lo montamos nosotros: dominio, marca, cursos y roles | Desglose de la implementación |
 
 ### La oferta irresistible
 
-- **Oferta central**: plataforma propia + implementación llave en mano.
+- **Oferta central**: aula virtual propia + implementación llave en mano.
 - **Desglose de valor**: la implementación se descompone en ocho conceptos con
-  su precio suelto (S/ 4 700 en total) frente al precio real (desde S/ 1 490).
+  su precio suelto (S/ 4 700 en total) frente al precio real (S/ 347).
   «Implementación» no dice nada; ocho líneas con precio, sí.
-- **Garantía**: publicada en 7 días o se devuelve la implementación completa. Es
+- **Garantía**: funcionando en 7 días o se devuelve la implementación completa. Es
   una garantía condicional sobre algo que depende de nosotros, no del cliente,
   que es lo que la hace creíble y sostenible.
-- **Anclaje**: la comparativa se lee antes que los precios. Cuando se llega a
-  S/ 349 al mes, el número con el que se compara ya es S/ 990.
+- **Anclaje**: la comparativa de los tres caminos se lee antes que los precios,
+  y la nota al pie deja el 9,9 % de comisión (≈ S/ 12 000 al año sobre
+  S/ 10 000 al mes) en la cabeza justo antes de enseñar S/ 99.
 - **Tres planes**: el del medio destacado y con más contenido por sol. El de
-  arriba (S/ 4 900 + S/ 749) existe sobre todo para que el del medio parezca
-  razonable.
+  arriba va a cotización, sin precio de lista: además de que su alcance cambia
+  en cada caso, un «a cotizar» arriba hace que los dos de abajo se lean como
+  precio cerrado y sin sorpresas.
 
 ### Lo que se ha dejado fuera a propósito
 
@@ -93,25 +152,40 @@ De *$100M Offers* y *$100M Leads*, lo que se ha usado y dónde.
 
 | | Inicia | **Crece** | Escala |
 |---|---|---|---|
-| Implementación | S/ 1 490 | **S/ 2 490** | S/ 4 900 |
-| Mensualidad | S/ 179 | **S/ 349** | S/ 749 |
+| Implementación | S/ 347 | **S/ 347** | A cotizar |
+| Mensualidad | S/ 47 | **S/ 99** | A cotizar |
 | Alumnado | 300 | 2 000 | Ilimitado |
 
 Los tres están en `apps/web/src/app/features/landing/landing.data.ts`. Cambiar
-un precio es cambiar un número ahí.
+un precio es cambiar un número ahí; la implementación vive además en la
+constante `IMPLEMENTACION_DESDE`, porque la página la enseña en dos sitios.
 
 ### Por qué esta horquilla
 
-- **S/ 349 al mes** deja el plan intermedio por debajo de lo que se lleva
-  Hotmart de quien factura S/ 10 000, que es el cliente objetivo. Por debajo de
-  esa cifra el argumento se sostiene solo.
-- **La implementación existe** porque el trabajo existe: montar, conectar el
-  dominio, aplicar la marca, cargar cursos y probar el cobro son horas
-  nuestras. Cobrarlas aparte permite además una mensualidad baja, que es lo que
-  quita el miedo a empezar.
-- **S/ 2 490 frente a S/ 4 700** de valor desglosado: un 47 % de descuento
-  aparente sin regalar nada, porque los conceptos sueltos son precios de
-  mercado defendibles uno a uno.
+- **S/ 47 y S/ 99 al mes** no compiten con Hotmart, Teachable o Kajabi: los
+  dejan fuera de la conversación. Quien factura S/ 10 000 al mes está pagando
+  ≈ S/ 990 de comisión; ver S/ 99 al lado convierte la comparación en una
+  decisión obvia y quita cualquier objeción de precio antes de que aparezca.
+- **Una sola implementación, S/ 347 en los dos planes**, porque el trabajo de
+  montar la academia no cambia por vender más: montar, conectar el dominio,
+  aplicar la marca, cargar cursos y probar el cobro son las mismas horas. Un
+  solo importe se recuerda, dos hay que compararlos.
+- **S/ 347 frente a S/ 4 700** de valor desglosado: el ancla es agresiva, y solo
+  se sostiene mientras los ocho conceptos sueltos sigan siendo precios de
+  mercado defendibles uno a uno. Si alguna vez hay que justificarlo en una
+  llamada, el argumento es que la implementación es captación, no margen: se
+  cobra para filtrar a quien va en serio, y el negocio está en la mensualidad
+  recurrente.
+- **El plan de arriba no lleva precio.** Varias sedes, integraciones a medida y
+  acuerdos de nivel de servicio no se cotizan igual dos veces, y un «a cotizar»
+  arriba refuerza que los dos de abajo sí son precio cerrado.
+
+### El riesgo de este tramo
+
+Una mensualidad de S/ 47 tiene que cubrir infraestructura y soporte de cada
+academia. Es el punto que hay que vigilar antes que ningún otro: si el coste
+real de operar una instalación se acerca a esa cifra, el plan Inicia deja de
+tener margen y hay que subirlo o recortar lo que incluye.
 
 ### Qué revisar cada cierto tiempo
 

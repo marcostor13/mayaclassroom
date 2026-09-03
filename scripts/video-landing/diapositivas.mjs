@@ -5,7 +5,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import os from 'node:os';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /**
  * Playwright no es dependencia del proyecto —es utillaje, no producción—, así
@@ -49,14 +49,27 @@ const navegador = () =>
     process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {},
   );
 
-const BASE = path.dirname(new URL(import.meta.url).pathname);
+// `fileURLToPath` y no `.pathname`: en Windows el pathname de una URL
+// `file:` conserva la barra inicial delante de la letra de unidad
+// (`/C:/…`), y todo lo que se construya sobre eso acaba en `C:\C:\…`.
+const BASE = path.dirname(fileURLToPath(import.meta.url));
 const guion = JSON.parse(fs.readFileSync(`${BASE}/guion.json`, 'utf8'));
 const salida = `${BASE}/diapositivas`;
 fs.mkdirSync(salida, { recursive: true });
 
+/*
+ * La misma carpeta, pero escrita como URL.
+ *
+ * El HTML de cada diapositiva referencia las tipografías y las capturas con
+ * `file:`, y ahí no vale la ruta del sistema: en Windows lleva barras
+ * invertidas y letra de unidad, que el navegador no resuelve —las tipografías
+ * salían con la de respaldo y las capturas, en blanco—.
+ */
+const BASE_URL = pathToFileURL(`${BASE}/`).href;
+
 const ESTILO = `
-  @font-face { font-family: 'Outfit'; src: url('file://${BASE}/tipografias/Outfit-Bold.ttf'); font-weight: 700; }
-  @font-face { font-family: 'Outfit'; src: url('file://${BASE}/tipografias/Outfit-Regular.ttf'); font-weight: 400; }
+  @font-face { font-family: 'Outfit'; src: url('${BASE_URL}tipografias/Outfit-Bold.ttf'); font-weight: 700; }
+  @font-face { font-family: 'Outfit'; src: url('${BASE_URL}tipografias/Outfit-Regular.ttf'); font-weight: 400; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --rojo: #FF3B2E; --rojo-hondo: #C31B0D; --tinta: #101114;
@@ -68,7 +81,10 @@ const ESTILO = `
     background: var(--papel); position: relative;
   }
   .escena { position: absolute; inset: 0; display: flex; flex-direction: column; }
-  .cuerpo { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 96px 120px 0; }
+  /* El hueco de abajo lo reserva la barra de subtítulo, que va encima y en
+     posición absoluta: sin él, un subtítulo de tres líneas se come el
+     titular, y eso solo se ve al mirar la diapositiva ya generada. */
+  .cuerpo { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 96px 120px 280px; }
 
   .kicker {
     font-size: 30px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
@@ -181,7 +197,7 @@ function escenaHtml(e) {
           <span class="marco__punto"></span><span class="marco__punto"></span><span class="marco__punto"></span>
           <span class="marco__url">tuacademia.pe</span>
         </div>
-        <img src="file://${BASE}/capturas/${e.captura}" />
+        <img src="${BASE_URL}capturas/${e.captura}" />
       </div>
     </div></div>${sub}</div>`;
   }
@@ -201,7 +217,7 @@ const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, de
 for (const e of guion.escenas) {
   const html = `${BASE}/diapositivas/${e.id}.html`;
   fs.writeFileSync(html, `<!doctype html><meta charset="utf-8"><style>${ESTILO}</style>${escenaHtml(e)}`);
-  await page.goto(`file://${html}`, { waitUntil: 'load' });
+  await page.goto(pathToFileURL(html).href, { waitUntil: 'load' });
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${salida}/${e.id}.png` });
   console.log(`  ${e.id} · ${e.titular?.replace(/\n/g, ' ') ?? e.tipo}`);

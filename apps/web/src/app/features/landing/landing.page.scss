@@ -239,6 +239,121 @@
   font-weight: 700;
 }
 
+/* --- El aula por dentro -------------------------------------------------- */
+
+.aula {
+  display: grid;
+  gap: var(--maya-space-8);
+}
+
+/* Dos columnas solo en pantalla ancha: son doce bloques de texto y en tableta
+   se leen mucho mejor en una sola caída que en dos columnas estrechas. */
+@include from($maya-bp-lg) {
+  .aula { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--maya-space-10); }
+}
+
+.aula__titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-5);
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-lg);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.aula__sello {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+}
+
+.aula__lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--maya-space-5);
+}
+
+.aula__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--maya-space-4);
+  align-items: start;
+}
+
+.aula__icono {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--maya-radius-sm);
+  border: 1px solid var(--maya-border);
+  background: var(--maya-surface);
+  color: var(--maya-primary-ink);
+}
+
+.aula__item-titulo {
+  margin-bottom: var(--maya-space-1);
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-base);
+  font-weight: 700;
+}
+
+/* --- Clases en vivo ------------------------------------------------------ */
+
+.vivo {
+  display: grid;
+  gap: var(--maya-space-8);
+  align-items: center;
+}
+
+@include from($maya-bp-lg) {
+  .vivo { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+}
+
+.vivo__etiqueta {
+  margin-bottom: var(--maya-space-4);
+}
+
+/* La advertencia de qué se puede hacer HOY va pegada al texto y con marco:
+   es la línea que separa lo prometido de lo disponible, y perderla dentro del
+   párrafo es exactamente el malentendido que queremos evitar. */
+.vivo__hoy {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-4);
+  padding: var(--maya-space-3) var(--maya-space-4);
+  border-radius: var(--maya-radius-md);
+  border: 1px solid var(--maya-warning);
+  background: var(--maya-warning-soft);
+  color: var(--maya-text);
+
+  maya-icon { color: var(--maya-warning); flex-shrink: 0; margin-top: 2px; }
+}
+
+.vivo__lista {
+  list-style: none;
+  display: grid;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-6);
+  margin: 0;
+  border-radius: var(--maya-radius-lg);
+  border: 1px solid var(--maya-border);
+  background: var(--maya-surface);
+
+  li { display: flex; align-items: flex-start; gap: var(--maya-space-3); }
+  maya-icon { color: var(--maya-success); flex-shrink: 0; margin-top: 2px; }
+}
+
 /* --- Comparativa --------------------------------------------------------- */
 
 .tabla-envoltorio {
@@ -276,11 +391,16 @@
 .tabla__nombre { font-weight: 700; }
 .tabla__coste { font-weight: 700; }
 
-.tabla__nuestra {
+/* La comparativa resalta una COLUMNA, no una fila: ahora se comparan tres
+   caminos concepto a concepto, y el nuestro es el de la derecha. */
+.tabla__maya {
   background: var(--maya-primary-softer);
+  color: var(--maya-primary-deep);
+}
 
-  td { color: var(--maya-primary-deep); }
-  .tabla__nombre, .tabla__coste { color: var(--maya-primary-deep); }
+th.tabla__maya {
+  color: var(--maya-primary-deep);
+  background: var(--maya-primary-soft);
 }
 
 .nota {
@@ -305,6 +425,20 @@
   flex-wrap: wrap;
   gap: var(--maya-space-3);
   margin-top: var(--maya-space-5);
+}
+
+/* Las credenciales de la demostración, a la vista: pedir que entren como
+   alumna y no decir con qué usuario es mandarlos a un formulario cerrado. */
+.demo__credenciales {
+  margin-top: var(--maya-space-4);
+  color: color-mix(in srgb, #fff 72%, transparent);
+
+  code {
+    padding: 2px 6px;
+    border-radius: var(--maya-radius-sm);
+    background: color-mix(in srgb, #fff 12%, transparent);
+    font-size: 0.95em;
+  }
 }
 
 .demo__lista {

@@ -7,7 +7,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import os from 'node:os';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /**
  * Playwright no es dependencia del proyecto —es utillaje, no producción—, así
@@ -51,7 +51,10 @@ const navegador = () =>
     process.env.PLAYWRIGHT_CHROMIUM ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM } : {},
   );
 
-const BASE = path.dirname(new URL(import.meta.url).pathname);
+// `fileURLToPath` y no `.pathname`: en Windows el pathname de una URL
+// `file:` conserva la barra inicial delante de la letra de unidad
+// (`/C:/…`), y todo lo que se construya sobre eso acaba en `C:\C:\…`.
+const BASE = path.dirname(fileURLToPath(import.meta.url));
 const datos = JSON.parse(fs.readFileSync(`${BASE}/datos-demo.json`, 'utf8'));
 const salida = `${BASE}/capturas`;
 fs.mkdirSync(salida, { recursive: true });
@@ -87,6 +90,38 @@ const panel = {
   ],
   deadlines: [{ id: 'd1', name: 'Práctica 1 · Su primera tanda de alfajores', courseId: cursosAdmin[0].id, courseName: datos.cursos[0].title, dueDate: new Date(Date.now() + 12 * 864e5).toISOString(), submitted: false }],
 };
+/**
+ * Los eventos del calendario del alumno.
+ *
+ * Se reparten por el mes en curso —y no en fechas fijas— para que la rejilla
+ * salga poblada cualquier día que se rehaga el vídeo. Mezclan clase en vivo y
+ * entrega a propósito: es exactamente lo que la landing promete que el alumno
+ * ve en un solo sitio.
+ */
+const eventos = (() => {
+  const hoy = new Date();
+  const dia = (n, hora) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth(), n, hora, 0, 0);
+    return d.toISOString();
+  };
+  const fin = (n, hora, minutos) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth(), n, hora, minutos, 0);
+    return d.toISOString();
+  };
+  const curso = (i) => ({ courseId: cursosAdmin[i].id, courseName: datos.cursos[i].title });
+
+  return [
+    { id: 'c1', name: 'Clase en vivo · Merengue italiano sin fallos', eventType: 'course', ...curso(0), startAt: dia(4, 19), endAt: fin(4, 20, 30), allDay: false, location: 'Aula virtual', actionable: true },
+    { id: 'c2', name: 'Entrega · Su primera tanda de alfajores', eventType: 'course', ...curso(0), startAt: dia(8, 23), endAt: fin(8, 23, 59), allDay: false, location: null, actionable: true },
+    { id: 'c3', name: 'Clase en vivo · El punto del manjarblanco', eventType: 'course', ...curso(0), startAt: dia(11, 19), endAt: fin(11, 20, 30), allDay: false, location: 'Aula virtual', actionable: true },
+    { id: 'c4', name: 'Cuestionario · Temperaturas y puntos de cocción', eventType: 'course', ...curso(1), startAt: dia(15, 20), endAt: fin(15, 21, 0), allDay: false, location: null, actionable: true },
+    { id: 'c5', name: 'Clase en vivo · Masa que no se rompe', eventType: 'course', ...curso(1), startAt: dia(18, 19), endAt: fin(18, 20, 30), allDay: false, location: 'Aula virtual', actionable: true },
+    { id: 'c6', name: 'Entrega · Hoja de costos por porción', eventType: 'course', ...curso(1), startAt: dia(22, 23), endAt: fin(22, 23, 59), allDay: false, location: null, actionable: true },
+    { id: 'c7', name: 'Clase en vivo · Suspiro limeño paso a paso', eventType: 'course', ...curso(2), startAt: dia(25, 19), endAt: fin(25, 20, 30), allDay: false, location: 'Aula virtual', actionable: true },
+    { id: 'c8', name: 'Cierre del módulo · Pastelería peruana clásica', eventType: 'course', ...curso(0), startAt: dia(28, 18), endAt: fin(28, 19, 0), allDay: false, location: 'Aula virtual', actionable: true },
+  ];
+})();
+
 const usuario = (rol) => ({
   id: 'u1', tenantId: 't1', tenantSlug: 'demo',
   email: rol === 'manager' ? 'gestora@dulcelima.pe' : 'ana.quispe@dulcelima.pe',
@@ -176,6 +211,7 @@ async function pagina(rol) {
     if (p === '/dashboard') return j(panel);
     if (p === '/orders') return j(pedidos);
     if (p === '/payments/settings') return j({ currency: 'PEN', mercadoPago: { enabled: true, publicKey: 'APP_USR-…', hasAccessToken: true, sandbox: false }, paypal: { enabled: true, clientId: 'AY…', hasSecret: true, sandbox: false }, manual: { enabled: true, instructions: 'Transferencia o depósito al BCP, cuenta corriente soles 194-1234567-0-89. También Yape al 987 654 321.' }, simulated: { enabled: false } });
+    if (p === '/calendar/events' || p === '/calendar/upcoming') return j(eventos);
     if (p === '/guides') return j({ guides: [], progress: [] });
     if (p === '/messages/unread-count') return j({ count: 1 });
     if (p.startsWith('/tenants/public')) return j({ id: 't1', slug: 'demo', name: 'Dulce Lima', branding: { primaryColor: '#E11D64', accentColor: '#F2A93B', logoUrl: '/demo/dulce-lima.svg' }, allowSelfRegistration: true, allowGuestAccess: false, defaultLanguage: 'es' });
@@ -223,11 +259,25 @@ const cerrarGuia = async (p) => { await p.locator('button:has-text("Ahora no")')
 }
 
 // ── Alumnado
+//
+// Son las capturas que sostienen el argumento del aula, no el de la venta: lo
+// que ve quien estudia. Van juntas y con el mismo usuario para que en el vídeo
+// se lean como un recorrido y no como pantallas sueltas.
 {
   const p = await pagina('student');
   await p.goto('http://127.0.0.1:4310/dashboard', { waitUntil: 'domcontentloaded' });
   await p.waitForTimeout(1800);
   await p.screenshot({ path: `${salida}/08-panel-alumno.png` });
+
+  await p.goto('http://127.0.0.1:4310/courses', { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1600);
+  await cerrarGuia(p);
+  await p.screenshot({ path: `${salida}/10-mis-cursos.png` });
+
+  await p.goto('http://127.0.0.1:4310/calendar', { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1800);
+  await cerrarGuia(p);
+  await p.screenshot({ path: `${salida}/11-calendario.png` });
   await p.close();
 }
 

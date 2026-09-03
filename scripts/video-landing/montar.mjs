@@ -12,8 +12,12 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const BASE = path.dirname(new URL(import.meta.url).pathname);
+// `fileURLToPath` y no `.pathname`: en Windows el pathname de una URL
+// `file:` conserva la barra inicial delante de la letra de unidad
+// (`/C:/…`), y todo lo que se construya sobre eso acaba en `C:\C:\…`.
+const BASE = path.dirname(fileURLToPath(import.meta.url));
 /** `FFMPEG` para apuntar a un binario concreto; si no, el del sistema. */
 const FFMPEG = process.env.FFMPEG ?? 'ffmpeg';
 const guion = JSON.parse(fs.readFileSync(`${BASE}/guion.json`, 'utf8'));
@@ -29,6 +33,8 @@ const SALIDA = path.resolve(BASE, '../../apps/web/public/landing/maya-classroom.
  * poco y quitan ese agujero.
  */
 const SALIDA_WEBM = SALIDA.replace(/\.mp4$/, '.webm');
+/** La imagen de espera del `<video>` de la landing (`poster`). */
+const SALIDA_CARTEL = SALIDA.replace(/\.mp4$/, '.jpg');
 fs.mkdirSync(path.dirname(SALIDA), { recursive: true });
 const FPS = 30;
 const FUNDIDO = 0.6;
@@ -222,6 +228,33 @@ try {
   console.warn('  no se pudo generar el WebM; el MP4 sirve para casi todo.');
 }
 
+/* ------------------------------- Cartel ---------------------------------- */
+
+/*
+ * La imagen de espera del `<video>`, sacada del propio vídeo.
+ *
+ * Se generaba a mano, y por eso se quedó atrás: la landing enseñaba el cartel
+ * de un montaje anterior hasta que alguien le daba al play. Sacarla del primer
+ * fotograma la deja siempre en hora, y además es lo que se ve al arrancar, así
+ * que el salto entre cartel y vídeo desaparece.
+ */
+console.log('cartel…');
+try {
+  execFileSync(
+    FFMPEG,
+    [
+      '-y', '-hide_banner', '-loglevel', 'error',
+      // Medio segundo dentro: en el 0 la deriva de la cámara aún no ha
+      // empezado y el encuadre no es el que se ve al reproducir.
+      '-ss', '0.5', '-i', SALIDA, '-frames:v', '1', '-q:v', '3', SALIDA_CARTEL,
+    ],
+    { stdio: ['ignore', 'ignore', 'pipe'] },
+  );
+} catch (error) {
+  console.warn('  no se pudo generar el cartel; queda el anterior.');
+}
+
 const mb = (f) => (fs.existsSync(f) ? `${(fs.statSync(f).size / 1e6).toFixed(1)} MB` : '—');
 console.log(`listo: ${SALIDA} · ${mb(SALIDA)}`);
 if (fs.existsSync(SALIDA_WEBM)) console.log(`       ${SALIDA_WEBM} · ${mb(SALIDA_WEBM)}`);
+if (fs.existsSync(SALIDA_CARTEL)) console.log(`       ${SALIDA_CARTEL} · ${mb(SALIDA_CARTEL)}`);

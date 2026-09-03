@@ -4,12 +4,16 @@ import { RouterLink } from '@angular/router';
 import { formatMoney } from '@maya/shared';
 import { IconComponent, LogoComponent } from '../../shared';
 import {
+  AULA_ALUMNO,
+  AULA_DOCENTE,
   COMPARATIVA,
   DOLORES,
   IMPLEMENTACION,
+  IMPLEMENTACION_DESDE,
   PASOS,
   PLANES,
   PREGUNTAS,
+  VIVO,
   WHATSAPP,
   whatsapp,
 } from './landing.data';
@@ -36,8 +40,12 @@ export class LandingPage {
 
   readonly planes = PLANES;
   readonly implementacion = IMPLEMENTACION;
+  readonly implementacionDesde = IMPLEMENTACION_DESDE;
   readonly comparativa = COMPARATIVA;
   readonly dolores = DOLORES;
+  readonly aulaAlumno = AULA_ALUMNO;
+  readonly aulaDocente = AULA_DOCENTE;
+  readonly vivo = VIVO;
   readonly pasos = PASOS;
   readonly preguntas = PREGUNTAS;
 
@@ -50,12 +58,13 @@ export class LandingPage {
   );
 
   constructor() {
-    this.title.setTitle('Tu propia academia en internet · Maya Classroom');
+    this.title.setTitle('Tu propia aula virtual · Maya Classroom');
     this.meta.updateTag({
       name: 'description',
       content:
-        'Vende tus cursos desde tu propia plataforma, con tu marca y tu dominio, cobrando en ' +
-        'soles y sin pagar comisión por venta. Implementación en 7 días.',
+        'Aula virtual propia para tu academia: cursos, clases en vivo, tareas, notas, avance y ' +
+        'certificados, con tu marca y tu dominio. Y si vendes, cobras en soles sin comisión. ' +
+        'Funcionando en 7 días.',
     });
   }
 
@@ -70,17 +79,20 @@ export class LandingPage {
   /* --------------------------------- Enlaces ------------------------------ */
 
   readonly whatsappGeneral = whatsapp(
-    'Hola, vi la página de Maya Classroom y quiero mi propia plataforma de cursos. ¿Lo vemos?',
+    'Hola, vi la página de Maya Classroom y quiero mi propia aula virtual. ¿Lo vemos?',
   );
 
   readonly telefono = WHATSAPP;
 
   /** Cada plan escribe su propio mensaje: la conversación empieza ya situada. */
   whatsappPlan(plan: Plan): string {
+    const detalle =
+      plan.setup === null || plan.mensual === null
+        ? 'y necesito que lo coticen para mi caso'
+        : `(implementación ${this.precio(plan.setup)} + ${this.precio(plan.mensual)} al mes)`;
+
     return whatsapp(
-      `Hola, me interesa el plan ${plan.nombre} de Maya Classroom ` +
-        `(implementación ${this.precio(plan.setup)} + ${this.precio(plan.mensual)} al mes). ` +
-        '¿Podemos conversar?',
+      `Hola, me interesa el plan ${plan.nombre} de Maya Classroom ${detalle}. ¿Podemos conversar?`,
     );
   }
 }
