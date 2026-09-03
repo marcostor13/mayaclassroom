@@ -3,9 +3,9 @@
   <div class="barra__interior">
     <maya-logo [size]="34" [showText]="true" textLayout="inline" />
     <nav class="barra__acciones">
-      <a class="maya-btn maya-btn--ghost maya-btn--sm maya-hide-mobile" routerLink="/p/demo">
+      <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm maya-hide-mobile" (click)="abrirDemo()">
         Ver la demostración
-      </a>
+      </button>
       <a class="maya-btn maya-btn--primary maya-btn--sm" [href]="whatsappGeneral" target="_blank" rel="noopener">
         <maya-icon name="message-square" [size]="15" />
         Escríbenos
@@ -37,10 +37,10 @@
             <maya-icon name="message-square" [size]="18" />
             Quiero mi aula virtual
           </a>
-          <a class="maya-btn maya-btn--secondary maya-btn--lg" routerLink="/p/demo">
+          <button type="button" class="maya-btn maya-btn--secondary maya-btn--lg" (click)="abrirDemo()">
             <maya-icon name="eye" [size]="18" />
             Ver la demostración
-          </a>
+          </button>
         </div>
         <p class="portada__pie maya-small maya-subtle">
           Demostración completa, sin registro y sin dejar datos.
@@ -411,7 +411,9 @@
           <maya-icon name="message-square" [size]="18" />
           Escribir por WhatsApp
         </a>
-        <a class="maya-btn maya-btn--ghost maya-btn--lg" routerLink="/p/demo">Ver la demostración</a>
+        <button type="button" class="maya-btn maya-btn--ghost maya-btn--lg" (click)="abrirDemo()">
+          Ver la demostración
+        </button>
       </div>
       <p class="maya-small maya-subtle">+51 975 760 418 · Lima, Perú</p>
     </div>
@@ -430,3 +432,95 @@
 <a class="flotante maya-app-only" [href]="whatsappGeneral" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
   <maya-icon name="message-square" [size]="22" />
 </a>
+
+<!-- ───────────────────── Selector de demostración ─────────────────────────
+     La plataforma se ve distinta según desde dónde se mire, y quien llega a
+     esta página no tiene por qué saber que hay tres lados. Se le pregunta.  -->
+@if (demoAbierta()) {
+  <div class="maya-backdrop" (click)="cerrarDemo()"></div>
+  <div
+    class="maya-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="demo-titulo"
+    tabindex="-1"
+    (keydown.escape)="cerrarDemo()"
+  >
+    <div class="maya-modal__panel demo-selector">
+      <span class="maya-modal__handle"></span>
+
+      <header class="maya-modal__header">
+        <div>
+          <h2 class="demo-selector__titulo" id="demo-titulo">¿Desde dónde quieres verla?</h2>
+          <p class="maya-small maya-subtle">
+            Dulce Lima, una escuela de pastelería de verdad montada en Maya Classroom.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--icon"
+          (click)="cerrarDemo()"
+          [disabled]="entrandoComo() !== null"
+          aria-label="Cerrar"
+        >
+          <maya-icon name="x" [size]="18" />
+        </button>
+      </header>
+
+      <div class="maya-modal__body demo-selector__opciones">
+        <!-- El escaparate va sin sesión, así que está siempre, incluso en un
+             despliegue con el acceso de demostración apagado. -->
+        <a
+          class="demo-opcion"
+          [routerLink]="enlaceEscaparate()"
+          (click)="cerrarDemo()"
+        >
+          <span class="demo-opcion__icono"><maya-icon name="globe" [size]="20" /></span>
+          <span class="demo-opcion__texto">
+            <span class="demo-opcion__titulo">Como visitante</span>
+            <span class="maya-small maya-subtle">
+              Su página pública: el catálogo, la ficha de un curso y la compra. Sin sesión.
+            </span>
+          </span>
+          <maya-icon name="chevron-right" [size]="18" />
+        </a>
+
+        @if (ofrece(Papel.Student)) {
+          <button type="button" class="demo-opcion" (click)="entrarComo(Papel.Student)" [disabled]="entrandoComo() !== null">
+            <span class="demo-opcion__icono"><maya-icon name="graduation-cap" [size]="20" /></span>
+            <span class="demo-opcion__texto">
+              <span class="demo-opcion__titulo">
+                {{ entrandoComo() === Papel.Student ? 'Entrando…' : 'Como alumno' }}
+              </span>
+              <span class="maya-small maya-subtle">
+                El aula por dentro: sus cursos, su avance, sus notas y su calendario.
+              </span>
+            </span>
+            <maya-icon name="chevron-right" [size]="18" />
+          </button>
+        }
+
+        @if (ofrece(Papel.Admin)) {
+          <button type="button" class="demo-opcion" (click)="entrarComo(Papel.Admin)" [disabled]="entrandoComo() !== null">
+            <span class="demo-opcion__icono"><maya-icon name="sliders" [size]="20" /></span>
+            <span class="demo-opcion__texto">
+              <span class="demo-opcion__titulo">
+                {{ entrandoComo() === Papel.Admin ? 'Entrando…' : 'Como administrador' }}
+              </span>
+              <span class="maya-small maya-subtle">
+                La gestión: cursos, alumnado, clases en vivo, cobros y la página pública.
+              </span>
+            </span>
+            <maya-icon name="chevron-right" [size]="18" />
+          </button>
+        }
+      </div>
+
+      <footer class="maya-modal__footer demo-selector__pie">
+        <span class="maya-small maya-subtle">
+          Se entra sin registrarse y sin dejar datos.
+        </span>
+      </footer>
+    </div>
+  </div>
+}

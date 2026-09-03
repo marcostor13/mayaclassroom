@@ -355,6 +355,90 @@
   maya-icon { color: var(--maya-success); flex-shrink: 0; margin-top: 2px; }
 }
 
+/* --- Selector de demostración -------------------------------------------- */
+
+.demo-selector__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-lg);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--maya-space-1);
+}
+
+.demo-selector__opciones {
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+.demo-selector__pie {
+  justify-content: center;
+}
+
+/* Las tres opciones son la misma pieza aunque una sea un enlace y las otras
+   botones: se eligen igual y tienen que verse igual. De ahí que el estilo
+   cuelgue de la clase y no del elemento. */
+.demo-opcion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--maya-space-4);
+  align-items: center;
+  width: 100%;
+  padding: var(--maya-space-4);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--maya-duration) var(--maya-ease),
+    background var(--maya-duration) var(--maya-ease);
+
+  &:hover:not(:disabled) {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-softer);
+
+    /* El fondo de la fila al pasar por encima es el mismo que el de la cajita
+       del icono, así que sin esto la cajita se disuelve justo en la opción que
+       se está mirando. */
+    .demo-opcion__icono {
+      background: var(--maya-primary-soft);
+    }
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  > maya-icon {
+    color: var(--maya-text-subtle);
+  }
+}
+
+.demo-opcion__icono {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+}
+
+.demo-opcion__texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.demo-opcion__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-base);
+  font-weight: 700;
+}
+
 /* --- Comparativa --------------------------------------------------------- */
 
 .tabla-envoltorio {
