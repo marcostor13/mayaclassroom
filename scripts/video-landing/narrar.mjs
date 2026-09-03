@@ -106,6 +106,12 @@ function puntuar(voz) {
   const acento = ACENTOS.findIndex((a) => texto.includes(a));
   let punto = (nativa ? 300 : 100) + (acento === -1 ? 0 : (ACENTOS.length - acento) * 10);
 
+  // Una voz clonada de la propia cuenta gana a todo lo demás. Por dos motivos:
+  // es la voz de quien vende —que para un vídeo de venta es lo que se quiere—
+  // y es de las pocas que la API deja usar sin plan de pago, así que ponerla
+  // primera evita el rodeo de elegir una de biblioteca y comerse un 402.
+  if (voz.category === 'cloned') punto += 500;
+
   // Entre las inglesas, las que ElevenLabs ha verificado en español van muy por
   // delante: las demás pronuncian el español de oído y se nota en la primera
   // palabra con tilde.

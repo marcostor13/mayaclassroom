@@ -107,8 +107,13 @@ de voces de ElevenLabs buscando **Spanish · Latin American**.
 > candidatas latinoamericanas, incluida `Giancarlos`, que es peruana: todas
 > devuelven 402 con la cuenta en plan gratuito.
 >
-> Para la voz nativa hay que subir de plan, borrar `audio/` y repetir los pasos
-> 3 y 4. El guion elegirá la peruana solo, sin tocar nada.
+> **La salida barata es una voz clonada.** Las clonadas de la propia cuenta sí
+> funcionan por API en plan gratuito, y el guion las pone las primeras: son la
+> voz de quien vende, que para un vídeo de venta es justo lo que se quiere. El
+> vídeo actual está locutado con una de ellas.
+>
+> Para una voz nativa de biblioteca hay que subir de plan, borrar `audio/` y
+> repetir los pasos 3 y 4. El guion elegirá la mejor solo, sin tocar nada.
 
 ## El guion
 
