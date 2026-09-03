@@ -245,6 +245,10 @@ bun apps/api/dist/database/seeds/seed.js
 PEXELS_API_KEY=xxxxx bun apps/api/dist/database/seeds/seed.js
 ```
 
+Al arrancar dice sobre qué base va a escribir —«Base de datos: "maya_classroom"
+en cluster0.xxxxx.mongodb.net»—, porque la misma orden vale para la base local
+y para la de producción: lo único que cambia es el `.env` que se haya cargado.
+
 Es idempotente y **converge**: actualiza el nombre, la marca y el logotipo de
 la empresa de demostración aunque ya exista, reescribe el escaparate y los
 pedidos de ejemplo, y retira lo que dejó la versión anterior —los cursos de

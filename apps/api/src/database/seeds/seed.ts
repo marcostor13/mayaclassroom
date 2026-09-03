@@ -16,6 +16,7 @@ import {
   TenantStatus,
   UserStatus,
 } from '@maya/shared';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from '../../app.module';
 import { ContextsService } from '../../modules/contexts/contexts.service';
 import { RolesService } from '../../modules/rbac/roles.service';
@@ -52,6 +53,32 @@ import { leccion } from './demo-content';
 import { FOTOS, resolverVideos } from './demo-media';
 
 const logger = new Logger('Seed');
+
+/**
+ * Dice en voz alta sobre qué base se va a escribir.
+ *
+ * La siembra ya no solo crea: actualiza la empresa de demostración, saca
+ * cursos del catálogo y suspende cuentas. Y la misma orden vale para la base
+ * local y para la de producción —lo único que cambia es el `.env` que se haya
+ * cargado—, así que conviene ver el destino antes de que empiece a escribir.
+ *
+ * Del `MONGODB_URI` sale solo el servidor: la cadena lleva la contraseña y un
+ * registro no es sitio para ella.
+ */
+function anunciarDestino(config: ConfigService): void {
+  const uri = config.get<string>('database.uri') ?? '';
+  const dbName = config.get<string>('database.dbName') ?? '(por defecto)';
+
+  let servidor = '(desconocido)';
+  try {
+    servidor = new URL(uri).host || servidor;
+  } catch {
+    // Una cadena que no se puede analizar no debe impedir sembrar; el nombre
+    // de la base ya orienta lo suficiente.
+  }
+
+  logger.log(`Base de datos: «${dbName}» en ${servidor}`);
+}
 
 /**
  * Dentro de N días, a la hora en punto que se indique, en horario de Lima.
@@ -118,6 +145,8 @@ async function seed(): Promise<void> {
   const orderModel = app.get<Model<OrderDocument>>(getModelToken(Order.name));
   const courseModel = app.get<Model<CourseDocument>>(getModelToken(Course.name));
   const userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
+
+  anunciarDestino(app.get(ConfigService));
 
   logger.log('1/10 · Contexto de sistema y roles globales');
   const systemContext = await contexts.getSystemContext();
