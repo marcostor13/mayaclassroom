@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { TenantDto } from '@maya/shared';
+import { DEFAULT_TIMEZONE, TenantDto } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -51,7 +51,7 @@ export class AdminTenantPage {
 
   readonly settingsForm = this.fb.nonNullable.group({
     defaultLanguage: ['es'],
-    timezone: ['Europe/Madrid'],
+    timezone: [DEFAULT_TIMEZONE],
     allowSelfRegistration: [false],
     requireEmailVerification: [true],
     allowGuestAccess: [false],

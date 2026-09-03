@@ -20,7 +20,7 @@ import {
   SiteRenderComponent,
 } from '../../../../shared';
 import type { SiteRenderData } from '../../../../shared';
-import { toEmbedUrl } from '../../../../shared';
+import { normalizeVideoUrl } from '../../../../shared';
 import {
   BLOQUES,
   ICONOS_BLOQUE,
@@ -298,16 +298,18 @@ export class PageBuilderComponent {
   }
 
   /**
-   * Guarda un enlace de vídeo ya convertido al formato que se puede incrustar.
+   * Guarda un enlace de vídeo ya normalizado.
    *
-   * Se traduce al escribirlo y no al pintarlo para que el propio editor enseñe
-   * al momento si el enlace vale: si no se reconoce, el campo se queda vacío y
-   * el aviso aparece justo debajo.
+   * Los de YouTube y Vimeo se traducen al formato que se puede incrustar; la
+   * dirección de un fichero `.mp4` se guarda tal cual y la reproduce el propio
+   * navegador. Se traduce al escribirlo y no al pintarlo para que el editor
+   * enseñe al momento si el enlace vale: si no se reconoce, el campo se queda
+   * vacío y el aviso aparece justo debajo.
    */
   editarVideo(valor: string): void {
     const section = this.seleccionada();
     if (!section) return;
-    this.reemplazar({ ...section, videoUrl: toEmbedUrl(valor) });
+    this.reemplazar({ ...section, videoUrl: normalizeVideoUrl(valor) });
   }
 
   editarEstilo(campo: keyof SiteSectionStyle, valor: string | number): void {

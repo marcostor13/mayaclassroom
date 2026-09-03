@@ -1,33 +1,34 @@
 import { LessonBlockType, SiteSectionType, SiteTemplate } from '@maya/shared';
-import type { LessonBlock, SiteSection } from '@maya/shared';
+import type { LessonBlock, SiteSection, SiteSectionItem } from '@maya/shared';
 import { makeSection } from '../../modules/site/site.defaults';
+import { FOTOS, foto } from './demo-media';
 
 /* -------------------------------------------------------------------------- */
-/*  Contenido de la demostración                                              */
+/*  Contenido de la demostración · Dulce Lima, escuela de pastelería           */
 /*                                                                            */
 /*  Vive aparte del guion de siembra porque es contenido, no procedimiento:    */
-/*  textos, temarios y vídeos que se retocan a menudo y que no deberían        */
+/*  textos, temarios e imágenes que se retocan a menudo y que no deberían      */
 /*  obligar a releer la lógica de creación cada vez.                          */
 /*                                                                            */
-/*  Los vídeos son cortometrajes de la Blender Foundation, publicados con      */
-/*  licencia Creative Commons. Se usan como material de muestra: son libres,   */
-/*  están alojados de forma estable y evitan tener que subir archivos para     */
-/*  que la demostración se vea completa.                                      */
+/*  Todo está escrito para Perú: precios en soles, direcciones de Lima,        */
+/*  comprobante de pago y recetas de la casa. Una demostración con nombres y   */
+/*  costumbres de otro sitio se nota y resta credibilidad a la plataforma.     */
 /* -------------------------------------------------------------------------- */
 
-export const VIDEOS = {
-  bigBuckBunny: 'YE7VzlLtp-4',
-  sintel: 'eRsGyueVLvQ',
-  tearsOfSteel: 'R6MlUcmOul8',
-  elephantsDream: 'TLkA0RELQ1g',
-  cosmosLaundromat: 'Y-rmzh0PI3c',
-  spring: 'WhWc3b3KhnY',
-} as const;
+/** Elemento de sección con todos los campos puestos. */
+export function elemento(datos: Partial<SiteSectionItem> & { title: string }): SiteSectionItem {
+  return {
+    title: datos.title,
+    body: datos.body ?? null,
+    imageUrl: datos.imageUrl ?? null,
+    author: datos.author ?? null,
+    icon: datos.icon ?? null,
+    value: datos.value ?? null,
+    url: datos.url ?? null,
+  };
+}
 
-export const youtube = (id: string): string => `https://www.youtube.com/embed/${id}`;
-
-/** Portada del vídeo. Sirve de imagen de curso sin subir ningún archivo. */
-export const miniatura = (id: string): string => `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+/* ------------------------------- Lecciones -------------------------------- */
 
 /** Bloque de texto de una lección. */
 const texto = (id: string, html: string): LessonBlock => ({
@@ -41,13 +42,25 @@ const texto = (id: string, html: string): LessonBlock => ({
   filename: null,
 });
 
-/** Bloque de vídeo externo. */
-const video = (id: string, youtubeId: string): LessonBlock => ({
+/** Bloque de vídeo. Admite tanto una incrustación como un fichero suelto. */
+const video = (id: string, url: string): LessonBlock => ({
   id,
   type: LessonBlockType.Embed,
   content: null,
-  url: youtube(youtubeId),
+  url,
   title: null,
+  variant: null,
+  mimeType: null,
+  filename: null,
+});
+
+/** Imagen con pie. */
+const imagen = (id: string, url: string, pie: string): LessonBlock => ({
+  id,
+  type: LessonBlockType.Image,
+  content: null,
+  url,
+  title: pie,
   variant: null,
   mimeType: null,
   filename: null,
@@ -70,18 +83,35 @@ const aviso = (
   filename: null,
 });
 
-/** Lección con vídeo, explicación y un aviso. Es la forma de todas las de la demo. */
-export function leccion(params: {
+export interface LeccionDemo {
   prefijo: string;
   intro: string;
-  youtubeId: string;
+  /** Dirección del vídeo ya resuelta. Sin vídeo, la lección va con la imagen. */
+  videoUrl?: string | null;
+  imagenId?: number;
+  imagenPie?: string;
   desarrollo: string;
   avisoTitulo: string;
   avisoTexto: string;
-}): LessonBlock[] {
+}
+
+/**
+ * Lección de la demostración: explicación, medio, desarrollo y un aviso.
+ *
+ * El medio es el vídeo si se pudo resolver y, si no, la fotografía: una
+ * lección sin nada visual se lee como un apunte, no como un curso, y la
+ * demostración tiene que enseñar cómo queda de verdad.
+ */
+export function leccion(params: LeccionDemo): LessonBlock[] {
+  const medio = params.videoUrl
+    ? video(`${params.prefijo}-2`, params.videoUrl)
+    : params.imagenId
+      ? imagen(`${params.prefijo}-2`, foto(params.imagenId, 1200, 800), params.imagenPie ?? '')
+      : null;
+
   return [
     texto(`${params.prefijo}-1`, params.intro),
-    video(`${params.prefijo}-2`, params.youtubeId),
+    ...(medio ? [medio] : []),
     texto(`${params.prefijo}-3`, params.desarrollo),
     aviso(`${params.prefijo}-4`, params.avisoTitulo, params.avisoTexto),
   ];
@@ -90,168 +120,139 @@ export function leccion(params: {
 /* --------------------------- Página de la empresa ------------------------- */
 
 /**
- * Escaparate de la academia de demostración, ya diseñado y publicado.
+ * Escaparate de la escuela, ya diseñado y publicado.
  *
  * Se siembra completo a propósito: una demostración con la página por defecto
  * enseña la plantilla, no lo que la plataforma permite hacer con ella.
  */
-export function paginaDemo(nombre: string): { template: SiteTemplate; sections: SiteSection[] } {
+export function paginaDemo(
+  nombre: string,
+  videoPortada: string | null,
+): { template: SiteTemplate; sections: SiteSection[] } {
   return {
     template: SiteTemplate.Classic,
     sections: [
       makeSection('portada', SiteSectionType.Hero, {
-        title: 'Formación práctica que se nota el lunes',
+        title: 'Aprenda pastelería con las manos en la masa',
         subtitle:
-          'Cursos en línea de desarrollo e inteligencia artificial, con acompañamiento real ' +
-          'y acceso de por vida. Empiece cuando quiera, avance a su ritmo.',
+          'Cursos en línea de pastelería peruana, chocolatería y panadería, grabados en obrador ' +
+          'y pensados para vender: recetas escaladas, costos por porción y acompañamiento del ' +
+          'equipo docente. Empiece cuando quiera, a su ritmo y de por vida.',
         ctaLabel: 'Ver los cursos',
         ctaUrl: '#cursos',
-        ctaSecondaryLabel: 'Hablar con nosotros',
+        ctaSecondaryLabel: 'Escríbanos',
         ctaSecondaryUrl: '#contacto',
-        videoUrl: youtube(VIDEOS.spring),
+        imageUrl: foto(FOTOS.amasando, 1200, 900),
+        videoUrl: videoPortada,
         style: { background: 'soft', align: 'start', spacing: 'roomy', columns: 3 },
       }),
 
       makeSection('ventajas', SiteSectionType.Features, {
-        title: 'Por qué formarse con nosotros',
-        subtitle: 'Sin relleno, sin sesiones interminables y sin caducidad.',
+        title: 'Por qué estudiar en Dulce Lima',
+        subtitle: 'Sin relleno, con recetas probadas en producción y sin fecha de caducidad.',
         items: [
-          {
-            title: 'A su ritmo, de por vida',
-            body: 'El acceso no caduca. Vuelva al material cuando lo necesite.',
+          elemento({
+            title: 'Recetas al gramo',
+            body: 'Cada preparación viene escalada, con porcentaje de panadero y costo por porción.',
+            icon: 'clipboard-check',
+          }),
+          elemento({
+            title: 'Ajustado al clima de Lima',
+            body: 'Humedad, fermentaciones y templado de chocolate resueltos para la costa peruana.',
+            icon: 'target',
+          }),
+          elemento({
+            title: 'Acceso de por vida',
+            body: 'El curso no caduca y las actualizaciones de recetas entran sin pagar de nuevo.',
             icon: 'clock',
-            author: null,
-            imageUrl: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: 'Proyectos reales',
-            body: 'Cada módulo cierra con algo que puede enseñar o usar en su trabajo.',
-            icon: 'zap',
-            author: null,
-            imageUrl: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: 'Dudas resueltas',
-            body: 'Foro por curso y mensajería directa con el profesorado.',
-            icon: 'message-square',
-            author: null,
-            imageUrl: null,
-            value: null,
-            url: null,
-          },
-          {
+          }),
+          elemento({
             title: 'Certificado verificable',
-            body: 'Al completar el curso recibe un certificado con código de verificación.',
+            body: 'Al terminar recibe un certificado con código de verificación en línea.',
             icon: 'award',
-            author: null,
-            imageUrl: null,
-            value: null,
-            url: null,
-          },
+          }),
         ],
         style: { background: 'plain', align: 'center', spacing: 'normal', columns: 4 },
       }),
 
       makeSection('cursos', SiteSectionType.Courses, {
         title: 'Nuestros cursos',
-        subtitle: 'Tres formaciones, tres niveles. Elija por donde le encaje empezar.',
+        subtitle: 'De las cinco recetas base a la bombonería fina. Elija por dónde empezar.',
       }),
 
       makeSection('cifras', SiteSectionType.Stats, {
         title: null,
         items: [
-          { title: 'Alumnado formado', value: '1.240', body: null, author: null, imageUrl: null, icon: null, url: null },
-          { title: 'Horas de contenido', value: '38', body: null, author: null, imageUrl: null, icon: null, url: null },
-          { title: 'Valoración media', value: '4,8/5', body: null, author: null, imageUrl: null, icon: null, url: null },
-          { title: 'Terminan el curso', value: '87 %', body: null, author: null, imageUrl: null, icon: null, url: null },
+          elemento({ title: 'Alumnado formado', value: '1.860' }),
+          elemento({ title: 'Horas de obrador grabadas', value: '46' }),
+          elemento({ title: 'Valoración media', value: '4,8/5' }),
+          elemento({ title: 'Terminan el curso', value: '89 %' }),
         ],
         style: { background: 'brand', align: 'center', spacing: 'normal', columns: 4 },
       }),
 
+      makeSection('galeria', SiteSectionType.Gallery, {
+        title: 'El obrador por dentro',
+        subtitle: 'Lo que se hace en clase, tal cual sale de la vitrina.',
+        items: [
+          elemento({ title: 'Vitrina de la escuela', imageUrl: foto(FOTOS.vitrina, 800, 600) }),
+          elemento({ title: 'Mostrador de la mañana', imageUrl: foto(FOTOS.mostrador, 800, 600) }),
+          elemento({ title: 'Surtido de tartaletas', imageUrl: foto(FOTOS.surtido, 800, 600) }),
+          elemento({ title: 'Panes de masa madre', imageUrl: foto(FOTOS.panes, 800, 600) }),
+          elemento({ title: 'Torta de capas', imageUrl: foto(FOTOS.tortaCapas, 800, 600) }),
+          elemento({ title: 'Macarons del taller', imageUrl: foto(FOTOS.macarons, 800, 600) }),
+        ],
+        style: { background: 'soft', align: 'center', spacing: 'normal', columns: 3 },
+      }),
+
       makeSection('como-funciona', SiteSectionType.Steps, {
         title: 'Cómo funciona',
-        subtitle: 'De la compra al aula, en menos de un minuto.',
+        subtitle: 'De la compra al obrador, en menos de un minuto.',
         items: [
-          {
+          elemento({
             title: 'Elija su curso',
-            body: 'Cada ficha trae el temario completo y una muestra gratuita.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: 'Pague como prefiera',
-            body: 'Mercado Pago, PayPal o transferencia. El cobro es de la pasarela, no nuestro.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
+            body: 'Cada ficha trae el temario completo y una clase de muestra gratuita.',
+          }),
+          elemento({
+            title: 'Pague en soles',
+            body: 'Mercado Pago, PayPal o transferencia y Yape. El cobro lo hace la pasarela.',
+          }),
+          elemento({
             title: 'Reciba su acceso',
-            body: 'Le llega un correo con su cuenta creada y el curso ya matriculado.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: 'Empiece a aprender',
-            body: 'Vídeos, ejercicios y foro. Su avance se guarda solo.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
+            body: 'Le llega un correo con la cuenta creada y el curso ya matriculado.',
+          }),
+          elemento({
+            title: 'A la cocina',
+            body: 'Vídeos, recetario descargable y foro con el equipo docente. El avance se guarda solo.',
+          }),
         ],
-        style: { background: 'soft', align: 'start', spacing: 'normal', columns: 4 },
+        style: { background: 'plain', align: 'start', spacing: 'normal', columns: 4 },
       }),
 
       makeSection('testimonios', SiteSectionType.Testimonials, {
-        title: 'Lo que dice quien ya ha pasado por aquí',
+        title: 'Lo que dice quien ya pasó por el obrador',
         items: [
-          {
-            title: 'Dejé de copiar plantillas y entendí el porqué',
+          elemento({
+            title: 'Dejé de regalar el trabajo',
             body:
-              'Venía de hacer cursos que se quedan en la superficie. Aquí el módulo de señales ' +
-              'me cambió la forma de estructurar la aplicación en el trabajo.',
-            author: 'Ana Ruiz · Desarrolladora frontend',
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: 'En dos semanas teníamos la API en producción',
+              'Vendía alfajores por encargo sin saber cuánto ganaba. Con la plantilla de costos ' +
+              'del curso subí el precio 40 % y sigo vendiendo igual.',
+            author: 'Rocío Ttito · Emprendedora, Cusco',
+          }),
+          elemento({
+            title: 'El merengue por fin me aguanta',
             body:
-              'El curso de NestJS está montado como se monta de verdad un proyecto: validación, ' +
-              'permisos y despliegue. Nos ahorró meses de prueba y error.',
-            author: 'Carlos Molina · Responsable técnico',
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: 'Por fin una formación de IA sin humo',
+              'Con la humedad de Lima se me bajaba siempre. La clase del merengue italiano y el ' +
+              'truco del almíbar a 118 °C me resolvieron el suspiro de una vez.',
+            author: 'Diego Palomino · Pastelero, Miraflores',
+          }),
+          elemento({
+            title: 'Abrimos la carta de bombones',
             body:
-              'Salí con un flujo de mi trabajo automatizado de verdad, no con una lista de ' +
-              'herramientas que nunca vuelvo a abrir.',
-            author: 'Elena Vargas · Responsable de operaciones',
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
+              'Sumamos bombonería a la cafetería con lo que aprendimos en chocolatería. Es lo ' +
+              'que más margen deja de toda la vitrina.',
+            author: 'Sofía Ccahuana · Cafetería Aroma, Barranco',
+          }),
         ],
         style: { background: 'plain', align: 'start', spacing: 'normal', columns: 3 },
       }),
@@ -259,46 +260,42 @@ export function paginaDemo(nombre: string): { template: SiteTemplate; sections: 
       makeSection('preguntas', SiteSectionType.Faq, {
         title: 'Preguntas frecuentes',
         items: [
-          {
+          elemento({
             title: '¿Cuánto dura el acceso?',
-            body: 'Para siempre. Se compra una vez y el material queda disponible, actualizaciones incluidas.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: '¿Necesito conocimientos previos?',
             body:
-              'El curso de IA no pide ninguno. Los de desarrollo asumen que ha programado antes, ' +
-              'aunque no en estas tecnologías.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: '¿Cómo se paga?',
+              'Para siempre. Se paga una vez y el material queda disponible, con las ' +
+              'actualizaciones de recetas incluidas.',
+          }),
+          elemento({
+            title: '¿Necesito equipo profesional?',
             body:
-              'Con Mercado Pago, con PayPal o por transferencia. El pago se hace en la pasarela; ' +
-              'nosotros no vemos ni guardamos los datos de su tarjeta.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
-          {
-            title: '¿Recibo factura?',
-            body: 'Sí. Escríbanos con sus datos fiscales y se la emitimos el mismo día.',
-            author: null,
-            imageUrl: null,
-            icon: null,
-            value: null,
-            url: null,
-          },
+              'No. Todo está probado con horno doméstico y batidora de mano. Cuando una receta ' +
+              'exija algo más, se dice antes y se da la alternativa.',
+          }),
+          elemento({
+            title: '¿Cómo pago?',
+            body:
+              'En soles, con Mercado Pago, PayPal, transferencia o Yape. El pago se hace en la ' +
+              'pasarela: nosotros no vemos ni guardamos los datos de su tarjeta.',
+          }),
+          elemento({
+            title: '¿Emiten boleta o factura?',
+            body:
+              'Sí. Escríbanos con su DNI o su RUC y le emitimos el comprobante electrónico el ' +
+              'mismo día.',
+          }),
+          elemento({
+            title: '¿Los ingredientes se consiguen en Perú?',
+            body:
+              'Todos. Cada receta lleva las marcas y los mercados donde encontrarlos, y una ' +
+              'alternativa por si falta alguno.',
+          }),
+          elemento({
+            title: '¿Hay clases en vivo?',
+            body:
+              'Una al mes, para resolver dudas del temario. Se graba y queda en el curso por si ' +
+              'no puede asistir.',
+          }),
         ],
         style: { background: 'soft', align: 'start', spacing: 'normal', columns: 3 },
       }),
@@ -306,24 +303,27 @@ export function paginaDemo(nombre: string): { template: SiteTemplate; sections: 
       makeSection('sobre-nosotros', SiteSectionType.About, {
         title: `Sobre ${nombre}`,
         body:
-          'Somos un equipo pequeño de personas que se dedican a esto todos los días: ' +
-          'desarrollamos software a medida y damos formación con lo que aprendemos haciéndolo.\n\n' +
-          'Por eso nuestros cursos no explican la teoría de un manual, sino las decisiones que ' +
-          'se toman en un proyecto real y por qué. Si algo no le encaja, escríbanos: preferimos ' +
-          'que se matricule en el curso adecuado antes que en el más caro.',
+          'Somos un obrador de Barranco que empezó vendiendo alfajores en ferias y acabó ' +
+          'enseñando a hacerlos. Seguimos produciendo todas las semanas: lo que se cuenta en ' +
+          'los cursos es lo que hacemos, no lo que dice un manual.\n\n' +
+          'Por eso cada receta viene con su costo, su rendimiento y los fallos típicos. Si algo ' +
+          'no le encaja, escríbanos: preferimos que se matricule en el curso adecuado antes que ' +
+          'en el más caro.',
+        imageUrl: foto(FOTOS.obrador, 1200, 800),
+        style: { background: 'plain', align: 'start', spacing: 'normal', columns: 3 },
       }),
 
       makeSection('llamada', SiteSectionType.Cta, {
         title: '¿Formación para todo su equipo?',
-        subtitle: 'Preparamos programas a medida y licencias por volumen.',
-        ctaLabel: 'Pedir presupuesto',
+        subtitle: 'Preparamos programas a medida para restaurantes, hoteles y cafeterías.',
+        ctaLabel: 'Pedir una propuesta',
         ctaUrl: '#contacto',
         style: { background: 'plain', align: 'center', spacing: 'normal', columns: 3 },
       }),
 
       makeSection('contacto', SiteSectionType.Contact, {
-        title: '¿Hablamos?',
-        subtitle: 'Le respondemos el mismo día laborable.',
+        title: '¿Conversamos?',
+        subtitle: 'Respondemos el mismo día útil, de lunes a sábado.',
         style: { background: 'soft', align: 'start', spacing: 'normal', columns: 3 },
       }),
     ],
@@ -333,7 +333,7 @@ export function paginaDemo(nombre: string): { template: SiteTemplate; sections: 
 /* ------------------------ Página de venta de un curso --------------------- */
 
 /**
- * Página de venta propia de un curso de la demostración.
+ * Página de venta propia de un curso.
  *
  * Se siembra ya diseñada para enseñar la diferencia entre la maqueta por
  * defecto —que la plataforma compone sola— y una página trabajada, que es lo
@@ -342,52 +342,52 @@ export function paginaDemo(nombre: string): { template: SiteTemplate; sections: 
 export function paginaCurso(params: {
   titulo: string;
   gancho: string;
-  youtubeId: string;
+  videoUrl: string | null;
+  imagenId: number;
   ventajas: { title: string; body: string; icon: string }[];
   preguntas: { title: string; body: string }[];
+  galeria?: { title: string; imagenId: number }[];
 }): SiteSection[] {
   return [
     makeSection('portada', SiteSectionType.Hero, {
       title: params.titulo,
       subtitle: params.gancho,
-      ctaLabel: 'Comprar el curso',
+      ctaLabel: 'Llevar el curso',
       ctaUrl: '#comprar',
-      videoUrl: youtube(params.youtubeId),
+      imageUrl: foto(params.imagenId, 1200, 900),
+      videoUrl: params.videoUrl,
       style: { background: 'soft', align: 'start', spacing: 'roomy', columns: 3 },
     }),
     makeSection('aprenderas', SiteSectionType.Features, {
       title: 'Lo que va a saber hacer al terminar',
-      items: params.ventajas.map((item) => ({
-        title: item.title,
-        body: item.body,
-        icon: item.icon,
-        author: null,
-        imageUrl: null,
-        value: null,
-        url: null,
-      })),
+      items: params.ventajas.map((item) =>
+        elemento({ title: item.title, body: item.body, icon: item.icon }),
+      ),
       style: { background: 'plain', align: 'start', spacing: 'normal', columns: 2 },
     }),
+    ...(params.galeria?.length
+      ? [
+          makeSection('muestras', SiteSectionType.Gallery, {
+            title: 'Lo que va a sacar del horno',
+            items: params.galeria.map((item) =>
+              elemento({ title: item.title, imageUrl: foto(item.imagenId, 800, 600) }),
+            ),
+            style: { background: 'soft', align: 'center', spacing: 'normal', columns: 3 },
+          }),
+        ]
+      : []),
     makeSection('temario', SiteSectionType.Curriculum, {
       title: 'Temario completo',
-      subtitle: 'El primer tema se puede ver gratis antes de comprar.',
-      style: { background: 'soft', align: 'start', spacing: 'normal', columns: 3 },
+      subtitle: 'La primera clase se puede ver gratis antes de comprar.',
+      style: { background: 'plain', align: 'start', spacing: 'normal', columns: 3 },
     }),
     makeSection('profesorado', SiteSectionType.Instructor, {
-      title: 'Quién imparte el curso',
+      title: 'Quién dicta el curso',
     }),
     makeSection('preguntas', SiteSectionType.Faq, {
       title: 'Dudas antes de decidirse',
-      items: params.preguntas.map((item) => ({
-        title: item.title,
-        body: item.body,
-        author: null,
-        imageUrl: null,
-        icon: null,
-        value: null,
-        url: null,
-      })),
-      style: { background: 'plain', align: 'start', spacing: 'normal', columns: 3 },
+      items: params.preguntas.map((item) => elemento({ title: item.title, body: item.body })),
+      style: { background: 'soft', align: 'start', spacing: 'normal', columns: 3 },
     }),
     makeSection('comprar', SiteSectionType.Pricing, {
       title: 'Empiece hoy mismo',

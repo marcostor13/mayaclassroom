@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { AuthProvider, UserStatus } from '@maya/shared';
+import { AuthProvider, DEFAULT_TIMEZONE, UserStatus } from '@maya/shared';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
 
 @Schema({ _id: false })
@@ -46,7 +46,7 @@ export class User extends TenantScopedDocument {
   @Prop({ type: String, default: null }) phone!: string | null;
   @Prop({ type: String, default: null }) city!: string | null;
   @Prop({ type: String, default: null }) country!: string | null;
-  @Prop({ default: 'Europe/Madrid' }) timezone!: string;
+  @Prop({ default: DEFAULT_TIMEZONE }) timezone!: string;
   @Prop({ default: 'es' }) language!: string;
   @Prop({ type: String, default: null }) department!: string | null;
   @Prop({ type: String, default: null }) institution!: string | null;

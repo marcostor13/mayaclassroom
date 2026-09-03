@@ -19,7 +19,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { CourseFormat, CourseVisibility, GroupMode, ModuleType } from '@maya/shared';
+import { CourseFormat, CourseVisibility, DEFAULT_CURRENCY, GroupMode, ModuleType } from '@maya/shared';
 import { PaginationQueryDto } from '../../../common/dto';
 import { SiteSectionDto } from '../../site/dto/site.dto';
 
@@ -110,7 +110,7 @@ export class CourseCatalogDto {
   @IsOptional()
   priceCents?: number;
 
-  @ApiPropertyOptional({ example: 'EUR' })
+  @ApiPropertyOptional({ example: DEFAULT_CURRENCY })
   @IsString()
   @IsOptional()
   @MaxLength(3)

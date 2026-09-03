@@ -218,7 +218,7 @@
           @if (course.catalog?.listed) {
             <div class="curso__campos">
               <div class="maya-field" data-guia="precio-curso">
-                <label class="maya-label" [attr.for]="'p-' + course.id">Precio (€)</label>
+                <label class="maya-label" [attr.for]="'p-' + course.id">Precio ({{ simbolo(course) }})</label>
                 <input
                   [id]="'p-' + course.id"
                   class="maya-input"
@@ -230,7 +230,7 @@
               </div>
 
               <div class="maya-field">
-                <label class="maya-label" [attr.for]="'pa-' + course.id">Precio tachado (€)</label>
+                <label class="maya-label" [attr.for]="'pa-' + course.id">Precio tachado ({{ simbolo(course) }})</label>
                 <input
                   [id]="'pa-' + course.id"
                   class="maya-input"

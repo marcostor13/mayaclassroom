@@ -117,26 +117,30 @@
           }
 
           @case (Tipo.Embed) {
-            @if (block.url) {
+            @if (video(block.url); as clip) {
               <div class="marco">
-                <iframe
-                  [src]="block.url"
-                  title="Vídeo"
-                  loading="lazy"
-                  allowfullscreen
-                  referrerpolicy="strict-origin-when-cross-origin"
-                ></iframe>
+                @if (clip.tipo === 'fichero') {
+                  <video [src]="clip.src" controls playsinline preload="metadata"></video>
+                } @else {
+                  <iframe
+                    [src]="clip.src"
+                    title="Vídeo"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"
+                  ></iframe>
+                }
               </div>
             }
             <input
               class="maya-input"
-              placeholder="Pegue el enlace de YouTube o Vimeo"
+              placeholder="Enlace de YouTube o Vimeo, o dirección de un .mp4"
               [value]="block.url ?? ''"
               (change)="fijarIncrustado(block.id, $any($event.target).value)"
             />
             <span class="maya-hint">
-              Vale el enlace normal del navegador; se convierte solo al formato que se puede
-              incrustar.
+              Vale el enlace normal del navegador; se convierte solo. También sirve la dirección
+              de un fichero de vídeo.
             </span>
           }
 

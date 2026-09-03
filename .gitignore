@@ -43,3 +43,6 @@ tmp/
 /banco/
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Caché de los vídeos de la demostración resueltos contra Pexels.
+.demo-media.json

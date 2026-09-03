@@ -57,8 +57,10 @@ cp .env.example .env          # y edite MONGODB_URI con su clúster de Atlas
 # 4 · Compilar los contratos compartidos
 bun run build:shared
 
-# 5 · Datos de demostración (empresa, usuarios, tres cursos con vídeo,
-#     escaparate publicado, cobros configurados y pedidos de ejemplo)
+# 5 · Datos de demostración: Dulce Lima, una escuela de pastelería de Lima con
+#     su equipo, cuatro cursos con temario y vídeo, alumnado con avance y
+#     notas, escaparate publicado, cobros en soles y pedidos de ejemplo.
+#     Con PEXELS_API_KEY en el entorno resuelve además los vídeos de Pexels.
 bun run seed
 
 # 6 · Arrancar API (:3000) y cliente (:4205) a la vez
@@ -70,9 +72,9 @@ Abra `http://localhost:4205` y acceda con la empresa **`demo`**:
 | Perfil | Usuario | Contraseña |
 |---|---|---|
 | Administrador de plataforma | `admin@mayaclassroom.app` | `Maya2026!` |
-| Gestora de la empresa | `gestora@academiamaya.example` | `Maya2026!` |
-| Profesor | `profesor@academiamaya.example` | `Maya2026!` |
-| Alumna | `ana.ruiz@academiamaya.example` | `Maya2026!` |
+| Gestora de la escuela | `gestora@dulcelima.pe` | `Maya2026!` |
+| Chef pastelera | `elena.chavez@dulcelima.pe` | `Maya2026!` |
+| Alumna | `ana.quispe@dulcelima.pe` | `Maya2026!` |
 
 La documentación interactiva de la API queda en `http://localhost:3000/api/docs`.
 

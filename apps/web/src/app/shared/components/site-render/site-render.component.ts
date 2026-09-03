@@ -1,9 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import {
-  DEFAULT_SECTION_STYLE,
-  SiteSectionType,
-  SiteTemplate,
-} from '@maya/shared';
+import { DEFAULT_SECTION_STYLE, SiteSectionType, SiteTemplate, formatMoney } from '@maya/shared';
 import type {
   PublicCourseDto,
   PublicCurriculumSection,
@@ -16,7 +12,8 @@ import type {
 import { IconComponent } from '../icon.component';
 import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 import { SafeResourcePipe } from '../../pipes/safe-resource.pipe';
-import { toEmbedUrl } from '../../utils/embed';
+import { resolveVideo } from '../../utils/embed';
+import type { VideoResuelto } from '../../utils/embed';
 
 /** Todo lo que hace falta para pintar una página, venga de donde venga. */
 export interface SiteRenderData {
@@ -135,8 +132,16 @@ export class SiteRenderComponent {
     return section.limit ? courses.slice(0, section.limit) : courses;
   }
 
-  incrustar(url: string | null | undefined): string | null {
-    return toEmbedUrl(url);
+  /**
+   * Resuelve el vídeo de una sección.
+   *
+   * Devuelve cómo hay que pintarlo —marco de YouTube o Vimeo, o el
+   * reproductor del navegador para un fichero suelto— y no solo la dirección,
+   * porque un `.mp4` metido en un `iframe` se ve como el visor pelado del
+   * navegador dentro de la página.
+   */
+  video(url: string | null | undefined): VideoResuelto | null {
+    return resolveVideo(url);
   }
 
   iconoModulo(type: string): string {
@@ -161,11 +166,7 @@ export class SiteRenderComponent {
   }
 
   private formatear(cents: number, currency: string): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: currency || 'EUR',
-      maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
-    }).format(cents / 100);
+    return formatMoney(cents, currency);
   }
 
   /** Las viñetas de «lo que aprenderás», que alimentan la sección de ventajas. */

@@ -126,11 +126,11 @@
 
         @if (usa('video')) {
           <div class="maya-field">
-            <label class="maya-label" for="f-video">Vídeo de YouTube o Vimeo</label>
+            <label class="maya-label" for="f-video">Vídeo</label>
             <input
               id="f-video"
               class="maya-input"
-              placeholder="Pegue aquí el enlace del navegador"
+              placeholder="YouTube, Vimeo o la dirección de un .mp4"
               [value]="section.videoUrl ?? ''"
               (change)="editarVideo($any($event.target).value)"
             />

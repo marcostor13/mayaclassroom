@@ -17,7 +17,8 @@ de API) va en inglés.
 ```bash
 bun install
 bun run dev            # API en :3000 y cliente en :4205
-bun run seed           # datos de demostración (necesita MONGODB_URI)
+bun run seed           # datos de demostración (necesita MONGODB_URI;
+                       #   con PEXELS_API_KEY además resuelve los vídeos)
 bun run build:shared   # solo hace falta antes de un `tsc` lanzado a mano
 
 bun run lint                          # ESLint de la API
@@ -51,6 +52,11 @@ dar por rota una herramienta.
   La regla `@typescript-eslint/consistent-type-imports` lo vigila.
 - **`@typescript-eslint/no-explicit-any` está en `error`.** No hay escapatoria
   con `any`; usar `unknown` y estrechar.
+- **Los medios de la demostración salen de Pexels.** Las fotos se componen de
+  su identificador y no necesitan clave; los vídeos sí, porque el nombre del
+  fichero depende de la resolución con la que se publicó cada uno. Sin
+  `PEXELS_API_KEY` la siembra funciona igual y deja la demostración con
+  imágenes y sin vídeos, avisando por el registro.
 
 ## Convenciones
 
@@ -73,4 +79,8 @@ ficheros que les corresponden. Los procedimientos de varios pasos son skills:
 - No introducir colores en crudo en el cliente: el sistema de diseño vive en
   variables CSS (`--maya-*`) para que la personalización de marca por empresa
   siga funcionando.
+- **Perú es el mercado por defecto.** Los precios van en soles y las fechas y
+  los importes se escriben como allí. Nada de `Intl.NumberFormat` a mano ni de
+  `'EUR'` suelto: `DEFAULT_CURRENCY`, `DEFAULT_LOCALE`, `DEFAULT_TIMEZONE`,
+  `formatMoney()` y `currencySymbol()` viven en `@maya/shared`.
 - Antes de dar algo por terminado, ejecutar `/verificar`.

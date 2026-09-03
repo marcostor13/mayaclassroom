@@ -149,9 +149,17 @@
                 </div>
               </div>
 
-              @if (incrustar(section.videoUrl); as video) {
+              @if (video(section.videoUrl); as clip) {
                 <div class="marco">
-                  @if (video | safeResource; as src) {
+                  @if (clip.tipo === 'fichero') {
+                    <video
+                      [src]="clip.src"
+                      [poster]="section.imageUrl ?? data().course?.imageUrl ?? null"
+                      controls
+                      playsinline
+                      preload="metadata"
+                    ></video>
+                  } @else if (clip.src | safeResource; as src) {
                     <iframe
                       [src]="src"
                       title="Vídeo de presentación"
@@ -359,9 +367,17 @@
                 <p class="seccion__entrada">{{ section.subtitle }}</p>
               }
             </header>
-            @if (incrustar(section.videoUrl); as video) {
+            @if (video(section.videoUrl); as clip) {
               <div class="marco marco--ancho">
-                @if (video | safeResource; as src) {
+                @if (clip.tipo === 'fichero') {
+                  <video
+                    [src]="clip.src"
+                    [poster]="section.imageUrl"
+                    controls
+                    playsinline
+                    preload="metadata"
+                  ></video>
+                } @else if (clip.src | safeResource; as src) {
                   <iframe
                     [src]="src"
                     [title]="section.title || 'Vídeo'"
@@ -372,7 +388,9 @@
                 }
               </div>
             } @else {
-              <p class="maya-muted">Pegue el enlace de un vídeo de YouTube o Vimeo.</p>
+              <p class="maya-muted">
+                Pegue el enlace de un vídeo de YouTube o Vimeo, o la dirección de un fichero .mp4.
+              </p>
             }
           }
 

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
+import { DEFAULT_CURRENCY } from '@maya/shared';
 
 /**
  * Credenciales de una pasarela.
@@ -57,7 +58,7 @@ export class PaymentSettings extends TenantScopedDocument {
   declare tenant: Types.ObjectId;
 
   /** Moneda por defecto de los cursos que no declaren la suya. */
-  @Prop({ default: 'EUR' }) currency!: string;
+  @Prop({ default: DEFAULT_CURRENCY }) currency!: string;
 
   @Prop({ type: MercadoPagoSettingsSchema, default: () => ({}) })
   mercadoPago!: MercadoPagoSettingsSchema;

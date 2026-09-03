@@ -10,7 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
-import { PaymentProvider } from '@maya/shared';
+import { PaymentProvider, formatMoney } from '@maya/shared';
 import type {
   PublicCourseDetailDto,
   PublicCourseDto,
@@ -91,11 +91,7 @@ export class CoursePublicPage implements OnInit {
     const course = this.data()?.course;
     if (!course) return '';
     if (course.catalog.priceCents <= 0) return 'Gratis';
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: course.catalog.currency || 'EUR',
-      maximumFractionDigits: course.catalog.priceCents % 100 === 0 ? 0 : 2,
-    }).format(course.catalog.priceCents / 100);
+    return formatMoney(course.catalog.priceCents, course.catalog.currency);
   });
 
   ngOnInit(): void {

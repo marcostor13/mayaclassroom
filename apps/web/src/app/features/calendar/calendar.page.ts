@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { CAP, CalendarEventDto, CalendarEventType, CourseSummary } from '@maya/shared';
+import { CAP, CalendarEventDto, CalendarEventType, CourseSummary, DEFAULT_LOCALE } from '@maya/shared';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CommunicationService } from '../../core/services/communication.service';
@@ -76,7 +76,7 @@ export class CalendarPage {
   });
 
   readonly monthLabel = computed(() =>
-    new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(this.cursor()),
+    new Intl.DateTimeFormat(DEFAULT_LOCALE, { month: 'long', year: 'numeric' }).format(this.cursor()),
   );
 
   /** Rejilla de 6 semanas comenzando en lunes. */

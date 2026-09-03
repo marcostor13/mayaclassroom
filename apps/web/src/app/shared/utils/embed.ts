@@ -38,3 +38,52 @@ export function embedPoster(value: string | null | undefined): string | null {
   const youtube = embed.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/);
   return youtube ? `https://i.ytimg.com/vi/${youtube[1]}/hqdefault.jpg` : null;
 }
+
+/**
+ * Extensiones de vídeo que el navegador reproduce sin ayuda de nadie.
+ *
+ * Se admite una cadena de consulta detrás porque los bancos de vídeo —Pexels
+ * entre ellos— sirven el fichero con parámetros de descarga.
+ */
+const FICHERO_DE_VIDEO = /\.(mp4|webm|ogv|ogg|mov|m4v)(?:[?#]|$)/i;
+
+/**
+ * Cómo hay que pintar un vídeo: dentro de un marco o con el reproductor del
+ * navegador.
+ */
+export type VideoResuelto =
+  /** YouTube, Vimeo: se incrusta en un `iframe`. */
+  | { readonly tipo: 'marco'; readonly src: string }
+  /** Un `.mp4` suelto: lo reproduce el propio navegador con `<video>`. */
+  | { readonly tipo: 'fichero'; readonly src: string };
+
+/**
+ * Resuelve un enlace de vídeo, venga de donde venga.
+ *
+ * No todo el vídeo del mundo está en YouTube: los bancos de material libre
+ * dan la dirección del fichero, y meter un `.mp4` en un `iframe` deja el
+ * visor pelado del navegador dentro de la página. Distinguir los dos casos
+ * aquí permite que quien pega el enlace no tenga que saber la diferencia.
+ */
+export function resolveVideo(value: string | null | undefined): VideoResuelto | null {
+  const url = (value ?? '').trim();
+  if (!url) return null;
+
+  const marco = toEmbedUrl(url);
+  if (marco) return { tipo: 'marco', src: marco };
+
+  if (/^https?:\/\//i.test(url) && FICHERO_DE_VIDEO.test(url)) return { tipo: 'fichero', src: url };
+
+  return null;
+}
+
+/**
+ * Normaliza el enlace para guardarlo.
+ *
+ * Los de YouTube y Vimeo se traducen al formato que se puede incrustar; los
+ * ficheros se guardan tal cual. Devuelve `null` si no es ninguna de las dos
+ * cosas, para poder avisar en vez de guardar algo que no se verá.
+ */
+export function normalizeVideoUrl(value: string | null | undefined): string | null {
+  return resolveVideo(value)?.src ?? null;
+}

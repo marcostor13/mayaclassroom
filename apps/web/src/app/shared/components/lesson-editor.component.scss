@@ -73,12 +73,17 @@ audio {
   background: #000;
 }
 
-.marco iframe {
+.marco :is(iframe, video) {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+/* Un fichero de vídeo puede no ser 16/9; se encaja sin deformarlo. */
+.marco video {
+  object-fit: contain;
 }
 
 .codigo {

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { OrderStatus } from '@maya/shared';
+import { OrderStatus, formatMoney } from '@maya/shared';
 import type { CheckoutResult } from '@maya/shared';
 import { SiteService } from '../../core/services/site.service';
 import { IconComponent } from '../../shared';
@@ -55,10 +55,7 @@ export class PaymentSandboxPage implements OnInit {
     const order = this.result()?.order;
     if (!order) return '';
     if (order.amountCents <= 0) return 'Gratis';
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: order.currency || 'EUR',
-    }).format(order.amountCents / 100);
+    return formatMoney(order.amountCents, order.currency);
   });
 
   ngOnInit(): void {

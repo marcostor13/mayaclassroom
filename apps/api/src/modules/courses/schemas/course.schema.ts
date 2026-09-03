@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { CourseFormat, CourseVisibility, GroupMode, MAX_UPLOAD_BYTES } from '@maya/shared';
+import { CourseFormat, CourseVisibility, DEFAULT_CURRENCY, GroupMode, MAX_UPLOAD_BYTES } from '@maya/shared';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
 import { SiteSectionSchema } from '../../site/schemas/tenant-site.schema';
 
@@ -10,7 +10,7 @@ export class CourseCatalogSchema {
   @Prop({ default: false, index: true }) listed!: boolean;
   /** En céntimos: el dinero en coma flotante acaba en errores de redondeo. */
   @Prop({ default: 0, min: 0 }) priceCents!: number;
-  @Prop({ default: 'EUR' }) currency!: string;
+  @Prop({ default: DEFAULT_CURRENCY }) currency!: string;
   @Prop({ type: String, default: null }) headline!: string | null;
   @Prop({ type: [String], default: [] }) highlights!: string[];
   @Prop({ type: String, default: null }) level!: string | null;

@@ -1,6 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { OrderStatus, PaymentProvider, SiteTemplate } from '@maya/shared';
+import {
+  DEFAULT_CURRENCY,
+  OrderStatus,
+  PaymentProvider,
+  SiteTemplate,
+  currencySymbol,
+  formatMoney,
+} from '@maya/shared';
 import type {
   CourseSummary,
   EnrolmentRequestDto,
@@ -128,7 +135,7 @@ export class AdminStorefrontPage implements OnInit {
       categoryId: course.categoryId,
       categoryName: course.categoryName ?? null,
       tags: [],
-      catalog: course.catalog ?? { listed: false, priceCents: 0, currency: 'EUR' },
+      catalog: course.catalog ?? { listed: false, priceCents: 0, currency: DEFAULT_CURRENCY },
       enrolledCount: course.enrolledCount ?? 0,
     };
   }
@@ -365,7 +372,7 @@ export class AdminStorefrontPage implements OnInit {
 
   private saveCatalog(course: CourseSummary, change: Record<string, unknown>): void {
     const catalog = {
-      ...(course.catalog ?? { listed: false, priceCents: 0, currency: 'EUR' }),
+      ...(course.catalog ?? { listed: false, priceCents: 0, currency: DEFAULT_CURRENCY }),
       ...change,
     };
     this.courses.update(course.id, { catalog } as Partial<CourseSummary>).subscribe({
@@ -388,14 +395,22 @@ export class AdminStorefrontPage implements OnInit {
     window.open(`/p/${slug}/c/${course.id}`, '_blank');
   }
 
+  /**
+   * Símbolo de la moneda en la que está puesto el precio del curso.
+   *
+   * Va en la etiqueta del campo porque un número sin moneda no dice nada, y
+   * la empresa puede vender en soles, en dólares o en lo que tenga
+   * configurado en Cobros.
+   */
+  simbolo(course: CourseSummary): string {
+    return currencySymbol(course.catalog?.currency);
+  }
+
   /* -------------------------------- Pedidos ------------------------------- */
 
   importe(order: OrderDto): string {
     if (order.amountCents <= 0) return 'Gratis';
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: order.currency || 'EUR',
-    }).format(order.amountCents / 100);
+    return formatMoney(order.amountCents, order.currency);
   }
 
   /** Nombre legible de la forma de pago; el valor guardado es un código. */

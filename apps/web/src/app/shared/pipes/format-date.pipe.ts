@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { DEFAULT_LOCALE } from '@maya/shared';
 
 type Preset = 'short' | 'long' | 'time' | 'datetime' | 'day' | 'month';
 
@@ -16,6 +17,6 @@ const OPTIONS: Record<Preset, Intl.DateTimeFormatOptions> = {
 export class FormatDatePipe implements PipeTransform {
   transform(value: string | Date | null | undefined, preset: Preset = 'short'): string {
     if (!value) return '—';
-    return new Intl.DateTimeFormat('es-ES', OPTIONS[preset]).format(new Date(value));
+    return new Intl.DateTimeFormat(DEFAULT_LOCALE, OPTIONS[preset]).format(new Date(value));
   }
 }

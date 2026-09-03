@@ -3,6 +3,8 @@ import { LessonBlock, LessonBlockType } from '@maya/shared';
 import { IconComponent } from './icon.component';
 import { SafeHtmlPipe } from '../pipes/safe-html.pipe';
 import { SafeResourcePipe } from '../pipes/safe-resource.pipe';
+import { resolveVideo } from '../utils/embed';
+import type { VideoResuelto } from '../utils/embed';
 
 /**
  * Lección compuesta por bloques, tal como la ve quien la estudia.
@@ -40,15 +42,19 @@ import { SafeResourcePipe } from '../pipes/safe-resource.pipe';
           }
 
           @case (Tipo.Embed) {
-            @if (block.url | safeResource; as src) {
+            @if (video(block.url); as clip) {
               <div class="marco">
-                <iframe
-                  [src]="src"
-                  title="Vídeo de la lección"
-                  loading="lazy"
-                  allowfullscreen
-                  referrerpolicy="strict-origin-when-cross-origin"
-                ></iframe>
+                @if (clip.tipo === 'fichero') {
+                  <video [src]="clip.src" controls playsinline preload="metadata"></video>
+                } @else if (clip.src | safeResource; as src) {
+                  <iframe
+                    [src]="src"
+                    title="Vídeo de la lección"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="strict-origin-when-cross-origin"
+                  ></iframe>
+                }
               </div>
             }
           }
@@ -144,12 +150,16 @@ import { SafeResourcePipe } from '../pipes/safe-resource.pipe';
       background: #000;
     }
 
-    .marco iframe {
+    .marco :is(iframe, video) {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       border: 0;
+    }
+
+    .marco video {
+      object-fit: contain;
     }
 
     .aviso {
@@ -208,6 +218,14 @@ export class LessonViewComponent {
   readonly blocks = input<LessonBlock[]>([]);
 
   readonly Tipo = LessonBlockType;
+
+  /**
+   * Un bloque incrustado puede traer un vídeo de YouTube o la dirección de un
+   * fichero. Se resuelve aquí para pintar cada uno con lo que le corresponde.
+   */
+  video(url: string | null | undefined): VideoResuelto | null {
+    return resolveVideo(url);
+  }
 
   esAudio(block: LessonBlock): boolean {
     return (block.mimeType ?? '').startsWith('audio/');

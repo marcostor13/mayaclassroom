@@ -9,7 +9,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { OrderStatus, PaymentProvider } from '@maya/shared';
+import { DEFAULT_CURRENCY, OrderStatus, PaymentProvider } from '@maya/shared';
 
 export class MercadoPagoSettingsDto {
   @ApiPropertyOptional() @IsBoolean() @IsOptional() enabled?: boolean;
@@ -54,7 +54,7 @@ export class SimulatedPaymentSettingsDto {
 }
 
 export class UpdatePaymentSettingsDto {
-  @ApiPropertyOptional({ example: 'EUR' })
+  @ApiPropertyOptional({ example: DEFAULT_CURRENCY })
   @IsString()
   @IsOptional()
   @MaxLength(3)

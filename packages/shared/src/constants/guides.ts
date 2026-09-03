@@ -108,7 +108,7 @@ export const GUIDES: readonly GuideDefinition[] = [
       {
         id: 'poner-precio',
         title: 'Ponle precio',
-        body: 'En euros. Un cero lo deja gratuito y la matrícula se hace al instante.',
+        body: 'En la moneda que tenga configurada en Cobros. Un cero lo deja gratuito y la matrícula se hace al instante.',
         route: '/admin/storefront',
         target: 'precio-curso',
         actionLabel: 'Siguiente',

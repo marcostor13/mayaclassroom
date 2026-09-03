@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { OrderStatus, PaymentProvider } from '@maya/shared';
+import { DEFAULT_CURRENCY, OrderStatus, PaymentProvider } from '@maya/shared';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
 
 /** Datos de quien compra. Se guardan aunque ya exista la cuenta: son los del
@@ -36,7 +36,7 @@ export class Order extends TenantScopedDocument {
   @Prop({ type: OrderBuyerSchema, required: true }) buyer!: OrderBuyerSchema;
 
   @Prop({ required: true, min: 0 }) amountCents!: number;
-  @Prop({ required: true, default: 'EUR' }) currency!: string;
+  @Prop({ required: true, default: DEFAULT_CURRENCY }) currency!: string;
 
   @Prop({ type: String, enum: Object.values(PaymentProvider), required: true, index: true })
   provider!: PaymentProvider;

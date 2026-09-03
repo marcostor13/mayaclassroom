@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { DEFAULT_TENANT_BRANDING, TenantPlan, TenantStatus } from '@maya/shared';
+import { DEFAULT_TENANT_BRANDING, DEFAULT_TIMEZONE, TenantPlan, TenantStatus } from '@maya/shared';
 import { BaseDocument } from '../../../common/schemas/base.schema';
 
 @Schema({ _id: false })
@@ -39,7 +39,7 @@ export class PasswordPolicySchema {
 @Schema({ _id: false })
 export class TenantSettingsSchema {
   @Prop({ default: 'es' }) defaultLanguage!: string;
-  @Prop({ default: 'Europe/Madrid' }) timezone!: string;
+  @Prop({ default: DEFAULT_TIMEZONE }) timezone!: string;
   @Prop({ default: false }) allowSelfRegistration!: boolean;
   @Prop({ default: true }) requireEmailVerification!: boolean;
   @Prop({ default: false }) allowGuestAccess!: boolean;

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { SUPPORTED_CURRENCIES } from '@maya/shared';
 import type { PaymentSettingsDto } from '@maya/shared';
 import { CommerceService } from '../../../core/services/commerce.service';
 import type { PaymentSettingsPayload } from '../../../core/services/commerce.service';
@@ -7,16 +8,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent } from '../../../shared';
 
 /** Monedas de los mercados donde operan las dos pasarelas admitidas. */
-const MONEDAS = [
-  { code: 'EUR', label: 'Euro (€)' },
-  { code: 'USD', label: 'Dólar estadounidense ($)' },
-  { code: 'MXN', label: 'Peso mexicano' },
-  { code: 'ARS', label: 'Peso argentino' },
-  { code: 'COP', label: 'Peso colombiano' },
-  { code: 'CLP', label: 'Peso chileno' },
-  { code: 'PEN', label: 'Sol peruano' },
-  { code: 'BRL', label: 'Real brasileño' },
-] as const;
+const MONEDAS = SUPPORTED_CURRENCIES;
 
 /**
  * Ajustes de cobro.

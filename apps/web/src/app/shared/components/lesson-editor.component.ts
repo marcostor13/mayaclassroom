@@ -4,7 +4,8 @@ import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { IconComponent } from './icon.component';
 import { RichEditorComponent } from './rich-editor.component';
-import { toEmbedUrl } from '../utils/embed';
+import { normalizeVideoUrl, resolveVideo } from '../utils/embed';
+import type { VideoResuelto } from '../utils/embed';
 
 interface TipoBloque {
   type: LessonBlockType;
@@ -180,20 +181,29 @@ export class LessonEditorComponent {
   }
 
   /**
-   * Convierte la dirección de YouTube o Vimeo en la de incrustar.
+   * Normaliza la dirección del vídeo.
    *
    * Pegar el enlace de la barra del navegador es lo que hace todo el mundo, y
-   * esa dirección no se puede meter en un marco: el navegador la rechaza. Se
-   * traduce aquí para que funcione sin tener que explicarlo.
+   * el de YouTube no se puede meter en un marco: el navegador lo rechaza. Se
+   * traduce aquí para que funcione sin tener que explicarlo. La dirección de
+   * un fichero de vídeo se acepta igual y la reproduce el navegador.
    */
   fijarIncrustado(id: string, valor: string): void {
     const url = valor.trim();
     if (!url) return this.update(id, { url: null });
 
-    const embed = toEmbedUrl(url);
-    if (embed) return this.update(id, { url: embed });
+    const normalizado = normalizeVideoUrl(url);
+    if (normalizado) return this.update(id, { url: normalizado });
 
-    this.toast.warning('Dirección no válida', 'Pegue el enlace completo de YouTube o Vimeo.');
+    this.toast.warning(
+      'Dirección no válida',
+      'Pegue el enlace completo de YouTube o Vimeo, o la dirección de un fichero .mp4.',
+    );
+  }
+
+  /** Cómo hay que pintar la vista previa: en un marco o con el reproductor. */
+  video(url: string | null | undefined): VideoResuelto | null {
+    return resolveVideo(url);
   }
 
   esAudio(block: LessonBlock): boolean {

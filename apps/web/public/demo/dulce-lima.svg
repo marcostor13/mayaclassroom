@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Dulce Lima">
+  <!--
+    Emblema de la escuela de pastelería de la demostración.
+
+    Va aparte de la marca de Maya Classroom a propósito: enseña que la página
+    pública es de la empresa, no de la plataforma. Es un sello: masa batida
+    dentro de un aro, con la crema del pastel dibujando la «D».
+  -->
+  <defs>
+    <linearGradient id="dl-crema" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF7BA6"/>
+      <stop offset="1" stop-color="#E11D64"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="32" cy="32" r="30" fill="#FFF1F5"/>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#E11D64" stroke-width="2.5"/>
+
+  <!-- Base del pastel. -->
+  <path d="M18 44h28a0 0 0 0 1 0 0v2a4 4 0 0 1-4 4H22a4 4 0 0 1-4-4v-2z" fill="#B4571F"/>
+  <path d="M18 36h28v8H18z" fill="#F2A93B"/>
+
+  <!-- Crema en tres vueltas, de más ancha a más estrecha. -->
+  <path d="M20 36c0-5 5-8 12-8s12 3 12 8z" fill="url(#dl-crema)"/>
+  <path d="M23.5 28.5c0-4 3.8-6.5 8.5-6.5s8.5 2.5 8.5 6.5z" fill="url(#dl-crema)"/>
+  <path d="M27 22.5c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5z" fill="url(#dl-crema)"/>
+
+  <!-- La guinda. -->
+  <circle cx="32" cy="14" r="3.4" fill="#C1123F"/>
+  <path d="M32 11.2c1-2.2 2.6-3 4.4-2.8" fill="none" stroke="#12A150" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

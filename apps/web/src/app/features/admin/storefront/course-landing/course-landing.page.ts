@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { Location } from '@angular/common';
-import { SiteTemplate } from '@maya/shared';
+import { DEFAULT_CURRENCY, SiteTemplate } from '@maya/shared';
 import type {
   CourseDetail,
   PublicCourseDto,
@@ -74,7 +74,7 @@ export class AdminCourseLandingPage implements OnInit {
       categoryId: course.categoryId,
       categoryName: course.categoryName ?? null,
       tags: course.tags,
-      catalog: course.catalog ?? { listed: false, priceCents: 0, currency: 'EUR' },
+      catalog: course.catalog ?? { listed: false, priceCents: 0, currency: DEFAULT_CURRENCY },
       enrolledCount: course.enrolledCount ?? 0,
     };
 
@@ -134,7 +134,7 @@ export class AdminCourseLandingPage implements OnInit {
     if (!course || this.saving()) return;
     this.saving.set(true);
 
-    const catalog = { ...(course.catalog ?? { listed: false, priceCents: 0, currency: 'EUR' }) };
+    const catalog = { ...(course.catalog ?? { listed: false, priceCents: 0, currency: DEFAULT_CURRENCY }) };
     this.courses
       .update(course.id, { catalog: { ...catalog, landing: this.secciones() } } as never)
       .subscribe({
@@ -164,7 +164,7 @@ export class AdminCourseLandingPage implements OnInit {
       .subscribe((ok) => {
         if (!ok) return;
         const catalog = {
-          ...(course.catalog ?? { listed: false, priceCents: 0, currency: 'EUR' }),
+          ...(course.catalog ?? { listed: false, priceCents: 0, currency: DEFAULT_CURRENCY }),
         };
         this.courses
           .update(course.id, { catalog: { ...catalog, landing: [] } } as never)
