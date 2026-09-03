@@ -240,9 +240,20 @@ compilada y la conexión a la base en el entorno:
 
 ```bash
 bun apps/api/dist/database/seeds/seed.js
+```
 
-# Con los vídeos de Pexels, si hay clave (pexels.com/api):
-PEXELS_API_KEY=xxxxx bun apps/api/dist/database/seeds/seed.js
+Para que resuelva también los vídeos de Pexels hace falta `PEXELS_API_KEY`
+(pexels.com/api). Lo más cómodo es dejarla en el `.env` —que está en
+`.gitignore`— y no repetirla en cada orden; la siembra la encuentra tanto en el
+`.env` de la raíz como en el de `apps/api/`. Si prefiere pasarla suelta, la
+sintaxis depende del intérprete:
+
+```bash
+PEXELS_API_KEY=xxxxx bun run seed          # bash, zsh
+```
+
+```powershell
+$env:PEXELS_API_KEY = "xxxxx"; bun run seed   # PowerShell
 ```
 
 Al arrancar dice sobre qué base va a escribir —«Base de datos: "maya_classroom"
