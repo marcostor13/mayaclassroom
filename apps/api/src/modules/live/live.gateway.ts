@@ -4,13 +4,13 @@ import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import type { Namespace, Socket } from 'socket.io';
+import type { ExtendedError, Namespace, Socket } from 'socket.io';
 import { LIVE_EVENT, LIVE_NAMESPACE, LiveParticipantRole, LiveSessionMode } from '@maya/shared';
 import type {
   LiveJoinPayload,
@@ -64,7 +64,7 @@ interface SocketState {
   // agrupamiento por defecto de Socket.IO los junta y basta con eso.
   maxHttpBufferSize: 1_000_000,
 })
-export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class LiveGateway implements OnGatewayInit, OnGatewayDisconnect {
   private readonly logger = new Logger(LiveGateway.name);
 
   /**
@@ -90,37 +90,64 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /* ---------------------------- Ciclo de vida ---------------------------- */
 
   /**
+   * Identificar a quien llama es lo primero que hace la sala, y va en un
+   * middleware de Socket.IO —no en `handleConnection`— por una cuestión de
+   * orden.
+   *
+   * Nest no espera a que `handleConnection` termine: en cuanto la conexión
+   * existe ata los manejadores de mensajes y sigue. El cliente, por su parte,
+   * emite `live:join` en cuanto recibe el `connect`. Como reconocer a alguien
+   * cuesta varias consultas a la base de datos, ese `join` llegaba antes de
+   * que `client.data.user` estuviera puesto y la sala lo rechazaba con
+   * «Sesión no válida» aunque el testigo fuese perfecto: un fallo que aparece
+   * y desaparece según lo que tarde la base de datos frente al viaje de ida y
+   * vuelta hasta el navegador.
+   *
+   * Un middleware corre antes de que el cliente reciba el `connect`, así que
+   * cuando llega el `join` la conexión ya sabe quién es. No hay carrera
+   * posible.
+   */
+  afterInit(server: Namespace): void {
+    server.use((client: Socket, next: (err?: ExtendedError) => void) => {
+      void this.authenticate(client).then(
+        () => next(),
+        (error: unknown) => {
+          this.logger.debug(`Conexión rechazada: ${String(error)}`);
+          // Rechazar desde el middleware llega al cliente como `connect_error`
+          // con este mensaje; emitir por el socket no serviría, porque para el
+          // navegador la conexión todavía no existe.
+          next(new Error('Sesión no válida o caducada.'));
+        },
+      );
+    });
+  }
+
+  /**
    * La conexión llega con el testigo de acceso en `auth.token`. Se verifica
    * aquí y no en un guard porque un socket rechazado debe cerrarse, no
    * devolver un 401 que nadie va a leer.
    */
-  async handleConnection(client: Socket): Promise<void> {
-    try {
-      const token = this.extractToken(client);
-      if (!token) throw new Error('sin testigo');
+  private async authenticate(client: Socket): Promise<void> {
+    const token = this.extractToken(client);
+    if (!token) throw new Error('sin testigo');
 
-      const jwtConfig = this.config.getOrThrow<JwtConfig>('jwt');
-      const payload = await this.jwt.verifyAsync<JwtPayload>(token, {
-        secret: jwtConfig.accessSecret,
-        issuer: jwtConfig.issuer,
-        audience: jwtConfig.audience,
-      });
-      if (payload.type !== 'access') throw new Error('el testigo no es de acceso');
+    const jwtConfig = this.config.getOrThrow<JwtConfig>('jwt');
+    const payload = await this.jwt.verifyAsync<JwtPayload>(token, {
+      secret: jwtConfig.accessSecret,
+      issuer: jwtConfig.issuer,
+      audience: jwtConfig.audience,
+    });
+    if (payload.type !== 'access') throw new Error('el testigo no es de acceso');
 
-      const user = await this.auth.buildSessionUser(payload.sub);
-      client.data.user = {
-        id: user.id,
-        tenantId: user.tenantId,
-        isPlatformAdmin: user.isPlatformAdmin,
-        capabilities: user.capabilities,
-      } satisfies LiveRequester;
-      client.data.fullName = user.fullName;
-      client.data.avatarUrl = user.avatarUrl;
-    } catch (error) {
-      this.logger.debug(`Conexión rechazada: ${String(error)}`);
-      client.emit(LIVE_EVENT.Error, { message: 'Sesión no válida o caducada.' });
-      client.disconnect(true);
-    }
+    const user = await this.auth.buildSessionUser(payload.sub);
+    client.data.user = {
+      id: user.id,
+      tenantId: user.tenantId,
+      isPlatformAdmin: user.isPlatformAdmin,
+      capabilities: user.capabilities,
+    } satisfies LiveRequester;
+    client.data.fullName = user.fullName;
+    client.data.avatarUrl = user.avatarUrl;
   }
 
   private extractToken(client: Socket): string | null {
