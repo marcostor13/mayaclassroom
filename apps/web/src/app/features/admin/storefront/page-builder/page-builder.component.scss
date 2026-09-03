@@ -13,6 +13,12 @@
 }
 
 .constructor {
+  /* Lo que hay por encima al desplazarse: la barra de la aplicación, que es
+     pegajosa. Los dos elementos pegajosos del constructor —la barra del lienzo
+     y el inspector— se apoyan en esta medida para quedarse justo debajo y no
+     por detrás. */
+  --constructor-tope: calc(var(--maya-topbar-height) + var(--maya-safe-top));
+
   display: grid;
   gap: var(--maya-space-4);
 }
@@ -20,6 +26,7 @@
 @include desktop-only {
   .constructor--con-panel {
     grid-template-columns: minmax(0, 1fr) 380px;
+    /* Cada columna a su aire: el alto de la fila lo marca el lienzo. */
     align-items: start;
   }
 }
@@ -39,8 +46,10 @@
 }
 
 .lienzo__barra {
+  /* La anchura de la vista y «Añadir bloque» siguen a mano por larga que sea
+     la página. */
   position: sticky;
-  top: 0;
+  top: var(--constructor-tope);
   z-index: 3;
   display: flex;
   align-items: center;
@@ -49,6 +58,7 @@
   flex-wrap: wrap;
   padding-block: var(--maya-space-2);
   background: var(--maya-bg);
+  flex-shrink: 0;
 }
 
 .lienzo__area {
@@ -89,6 +99,19 @@
 }
 
 @include app-only {
+  /* La hoja de ajustes tapa la mitad inferior de la pantalla: se añade aire al
+     final del lienzo para poder subir el bloque elegido por encima de ella. */
+  .constructor--con-panel .lienzo {
+    padding-bottom: 68vh;
+  }
+
+  /* Con la hoja abierta queda una franja estrecha de página a la vista; la
+     barra pegada se comería la mitad. Deja de pegarse mientras se edita: para
+     cambiar de anchura o añadir un bloque se cierra la hoja. */
+  .constructor--con-panel .lienzo__barra {
+    position: static;
+  }
+
   /* Hoja inferior: cae bajo el pulgar y deja ver la página encima. */
   .panel {
     position: fixed;
@@ -105,10 +128,21 @@
 }
 
 @include desktop-only {
+  /*
+   * El inspector acompaña al desplazamiento en lugar de quedarse arriba.
+   *
+   * Se pega dentro de su celda de la rejilla, que es tan alta como el lienzo:
+   * mientras quede página que editar, las herramientas siguen ahí. Y nunca más
+   * alto que lo que queda de ventana bajo la barra de la aplicación, porque un
+   * panel más largo que la pantalla acabaría empujando su propia cabecera
+   * fuera al bajar, que es justo lo que había que evitar; si los ajustes del
+   * bloque no caben, lo que se desplaza es su cuerpo.
+   */
   .panel {
     position: sticky;
-    top: var(--maya-space-4);
-    max-height: calc(100vh - var(--maya-topbar-height) - var(--maya-space-8));
+    top: var(--constructor-tope);
+    max-height: calc(100dvh - var(--constructor-tope) - var(--maya-space-6));
+    min-height: 0;
     display: flex;
     flex-direction: column;
   }

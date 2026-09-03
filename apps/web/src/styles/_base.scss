@@ -17,8 +17,16 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
-  /* Evita el rebote horizontal al deslizar el cajón lateral. */
-  overflow-x: hidden;
+  /*
+   * Evita el rebote horizontal al deslizar el cajón lateral.
+   *
+   * `clip` y no `hidden`: con `hidden` en un eje, el otro pasa de `visible` a
+   * `auto` por regla del propio CSS, el documento se convierte en contenedor
+   * de desplazamiento y todo `position: sticky` de la aplicación deja de
+   * pegarse —el panel del constructor de páginas se iba con el desplazamiento
+   * en lugar de quedarse a la vista—. `clip` corta igual y no crea contenedor.
+   */
+  overflow-x: clip;
 }
 
 body {
@@ -33,7 +41,8 @@ body {
   /* El destello gris de iOS al tocar rompe la sensación de app nativa: los
      estados táctiles se resuelven con `:active` en cada componente. */
   -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  /* Misma razón que en `html`: `hidden` aquí rompería `position: sticky`. */
+  overflow-x: clip;
 }
 
 /* Bloqueo de desplazamiento mientras hay un cajón u hoja abiertos. El

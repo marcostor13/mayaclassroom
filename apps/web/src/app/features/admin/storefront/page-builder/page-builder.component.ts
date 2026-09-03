@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   input,
   model,
@@ -11,6 +12,7 @@ import {
 import { DEFAULT_SECTION_STYLE, SiteSectionType } from '@maya/shared';
 import type { SiteSection, SiteSectionItem, SiteSectionStyle } from '@maya/shared';
 import { ConfirmService } from '../../../../core/services/confirm.service';
+import { LayoutService } from '../../../../core/services/layout.service';
 import {
   IconComponent,
   ImageUploadComponent,
@@ -65,6 +67,8 @@ export type Dispositivo = (typeof DISPOSITIVOS)[number]['id'];
 })
 export class PageBuilderComponent {
   private readonly confirm = inject(ConfirmService);
+  private readonly layout = inject(LayoutService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly sections = model.required<SiteSection[]>();
   readonly data = input.required<SiteRenderData>();
@@ -140,7 +144,43 @@ export class PageBuilderComponent {
   /* ------------------------------- Selección ------------------------------ */
 
   seleccionar(id: string): void {
-    this.selectedId.set(this.selectedId() === id ? null : id);
+    const abriendo = this.selectedId() !== id;
+    this.selectedId.set(abriendo ? id : null);
+
+    // En móvil los ajustes suben desde abajo y tapan media pantalla; si el
+    // bloque elegido estaba en esa mitad, deja de verse justo cuando se
+    // empieza a editarlo. Se sube a la parte de arriba, que es la que queda
+    // libre. En escritorio no hace falta: el panel va al lado.
+    if (abriendo && !this.layout.isDesktop()) {
+      queueMicrotask(() =>
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      );
+      return;
+    }
+
+    // En escritorio el panel se queda pegado bajo la barra de la aplicación,
+    // pero si la página aún está arriba del todo arranca en su sitio natural,
+    // más abajo, y el pie —«Ocultar bloque», «Eliminar»— queda fuera de la
+    // pantalla. Se sube el constructor a su posición pegada para que el panel
+    // se vea entero desde el primer momento.
+    if (abriendo) queueMicrotask(() => this.encuadrarConstructor());
+  }
+
+  /** Deja el constructor justo debajo de la barra de la aplicación. */
+  private encuadrarConstructor(): void {
+    const raiz = this.host.nativeElement.querySelector<HTMLElement>('.constructor');
+    const barra = raiz?.querySelector<HTMLElement>('.lienzo__barra');
+    if (!raiz || !barra) return;
+
+    // La barra del lienzo se pega a la misma altura que el panel, así que su
+    // `top` resuelto en píxeles es exactamente el hueco que deja la barra de
+    // la aplicación. Leerlo de ahí evita repetir el cálculo del CSS.
+    const destino = Number.parseFloat(getComputedStyle(barra).top) || 0;
+    const { top } = raiz.getBoundingClientRect();
+
+    // Solo hacia abajo: si ya está encuadrado, o el usuario está más abajo, no
+    // se le mueve la vista.
+    if (top > destino + 1) window.scrollBy({ top: top - destino, behavior: 'smooth' });
   }
 
   cerrarInspector(): void {
