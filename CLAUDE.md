@@ -6,6 +6,7 @@ LMS multiempresa inspirado en Moodle. Monorepo Bun con tres paquetes:
 |---|---|
 | `apps/api` | API NestJS 11 + Mongoose 8 sobre MongoDB Atlas |
 | `apps/web` | Cliente Angular 22 sin zonas, basado en señales |
+| `scripts/video-landing` | Produce el vídeo de la página de venta (capturas → diapositivas → locución → MP4) |
 | `packages/shared` | Contratos TypeScript compartidos (`@maya/shared`) |
 
 El idioma del proyecto es el **español**: comentarios, textos de interfaz,

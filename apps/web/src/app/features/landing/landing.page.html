@@ -1,0 +1,343 @@
+<!-- ─────────────────────────────── Cabecera ─────────────────────────────── -->
+<header class="barra">
+  <div class="barra__interior">
+    <maya-logo [size]="34" [showText]="true" textLayout="inline" />
+    <nav class="barra__acciones">
+      <a class="maya-btn maya-btn--ghost maya-btn--sm maya-hide-mobile" routerLink="/p/demo">
+        Ver la demostración
+      </a>
+      <a class="maya-btn maya-btn--primary maya-btn--sm" [href]="whatsappGeneral" target="_blank" rel="noopener">
+        <maya-icon name="message-square" [size]="15" />
+        Escríbenos
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main class="pagina">
+  <!-- ─────────────────────────────── Portada ────────────────────────────── -->
+  <section class="portada">
+    <div class="contenedor portada__rejilla">
+      <div class="portada__texto">
+        <span class="etiqueta">
+          <span class="maya-dot"></span>
+          Para quien vende cursos por internet
+        </span>
+        <h1 class="titular">
+          Vendes tus cursos.<br />
+          <em>Pero la plataforma no es tuya.</em>
+        </h1>
+        <p class="entrada">
+          Monta tu propia academia en internet: tu marca, tu dominio y tus alumnos. Cobra en soles
+          con Mercado Pago, PayPal, transferencia o Yape. <strong>Sin comisión por venta.</strong>
+          Te la dejamos publicada en 7 días.
+        </p>
+        <div class="portada__botones">
+          <a class="maya-btn maya-btn--primary maya-btn--lg" [href]="whatsappGeneral" target="_blank" rel="noopener">
+            <maya-icon name="message-square" [size]="18" />
+            Quiero mi plataforma
+          </a>
+          <a class="maya-btn maya-btn--secondary maya-btn--lg" routerLink="/p/demo">
+            <maya-icon name="eye" [size]="18" />
+            Ver la demostración
+          </a>
+        </div>
+        <p class="portada__pie maya-small maya-subtle">
+          Demostración completa, sin registro y sin dejar datos.
+        </p>
+      </div>
+
+      <!-- El vídeo va mudo y con subtítulos: en el móvil casi nadie lo abre
+           con sonido, y así se entiende igual. -->
+      <figure class="video">
+        <!-- Dos formatos: el MP4 lo reproduce todo el mundo, y el WebM cubre
+             las compilaciones de Chromium sin códecs propietarios, donde el
+             MP4 se queda en negro. El navegador elige el primero que sepa. -->
+        <video
+          class="video__reproductor"
+          poster="/landing/maya-classroom.jpg"
+          controls
+          playsinline
+          preload="metadata"
+        >
+          <source src="/landing/maya-classroom.mp4" type="video/mp4" />
+          <source src="/landing/maya-classroom.webm" type="video/webm" />
+        </video>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── El problema ───────────────────────────── -->
+  <section class="seccion seccion--hueso">
+    <div class="contenedor">
+      <header class="cabecera">
+        <span class="kicker">Lo que cuesta alquilar</span>
+        <h2 class="titulo">Cuatro cosas que pagas sin verlas en la factura</h2>
+      </header>
+      <div class="rejilla rejilla--2">
+        @for (dolor of dolores; track dolor.titulo) {
+          <article class="tarjeta">
+            <span class="tarjeta__icono"><maya-icon [name]="dolor.icono" [size]="20" /></span>
+            <h3 class="tarjeta__titulo">{{ dolor.titulo }}</h3>
+            <p class="maya-muted">{{ dolor.texto }}</p>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── La cuenta ─────────────────────────────── -->
+  <section class="seccion">
+    <div class="contenedor">
+      <header class="cabecera">
+        <span class="kicker">La cuenta, con números</span>
+        <h2 class="titulo">Si vendes S/ 10 000 al mes, esto te cuesta cada camino</h2>
+        <p class="entrada entrada--centrada">
+          Precios de referencia de septiembre de 2026. Los de fuera están convertidos a soles.
+        </p>
+      </header>
+
+      <div class="tabla-envoltorio">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Plataforma</th>
+              <th>Mensualidad</th>
+              <th>Comisión</th>
+              <th>Te cuesta al mes</th>
+              <th>¿Es tuya?</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of comparativa; track fila.plataforma) {
+              <tr [class.tabla__nuestra]="fila.nuestra">
+                <td class="tabla__nombre">{{ fila.plataforma }}</td>
+                <td>{{ fila.mensual }}</td>
+                <td>{{ fila.comision }}</td>
+                <td class="tabla__coste">{{ fila.costeReal }}</td>
+                <td>
+                  @if (fila.propia) {
+                    <span class="maya-badge maya-badge--success">Sí</span>
+                  } @else {
+                    <span class="maya-badge">No</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="nota maya-small maya-subtle">
+        La comisión no se nota en la primera venta. Se nota al año: con S/ 10 000 al mes,
+        el 9,9 % son casi <strong>S/ 12 000</strong> que se van sin haber hecho nada por ti.
+      </p>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── La demo ──────────────────────────────── -->
+  <section class="seccion seccion--oscura">
+    <div class="contenedor demo">
+      <div>
+        <span class="kicker">No nos creas</span>
+        <h2 class="titulo">Entra a una academia hecha con esto</h2>
+        <p class="entrada">
+          Dulce Lima es una escuela de pastelería de Barranco montada entera en Maya Classroom.
+          Está publicada y funcionando: mira el catálogo, abre un curso, revisa el temario y el
+          precio. Después entra por dentro, como administrador y como alumno.
+        </p>
+        <div class="demo__botones">
+          <a class="maya-btn maya-btn--primary maya-btn--lg" routerLink="/p/demo">
+            <maya-icon name="globe" [size]="18" />
+            Ver la página de cursos
+          </a>
+          <a class="maya-btn maya-btn--ghost maya-btn--lg" routerLink="/auth/login">
+            <maya-icon name="log-in" [size]="18" />
+            Entrar como administrador o alumno
+          </a>
+        </div>
+      </div>
+      <ul class="demo__lista">
+        <li><maya-icon name="check" [size]="17" /> Catálogo con precios en soles</li>
+        <li><maya-icon name="check" [size]="17" /> Ficha de venta con temario y compra</li>
+        <li><maya-icon name="check" [size]="17" /> Constructor de páginas por bloques</li>
+        <li><maya-icon name="check" [size]="17" /> Panel del alumno con avance y notas</li>
+        <li><maya-icon name="check" [size]="17" /> Pedidos y cobros configurados</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── Cómo va ───────────────────────────────── -->
+  <section class="seccion seccion--hueso">
+    <div class="contenedor">
+      <header class="cabecera">
+        <span class="kicker">De la llamada a la primera venta</span>
+        <h2 class="titulo">Siete días hábiles, cuatro pasos</h2>
+      </header>
+      <ol class="pasos">
+        @for (paso of pasos; track paso.titulo; let i = $index) {
+          <li class="paso">
+            <span class="paso__numero">{{ i + 1 }}</span>
+            <div>
+              <h3 class="tarjeta__titulo">{{ paso.titulo }}</h3>
+              <p class="maya-muted">{{ paso.texto }}</p>
+            </div>
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── Qué entra en el setup ────────────────────── -->
+  <section class="seccion">
+    <div class="contenedor">
+      <header class="cabecera">
+        <span class="kicker">La implementación, por dentro</span>
+        <h2 class="titulo">Qué hacemos nosotros para que tú no lo hagas</h2>
+      </header>
+      <div class="desglose">
+        <ul class="desglose__lista">
+          @for (linea of implementacion; track linea.concepto) {
+            <li>
+              <maya-icon name="check" [size]="17" />
+              <span>{{ linea.concepto }}</span>
+              <b>{{ precio(linea.valor) }}</b>
+            </li>
+          }
+        </ul>
+        <aside class="desglose__resumen">
+          <p class="maya-small maya-subtle">Contratado por separado</p>
+          <p class="desglose__tachado">{{ precio(valorImplementacion()) }}</p>
+          <p class="maya-small maya-subtle">Implementación completa desde</p>
+          <p class="desglose__precio">{{ precio(1490) }}</p>
+          <a class="maya-btn maya-btn--primary maya-btn--block" [href]="whatsappGeneral" target="_blank" rel="noopener">
+            Reservar mi implementación
+          </a>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── Precios ──────────────────────────────── -->
+  <section class="seccion seccion--hueso" id="precios">
+    <div class="contenedor">
+      <header class="cabecera">
+        <span class="kicker">Precios</span>
+        <h2 class="titulo">Una implementación y una mensualidad. Nada más.</h2>
+        <p class="entrada entrada--centrada">
+          Sin comisión por venta, sin permanencia y sin letra pequeña. Precios en soles, con IGV
+          por añadir.
+        </p>
+      </header>
+
+      <div class="planes">
+        @for (plan of planes; track plan.id) {
+          <article class="plan" [class.plan--destacado]="plan.destacado">
+            @if (plan.destacado) {
+              <span class="plan__cinta">El más completo por lo que cuesta</span>
+            }
+            <h3 class="plan__nombre">{{ plan.nombre }}</h3>
+            <p class="maya-small maya-subtle">{{ plan.para }}</p>
+
+            <div class="plan__precio">
+              <span class="plan__setup">{{ precio(plan.setup) }}</span>
+              <span class="maya-small maya-subtle">de implementación, pago único</span>
+            </div>
+            <div class="plan__mensual">
+              <b>{{ precio(plan.mensual) }}</b>
+              <span class="maya-small maya-subtle">al mes</span>
+            </div>
+
+            <ul class="plan__incluye">
+              @for (linea of plan.incluye; track linea) {
+                <li><maya-icon name="check" [size]="16" /> {{ linea }}</li>
+              }
+            </ul>
+
+            <a
+              class="maya-btn maya-btn--block"
+              [class.maya-btn--primary]="plan.destacado"
+              [class.maya-btn--secondary]="!plan.destacado"
+              [href]="whatsappPlan(plan)"
+              target="_blank"
+              rel="noopener"
+            >
+              Quiero el plan {{ plan.nombre }}
+            </a>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── Garantía ──────────────────────────────── -->
+  <section class="seccion">
+    <div class="contenedor garantia">
+      <span class="garantia__sello"><maya-icon name="shield-check" [size]="34" /></span>
+      <div>
+        <h2 class="titulo titulo--medio">Publicada en 7 días o te devolvemos la implementación</h2>
+        <p class="entrada">
+          Contamos desde que nos entregas el contenido y los accesos. Si el día ocho tu academia
+          no está en internet cobrando, te devolvemos íntegro lo que pagaste por la
+          implementación y te quedas con lo que llevemos hecho.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── Preguntas ─────────────────────────────── -->
+  <section class="seccion seccion--hueso">
+    <div class="contenedor contenedor--estrecho">
+      <header class="cabecera">
+        <span class="kicker">Antes de escribirnos</span>
+        <h2 class="titulo">Lo que siempre nos preguntan</h2>
+      </header>
+      <div class="preguntas">
+        @for (item of preguntas; track item.pregunta; let i = $index) {
+          <div class="pregunta" [class.pregunta--abierta]="abierta() === i">
+            <button type="button" class="pregunta__titulo" (click)="alternar(i)" [attr.aria-expanded]="abierta() === i">
+              <span>{{ item.pregunta }}</span>
+              <maya-icon [name]="abierta() === i ? 'chevron-up' : 'chevron-down'" [size]="18" />
+            </button>
+            @if (abierta() === i) {
+              <p class="pregunta__respuesta maya-muted">{{ item.respuesta }}</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────── Cierre ────────────────────────────────── -->
+  <section class="seccion cierre">
+    <div class="contenedor cierre__interior">
+      <span class="kicker">Siguiente paso</span>
+      <h2 class="titulo titulo--grande">Cuéntanos qué vendes y te decimos cómo montarlo</h2>
+      <p class="entrada entrada--centrada">
+        Treinta minutos por WhatsApp o videollamada. Salimos con el alcance y el precio cerrados,
+        o con un «esto no es para ti» dicho a tiempo.
+      </p>
+      <div class="cierre__botones">
+        <a class="maya-btn maya-btn--primary maya-btn--lg" [href]="whatsappGeneral" target="_blank" rel="noopener">
+          <maya-icon name="message-square" [size]="18" />
+          Escribir por WhatsApp
+        </a>
+        <a class="maya-btn maya-btn--ghost maya-btn--lg" routerLink="/p/demo">Ver la demostración</a>
+      </div>
+      <p class="maya-small maya-subtle">+51 975 760 418 · Lima, Perú</p>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="contenedor pie__interior">
+    <maya-logo [size]="26" [showText]="true" textLayout="inline" />
+    <span class="maya-small maya-subtle">© {{ 2026 }} Maya Classroom · Lima, Perú</span>
+    <a class="maya-small" [href]="whatsappGeneral" target="_blank" rel="noopener">+51 975 760 418</a>
+  </div>
+</footer>
+
+<!-- Botón flotante: en móvil, el CTA siempre a mano sin volver arriba. -->
+<a class="flotante maya-app-only" [href]="whatsappGeneral" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+  <maya-icon name="message-square" [size]="22" />
+</a>

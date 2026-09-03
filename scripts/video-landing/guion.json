@@ -1,0 +1,88 @@
+{
+  "titulo": "Maya Classroom · vídeo de la landing",
+  "escenas": [
+    {
+      "id": "01",
+      "tipo": "gancho",
+      "dur": 5.0,
+      "kicker": "Para quien vende cursos por internet",
+      "titular": "Vendes tus cursos.\nPero la plataforma no es tuya.",
+      "sub": "Si vendes cursos por internet, hay algo que casi nadie te dice."
+    },
+    {
+      "id": "02",
+      "tipo": "dato",
+      "dur": 7.5,
+      "kicker": "Lo que se lleva la plataforma",
+      "cifra": "S/ 990",
+      "cifraPie": "al mes, si vendes S/ 10 000",
+      "titular": "Cada venta paga peaje.",
+      "sub": "De cada diez mil soles que vendes, la plataforma se queda con casi mil. Todos los meses."
+    },
+    {
+      "id": "03",
+      "tipo": "dato",
+      "dur": 6.0,
+      "kicker": "Y lo más caro no es el dinero",
+      "titular": "Tu marca, tu dominio\ny tus alumnos viven\nen casa ajena.",
+      "sub": "Tu marca, tu dominio y tus alumnos viven en casa ajena. Si cambian las reglas, cambian para ti."
+    },
+    {
+      "id": "04",
+      "tipo": "marca",
+      "dur": 5.0,
+      "titular": "Maya Classroom",
+      "kicker": "Tu propia academia en internet",
+      "sub": "Maya Classroom es tu propia academia en internet. Tuya de verdad."
+    },
+    {
+      "id": "05",
+      "captura": "01-escaparate.png",
+      "dur": 6.5,
+      "kicker": "Tu página de ventas",
+      "titular": "Con tu marca y tu dominio",
+      "sub": "Tu página de ventas, con tu marca, tu logo y tu dominio propio."
+    },
+    {
+      "id": "06",
+      "captura": "03-ficha-curso.png",
+      "dur": 6.5,
+      "kicker": "Ficha de cada curso",
+      "titular": "Temario, precio y compra",
+      "sub": "Cada curso con su temario, su precio en soles y su botón de compra."
+    },
+    {
+      "id": "07",
+      "captura": "07-cobros.png",
+      "dur": 6.5,
+      "kicker": "Cobras tú",
+      "titular": "Mercado Pago, PayPal,\ntransferencia y Yape",
+      "sub": "Cobras con Mercado Pago, PayPal, transferencia o Yape. El dinero entra a tu cuenta."
+    },
+    {
+      "id": "08",
+      "captura": "05-constructor.png",
+      "dur": 6.5,
+      "kicker": "Sin depender de nadie",
+      "titular": "La diseñas tú,\nbloque a bloque",
+      "sub": "Y la página la armas tú, bloque a bloque, sin tocar una línea de código."
+    },
+    {
+      "id": "09",
+      "captura": "08-panel-alumno.png",
+      "dur": 6.0,
+      "kicker": "Del otro lado",
+      "titular": "Un aula de verdad\npara tus alumnos",
+      "sub": "Tus alumnos entran a un aula de verdad: avance, notas, certificados y foro."
+    },
+    {
+      "id": "10",
+      "tipo": "cierre",
+      "dur": 7.0,
+      "kicker": "Implementación en 7 días",
+      "titular": "Te la dejamos\nlista y funcionando",
+      "cta": "wa.me/51975760418",
+      "sub": "Nosotros te la dejamos lista en siete días. Escríbenos por WhatsApp y la vemos juntos."
+    }
+  ]
+}

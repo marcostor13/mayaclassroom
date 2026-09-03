@@ -67,7 +67,15 @@ bun run seed
 bun run dev
 ```
 
-Abra `http://localhost:4205` y acceda con la empresa **`demo`**:
+En `http://localhost:4205` está la **página de venta de la plataforma**, que es
+lo que ve quien llega sin sesión; quien ya entró va directo a su panel. Los
+precios y los textos viven en
+`apps/web/src/app/features/landing/landing.data.ts`, y el razonamiento detrás
+—benchmark del mercado y marco de oferta— en [`docs/OFERTA.md`](docs/OFERTA.md).
+El vídeo de su primera sección lo produce `scripts/video-landing`
+([cómo](scripts/video-landing/README.md)).
+
+Para entrar, acceda con la empresa **`demo`**:
 
 | Perfil | Usuario | Contraseña |
 |---|---|---|

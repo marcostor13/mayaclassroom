@@ -1,0 +1,636 @@
+@use '../../../styles/tokens' as *;
+
+/**
+ * Página de venta de la plataforma.
+ *
+ * Vive fuera del armazón, así que se pinta su propia cabecera y su pie. Todo
+ * el color sale de las variables del sistema: la personalización de marca por
+ * empresa no aplica aquí, pero el tema oscuro sí, y con colores en crudo se
+ * rompería.
+ */
+:host {
+  display: block;
+  background: var(--maya-bg);
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--maya-space-4);
+}
+
+.contenedor--estrecho {
+  max-width: 820px;
+}
+
+@include from($maya-bp-md) {
+  .contenedor { padding-inline: var(--maya-space-6); }
+}
+
+/* --- Cabecera ------------------------------------------------------------ */
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: var(--maya-z-sticky);
+  background: color-mix(in srgb, var(--maya-bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--maya-border);
+}
+
+.barra__interior {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: var(--maya-space-3) var(--maya-space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+}
+
+.barra__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+
+  /* El botón principal es lo primero que se toca desde el móvil: por debajo
+     de 44 px el objetivo se queda corto. */
+  @include app-only {
+    .maya-btn--sm { min-height: 44px; padding-inline: var(--maya-space-4); }
+  }
+}
+
+/* --- Piezas comunes ------------------------------------------------------ */
+
+.seccion {
+  padding-block: var(--maya-space-10);
+}
+
+@include from($maya-bp-md) {
+  .seccion { padding-block: calc(var(--maya-space-10) * 1.6); }
+}
+
+.seccion--hueso { background: var(--maya-bg-alt); }
+
+.seccion--oscura {
+  background: var(--maya-text);
+  color: var(--maya-surface);
+
+  .titulo, .kicker { color: inherit; }
+  .kicker { color: var(--maya-pastel); }
+  .entrada { color: color-mix(in srgb, #fff 78%, transparent); }
+}
+
+.cabecera {
+  text-align: center;
+  margin-bottom: var(--maya-space-8);
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+.kicker {
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--maya-primary-ink);
+}
+
+.titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-2xl);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.titulo--medio { font-size: var(--maya-text-xl); }
+
+@include from($maya-bp-md) {
+  .titulo { font-size: var(--maya-text-3xl); }
+  .titulo--grande { font-size: var(--maya-text-4xl); }
+}
+
+.entrada {
+  font-size: var(--maya-text-md);
+  line-height: 1.6;
+  color: var(--maya-text-muted);
+  text-wrap: pretty;
+}
+
+.entrada--centrada {
+  max-width: 62ch;
+  margin-inline: auto;
+}
+
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  padding: 6px var(--maya-space-3);
+  border-radius: 999px;
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-deep);
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+}
+
+/* --- Portada ------------------------------------------------------------- */
+
+.portada {
+  padding-block: var(--maya-space-8) var(--maya-space-10);
+  background:
+    radial-gradient(900px 500px at 88% -10%, var(--maya-primary-softer), transparent 70%),
+    var(--maya-bg);
+}
+
+.portada__rejilla {
+  display: grid;
+  gap: var(--maya-space-8);
+  align-items: center;
+}
+
+@include from($maya-bp-lg) {
+  .portada { padding-block: calc(var(--maya-space-10) * 1.4); }
+
+  /* Las dos columnas casi iguales: con el texto en la estrecha, el titular se
+     partía en cinco líneas y perdía toda la fuerza. */
+  .portada__rejilla {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: var(--maya-space-8);
+  }
+}
+
+.portada__texto { display: grid; gap: var(--maya-space-4); justify-items: start; }
+
+.titular {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-3xl);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+
+  em { font-style: normal; color: var(--maya-primary-ink); }
+}
+
+@include from($maya-bp-md) { .titular { font-size: var(--maya-text-4xl); } }
+@include from($maya-bp-lg) { .titular { font-size: 3.1rem; } }
+
+.portada__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-3);
+}
+
+.portada__pie { margin-top: calc(var(--maya-space-1) * -1); }
+
+.video {
+  margin: 0;
+  border-radius: var(--maya-radius-xl);
+  overflow: hidden;
+  background: var(--maya-text);
+  border: 1px solid var(--maya-border);
+  box-shadow: var(--maya-shadow-lg);
+}
+
+.video__reproductor {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* --- Rejillas y tarjetas ------------------------------------------------- */
+
+.rejilla {
+  display: grid;
+  gap: var(--maya-space-4);
+}
+
+@include from($maya-bp-md) {
+  .rejilla--2 { grid-template-columns: 1fr 1fr; }
+}
+
+.tarjeta {
+  display: grid;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-6);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+}
+
+.tarjeta__icono {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-primary-softer);
+  color: var(--maya-primary-ink);
+}
+
+.tarjeta__titulo {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-md);
+  font-weight: 700;
+}
+
+/* --- Comparativa --------------------------------------------------------- */
+
+.tabla-envoltorio {
+  overflow-x: auto;
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--maya-text-sm);
+  /* Por debajo de esto las cinco columnas se aplastan; mejor que la tabla se
+     desplace dentro de su caja a que el texto se parta letra a letra. */
+  min-width: 720px;
+
+  th, td {
+    padding: var(--maya-space-3) var(--maya-space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--maya-border);
+  }
+
+  th {
+    font-size: var(--maya-text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--maya-text-muted);
+    background: var(--maya-surface-2);
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+}
+
+.tabla__nombre { font-weight: 700; }
+.tabla__coste { font-weight: 700; }
+
+.tabla__nuestra {
+  background: var(--maya-primary-softer);
+
+  td { color: var(--maya-primary-deep); }
+  .tabla__nombre, .tabla__coste { color: var(--maya-primary-deep); }
+}
+
+.nota {
+  margin-top: var(--maya-space-4);
+  text-align: center;
+}
+
+/* --- Demo ---------------------------------------------------------------- */
+
+.demo {
+  display: grid;
+  gap: var(--maya-space-8);
+  align-items: center;
+}
+
+@include from($maya-bp-lg) {
+  .demo { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+}
+
+.demo__botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-3);
+  margin-top: var(--maya-space-5);
+}
+
+.demo__lista {
+  list-style: none;
+  display: grid;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-6);
+  margin: 0;
+  border-radius: var(--maya-radius-lg);
+  background: color-mix(in srgb, #fff 8%, transparent);
+  border: 1px solid color-mix(in srgb, #fff 16%, transparent);
+
+  li { display: flex; align-items: center; gap: var(--maya-space-3); }
+  maya-icon { color: var(--maya-pastel); flex-shrink: 0; }
+}
+
+/* --- Pasos --------------------------------------------------------------- */
+
+.pasos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--maya-space-4);
+  counter-reset: paso;
+}
+
+@include from($maya-bp-md) {
+  .pasos { grid-template-columns: 1fr 1fr; }
+}
+
+.paso {
+  display: flex;
+  gap: var(--maya-space-4);
+  padding: var(--maya-space-5);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+}
+
+.paso__numero {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--maya-primary);
+  color: var(--maya-text-on-primary);
+  font-family: var(--maya-font-heading);
+  font-weight: 700;
+}
+
+/* --- Desglose de la implementación --------------------------------------- */
+
+.desglose {
+  display: grid;
+  gap: var(--maya-space-5);
+  align-items: start;
+}
+
+@include from($maya-bp-lg) {
+  .desglose { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); }
+}
+
+.desglose__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-3);
+    padding: var(--maya-space-3) var(--maya-space-4);
+    background: var(--maya-surface);
+    border: 1px solid var(--maya-border);
+    border-radius: var(--maya-radius-md);
+  }
+
+  maya-icon { color: var(--maya-success); flex-shrink: 0; }
+  span { flex: 1; min-width: 0; }
+  b { white-space: nowrap; color: var(--maya-text-muted); font-weight: 600; }
+}
+
+.desglose__resumen {
+  display: grid;
+  gap: var(--maya-space-1);
+  padding: var(--maya-space-6);
+  background: var(--maya-surface);
+  border: 2px solid var(--maya-primary);
+  border-radius: var(--maya-radius-lg);
+  box-shadow: var(--maya-shadow-md);
+  text-align: center;
+}
+
+.desglose__tachado {
+  font-size: var(--maya-text-lg);
+  color: var(--maya-text-subtle);
+  text-decoration: line-through;
+}
+
+.desglose__precio {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--maya-primary-ink);
+  margin-bottom: var(--maya-space-3);
+}
+
+/* --- Planes -------------------------------------------------------------- */
+
+.planes {
+  display: grid;
+  gap: var(--maya-space-4);
+  align-items: start;
+}
+
+@include from($maya-bp-lg) {
+  .planes { grid-template-columns: repeat(3, 1fr); }
+}
+
+.plan {
+  position: relative;
+  display: grid;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-6);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-xl);
+}
+
+.plan--destacado {
+  border: 2px solid var(--maya-primary);
+  box-shadow: var(--maya-shadow-lg);
+
+  @include from($maya-bp-lg) {
+    /* Sobresale para que el ojo caiga aquí primero. */
+    margin-block: calc(var(--maya-space-4) * -1);
+    padding-block: calc(var(--maya-space-6) + var(--maya-space-4));
+  }
+}
+
+.plan__cinta {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 5px var(--maya-space-4);
+  border-radius: 999px;
+  background: var(--maya-primary);
+  color: var(--maya-text-on-primary);
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+}
+
+.plan__nombre {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-xl);
+  font-weight: 700;
+}
+
+.plan__precio {
+  display: grid;
+  padding-top: var(--maya-space-3);
+  border-top: 1px solid var(--maya-border);
+}
+
+.plan__setup {
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.plan__mensual {
+  display: flex;
+  align-items: baseline;
+  gap: var(--maya-space-2);
+  padding-bottom: var(--maya-space-3);
+  border-bottom: 1px solid var(--maya-border);
+
+  b {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-lg);
+    color: var(--maya-primary-ink);
+  }
+}
+
+.plan__incluye {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-2);
+  font-size: var(--maya-text-sm);
+
+  li { display: flex; align-items: flex-start; gap: var(--maya-space-2); }
+  maya-icon { color: var(--maya-success); flex-shrink: 0; margin-top: 2px; }
+}
+
+/* --- Garantía ------------------------------------------------------------ */
+
+.garantia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-4);
+  padding: var(--maya-space-8);
+  border-radius: var(--maya-radius-xl);
+  background: var(--maya-success-soft);
+  border: 1px solid color-mix(in srgb, var(--maya-success) 34%, transparent);
+}
+
+@include from($maya-bp-md) {
+  .garantia { flex-direction: row; align-items: center; gap: var(--maya-space-6); }
+}
+
+.garantia__sello {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--maya-surface);
+  color: var(--maya-success);
+}
+
+/* --- Preguntas ----------------------------------------------------------- */
+
+.preguntas {
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+.pregunta {
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  overflow: hidden;
+}
+
+.pregunta--abierta { border-color: var(--maya-primary); }
+
+.pregunta__titulo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-4) var(--maya-space-5);
+  text-align: start;
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-md);
+  font-weight: 700;
+  /* Objetivo táctil holgado: es una lista que se recorre con el pulgar. */
+  min-height: 56px;
+
+  maya-icon { color: var(--maya-primary-ink); flex-shrink: 0; }
+  &:active { background: var(--maya-surface-2); }
+}
+
+.pregunta__respuesta {
+  padding: 0 var(--maya-space-5) var(--maya-space-5);
+  line-height: 1.65;
+}
+
+/* --- Cierre -------------------------------------------------------------- */
+
+.cierre {
+  background:
+    radial-gradient(700px 400px at 50% 0%, var(--maya-primary-softer), transparent 70%),
+    var(--maya-bg);
+}
+
+.cierre__interior {
+  display: grid;
+  gap: var(--maya-space-3);
+  justify-items: center;
+  text-align: center;
+}
+
+.cierre__botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--maya-space-3);
+  margin-block: var(--maya-space-3);
+}
+
+/* --- Pie ----------------------------------------------------------------- */
+
+.pie {
+  border-top: 1px solid var(--maya-border);
+  padding-block: var(--maya-space-6);
+}
+
+.pie__interior {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+}
+
+/* --- Botón flotante ------------------------------------------------------ */
+
+.flotante {
+  position: fixed;
+  right: var(--maya-space-4);
+  bottom: calc(var(--maya-space-4) + var(--maya-safe-bottom));
+  z-index: var(--maya-z-sticky);
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* Verde de WhatsApp: es una marca ajena y se reconoce por el color, así que
+     aquí sí va literal y no como variable del sistema. */
+  background: #25d366;
+  color: #06331a;
+  box-shadow: var(--maya-shadow-lg);
+
+  &:active { transform: scale(0.94); }
+}

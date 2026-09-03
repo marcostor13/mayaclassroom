@@ -46,3 +46,10 @@ CLAUDE.local.md
 
 # Caché de los vídeos de la demostración resueltos contra Pexels.
 .demo-media.json
+
+# Intermedios del vídeo de la landing: capturas, diapositivas y locución los
+# regeneran los guiones de `scripts/video-landing`. Lo que sí se versiona es el
+# MP4 resultante, que vive en `apps/web/public/landing`.
+/scripts/video-landing/capturas/
+/scripts/video-landing/diapositivas/
+/scripts/video-landing/audio/

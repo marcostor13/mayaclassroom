@@ -4,7 +4,15 @@ import { authGuard, guestGuard, passwordChangeGuard } from './core/guards/auth.g
 import { capabilityGuard, platformAdminGuard } from './core/guards/capability.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  {
+    // Portada pública: la página que vende la plataforma. `guestGuard` la
+    // reserva a quien no tiene sesión; quien ya entró va a su panel, que es a
+    // lo que viene.
+    path: '',
+    pathMatch: 'full',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/landing/landing.page').then((m) => m.LandingPage),
+  },
 
   /* ────────────────────── Escaparate público (sin sesión) ─────────────── */
   {
