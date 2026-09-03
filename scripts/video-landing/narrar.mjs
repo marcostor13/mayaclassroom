@@ -113,8 +113,13 @@ function puntuar(voz) {
 
   // Las de España se entienden, pero en Perú restan cercanía.
   if (/\bcastilian\b|\bspain\b|peninsular/.test(texto)) punto -= 60;
-  // Es una locución de venta, no un audiolibro ni un personaje.
-  if (/narration|narrative|advertis|social media|informative|professional/.test(texto)) punto += 15;
+
+  // El registro: esto es una locución didáctica y comercial. Una voz de
+  // telebasura o de redes suena a otra cosa aunque pronuncie perfecto, y el
+  // empate entre candidatas se decide aquí y no por el orden del catálogo.
+  if (/informative|educational|advertis/.test(texto)) punto += 25;
+  else if (/narration|narrative|professional/.test(texto)) punto += 10;
+  if (/social media|entertainment/.test(texto)) punto -= 20;
   // Los personajes de animación quedan fuera: esto no es un dibujo animado.
   if (/characters|animation/.test(texto)) punto -= 80;
 

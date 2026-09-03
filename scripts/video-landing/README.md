@@ -96,11 +96,19 @@ Si la cuenta no tiene ninguna voz en español, añádala antes desde la bibliote
 de voces de ElevenLabs buscando **Spanish · Latin American**.
 
 > **Ojo con el plan gratuito.** Las voces de la biblioteca compartida —que son
-> las únicas nativas en español— no se pueden usar por API sin plan de pago, y
-> ElevenLabs solo lo dice al sintetizar, con un `402 paid_plan_required`. El
+> las únicas nativas en español— **no se pueden usar por API sin plan de pago**,
+> y ElevenLabs solo lo dice al sintetizar, con un `402 paid_plan_required`. El
 > guion lo detecta y baja solo a la mejor voz `premade` verificada en español,
-> avisando por pantalla: sale un español neutro correcto, pero no peruano. Para
-> la voz nativa hay que subir de plan, borrar `audio/` y repetir el paso 3.
+> avisando por pantalla: sale un español neutro correcto, pero no peruano.
+>
+> No sirve de nada añadir la voz a la cuenta ni fiarse del campo
+> `free_users_allowed` de `/v1/shared-voices`: ese campo se refiere a usarla
+> **desde la web de ElevenLabs**, no por API. Comprobado una a una con las
+> candidatas latinoamericanas, incluida `Giancarlos`, que es peruana: todas
+> devuelven 402 con la cuenta en plan gratuito.
+>
+> Para la voz nativa hay que subir de plan, borrar `audio/` y repetir los pasos
+> 3 y 4. El guion elegirá la peruana solo, sin tocar nada.
 
 ## El guion
 
