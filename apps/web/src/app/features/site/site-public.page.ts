@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 import type { PublicCourseDto, PublicSiteDto } from '@maya/shared';
+import { HostTenantService } from '../../core/services/host-tenant.service';
 import { SiteService } from '../../core/services/site.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { GuideTourComponent, IconComponent, SiteRenderComponent } from '../../shared';
@@ -37,6 +38,7 @@ export class SitePublicPage implements OnInit {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly router = inject(Router);
+  private readonly host = inject(HostTenantService);
 
   readonly slug = input.required<string>();
 
@@ -141,6 +143,6 @@ export class SitePublicPage implements OnInit {
    * que veinticuatro caracteres hexadecimales no dicen nada.
    */
   abrirCurso(course: PublicCourseDto): void {
-    void this.router.navigate(['/p', this.slug(), 'c', course.slug || course.id]);
+    void this.router.navigate(this.host.rutaPublica(this.slug(), 'c', course.slug || course.id));
   }
 }

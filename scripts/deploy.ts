@@ -465,11 +465,21 @@ async function sincronizarCoolify(): Promise<void> {
           'R2_SECRET_ACCESS_KEY',
           'R2_PUBLIC_URL',
           // Demostración. Sin `DEMO_ENABLED` la pantalla de acceso no ofrece
-          // las tres puertas —ver el escaparate, entrar como administrador o
-          // como estudiante— y no hay forma de enseñar la plataforma sin
+          // las puertas —ver el escaparate, o entrar como estudiante, profesor
+          // o administrador— y no hay forma de enseñar la plataforma sin
           // repartir credenciales por otro canal.
           'DEMO_ENABLED',
           'DEMO_TENANT_SLUG',
+          // Dominios propios de las empresas. Sin `CUSTOM_DOMAIN_TARGET` la
+          // función queda apagada y la pantalla lo dice; con él pero sin la
+          // zona de Cloudflare for SaaS, la comprobación de DNS funciona y el
+          // certificado del cliente no se emite, así que el dominio resuelve
+          // y falla el TLS.
+          'CUSTOM_DOMAIN_TARGET',
+          'CUSTOM_DOMAIN_RESOLVER',
+          'CUSTOM_DOMAIN_RESERVED',
+          'CLOUDFLARE_SAAS_ZONE_ID',
+          'CLOUDFLARE_API_TOKEN',
         ]),
       },
     },

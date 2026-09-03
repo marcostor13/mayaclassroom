@@ -11,6 +11,7 @@ import {
 import { Title } from '@angular/platform-browser';
 import { OrderStatus, formatMoney } from '@maya/shared';
 import type { CheckoutResult } from '@maya/shared';
+import { HostTenantService } from '../../core/services/host-tenant.service';
 import { SiteService } from '../../core/services/site.service';
 import { IconComponent } from '../../shared';
 
@@ -37,6 +38,7 @@ const REINTENTOS = 10;
 })
 export class OrderPublicPage implements OnInit, OnDestroy {
   private readonly site = inject(SiteService);
+  private readonly host = inject(HostTenantService);
   private readonly title = inject(Title);
 
   readonly slug = input.required<string>();
@@ -92,5 +94,16 @@ export class OrderPublicPage implements OnInit, OnDestroy {
     this.intentos = 0;
     this.loading.set(true);
     this.consultar();
+  }
+
+  /**
+   * Dirección del escaparate relativa al dominio por el que se ha entrado.
+   *
+   * En el dominio propio de la empresa la raíz ya es su página, así que el
+   * prefijo `/p/<empresa>` sobra; con él, el primer enlace devolvería a la
+   * visita a la dirección larga a mitad de la compra.
+   */
+  enlace(...segmentos: string[]): string {
+    return this.host.enlacePublico(this.slug(), ...segmentos);
   }
 }

@@ -68,9 +68,18 @@ export interface LoginResponse {
 
 /* ------------------------- Acceso de demostración ------------------------- */
 
-/** Papeles con los que se puede entrar en la demostración. */
+/**
+ * Papeles con los que se puede entrar en la demostración.
+ *
+ * Son los tres lados desde los que se usa la plataforma, y se enseñan los tres
+ * porque cada uno vende una cosa distinta: el alumnado ve el aula, quien
+ * enseña ve el taller de cursos y quien administra ve el negocio. Enseñar solo
+ * dos deja fuera justo a quien decide la compra en una escuela pequeña, que
+ * suele ser quien también da las clases.
+ */
 export enum DemoRole {
   Admin = 'admin',
+  Teacher = 'teacher',
   Student = 'student',
 }
 

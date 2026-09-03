@@ -159,3 +159,17 @@ export class TenantQueryDto extends PaginationQueryDto {
   @IsOptional()
   plan?: TenantPlan;
 }
+
+/**
+ * El dominio que una empresa quiere usar para su página pública.
+ *
+ * La forma se valida en el servicio y no aquí con una expresión regular: hay
+ * que normalizar antes de juzgar —la gente pega `https://` y barras finales— y
+ * el mensaje tiene que decir qué está mal, no solo que no vale.
+ */
+export class SetTenantDomainDto {
+  @ApiProperty({ example: 'cursos.dulcelima.pe' })
+  @IsString()
+  @MaxLength(260)
+  hostname!: string;
+}

@@ -1,9 +1,47 @@
 import { Routes } from '@angular/router';
 import { CAP } from '@maya/shared';
 import { authGuard, guestGuard, passwordChangeGuard } from './core/guards/auth.guard';
+import { dominioPropioGuard, empresaDelDominio } from './core/guards/host.guard';
 import { capabilityGuard, platformAdminGuard } from './core/guards/capability.guard';
 
 export const routes: Routes = [
+  /* ─────────────────── Escaparate en el dominio de la empresa ───────────
+     Una empresa con dominio propio sirve su página pública en la raíz: en
+     `cursos.suescuela.pe` no pinta un `/p/suescuela`. Son las mismas páginas
+     que las de más abajo, con la empresa entrando por `resolve` en lugar de
+     por la dirección. Van primero y con `canMatch` porque un `canMatch` que
+     dice que no deja al enrutador seguir probando, así que en el dominio de la
+     plataforma estas cuatro rutas se saltan solas.                        */
+  {
+    path: '',
+    pathMatch: 'full',
+    canMatch: [dominioPropioGuard],
+    resolve: { slug: empresaDelDominio },
+    loadComponent: () =>
+      import('./features/site/site-public.page').then((m) => m.SitePublicPage),
+  },
+  {
+    path: 'c/:ref',
+    canMatch: [dominioPropioGuard],
+    resolve: { slug: empresaDelDominio },
+    loadComponent: () =>
+      import('./features/site/course-public.page').then((m) => m.CoursePublicPage),
+  },
+  {
+    path: 'pago-prueba/:reference',
+    canMatch: [dominioPropioGuard],
+    resolve: { slug: empresaDelDominio },
+    loadComponent: () =>
+      import('./features/site/payment-sandbox.page').then((m) => m.PaymentSandboxPage),
+  },
+  {
+    path: 'pedido/:reference',
+    canMatch: [dominioPropioGuard],
+    resolve: { slug: empresaDelDominio },
+    loadComponent: () =>
+      import('./features/site/order-public.page').then((m) => m.OrderPublicPage),
+  },
+
   {
     // Portada pública: la página que vende la plataforma. `guestGuard` la
     // reserva a quien no tiene sesión; quien ya entró va a su panel, que es a

@@ -16,6 +16,7 @@ import type {
   PublicCourseDto,
   PublicPaymentMethod,
 } from '@maya/shared';
+import { HostTenantService } from '../../core/services/host-tenant.service';
 import { SiteService } from '../../core/services/site.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -46,6 +47,7 @@ export class CoursePublicPage implements OnInit {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly router = inject(Router);
+  private readonly host = inject(HostTenantService);
   private readonly fb = inject(FormBuilder);
 
   readonly slug = input.required<string>();
@@ -186,13 +188,24 @@ export class CoursePublicPage implements OnInit {
             return;
           }
           this.enviando.set(false);
-          void this.router.navigate(['/p', this.slug(), 'pedido', session.reference]);
+          void this.router.navigate(this.host.rutaPublica(this.slug(), 'pedido', session.reference));
         },
         error: () => this.enviando.set(false),
       });
   }
 
   abrirCurso(course: PublicCourseDto): void {
-    void this.router.navigate(['/p', this.slug(), 'c', course.slug || course.id]);
+    void this.router.navigate(this.host.rutaPublica(this.slug(), 'c', course.slug || course.id));
+  }
+
+  /**
+   * Dirección del escaparate relativa al dominio por el que se ha entrado.
+   *
+   * En el dominio propio de la empresa la raíz ya es su página, así que el
+   * prefijo `/p/<empresa>` sobra; con él, el primer enlace devolvería a la
+   * visita a la dirección larga a mitad de la compra.
+   */
+  enlace(...segmentos: string[]): string {
+    return this.host.enlacePublico(this.slug(), ...segmentos);
   }
 }

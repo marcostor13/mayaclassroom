@@ -182,6 +182,24 @@
         </button>
       }
 
+      @if (ofrece(Papel.Teacher)) {
+        <button
+          type="button"
+          class="demo__opcion"
+          [disabled]="entrandoComo() !== null"
+          (click)="entrarEnDemo(Papel.Teacher)"
+        >
+          <span class="demo__icono"><maya-icon name="book-a" [size]="18" /></span>
+          <span class="demo__texto">
+            <b>{{ entrandoComo() === Papel.Teacher ? 'Entrando…' : 'Entrar como profesor' }}</b>
+            <span class="maya-tiny maya-subtle">
+              Monte el temario, corrija entregas y dé una clase en vivo.
+            </span>
+          </span>
+          <maya-icon name="arrow-right" [size]="16" />
+        </button>
+      }
+
       @if (ofrece(Papel.Student)) {
         <button
           type="button"

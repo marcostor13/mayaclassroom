@@ -111,6 +111,36 @@ describe('AuthService · disponibilidad de la demostración', () => {
     expect(acceso.tenantSlug).toBe('demo');
   });
 
+  it('ofrece los tres lados cuando la siembra los tiene, en orden de visita', async () => {
+    const { service } = await build({
+      porRol: {
+        manager: [userDouble()],
+        editingteacher: [userDouble()],
+        student: [userDouble()],
+      },
+    });
+
+    // El orden es el del selector, no el del enum: se entra por el aula, que
+    // es lo que la visita entiende sin explicación.
+    expect((await service.demoAccess()).roles).toEqual([
+      DemoRole.Student,
+      DemoRole.Teacher,
+      DemoRole.Admin,
+    ]);
+  });
+
+  it('el papel de profesor sale del rol que sí puede editar', async () => {
+    // Con `teacher` a secas la visita vería el curso sin un solo botón.
+    const { service, roles } = await build({ porRol: { editingteacher: [userDouble()] } });
+
+    expect((await service.demoAccess()).roles).toEqual([DemoRole.Teacher]);
+    expect(roles.assigneesByShortName).toHaveBeenCalledWith(
+      'editingteacher',
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it('se apaga si no hay ninguna cuenta utilizable', async () => {
     const { service } = await build({ porRol: {} });
 

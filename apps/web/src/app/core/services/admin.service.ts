@@ -10,6 +10,7 @@ import {
   Paginated,
   TenantAdminCredentials,
   TenantCreatedDto,
+  TenantDomainDto,
   TenantDto,
   TenantStatus,
   UserDto,
@@ -110,6 +111,30 @@ export class AdminService {
 
   updateMyTenant(payload: Record<string, unknown>): Observable<TenantDto> {
     return this.api.patch<TenantDto>('/tenants/me', payload);
+  }
+
+  /* ----------------------------- Dominio propio --------------------------- */
+
+  /**
+   * El dominio propio va por rutas aparte y no dentro del parche de la empresa
+   * porque no es un dato más: enruta tráfico, y hasta que la API comprueba el
+   * DNS no sirve nada. Guardarlo con el resto del formulario haría creer que
+   * con escribirlo basta.
+   */
+  myDomain(): Observable<TenantDomainDto> {
+    return this.api.get<TenantDomainDto>('/tenants/me/domain');
+  }
+
+  setMyDomain(hostname: string): Observable<TenantDomainDto> {
+    return this.api.put<TenantDomainDto>('/tenants/me/domain', { hostname });
+  }
+
+  verifyMyDomain(): Observable<TenantDomainDto> {
+    return this.api.post<TenantDomainDto>('/tenants/me/domain/verify');
+  }
+
+  removeMyDomain(): Observable<TenantDomainDto> {
+    return this.api.delete<TenantDomainDto>('/tenants/me/domain');
   }
 
   tenants(query: Record<string, string | number | undefined> = {}): Observable<Paginated<TenantDto>> {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel, LogAction, TenantStatus } from '@maya/shared';
 import {
@@ -10,8 +10,14 @@ import {
 } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { TenantsService } from './tenants.service';
+import { TenantDomainsService } from './tenant-domains.service';
 import { TenantProvisioningService } from './tenant-provisioning.service';
-import { CreateTenantDto, TenantQueryDto, UpdateTenantDto } from './dto/tenant.dto';
+import {
+  CreateTenantDto,
+  SetTenantDomainDto,
+  TenantQueryDto,
+  UpdateTenantDto,
+} from './dto/tenant.dto';
 
 @ApiTags('Empresas')
 @Controller('tenants')
@@ -19,6 +25,7 @@ export class TenantsController {
   constructor(
     private readonly tenants: TenantsService,
     private readonly provisioning: TenantProvisioningService,
+    private readonly domains: TenantDomainsService,
   ) {}
 
   @Public()
@@ -41,6 +48,18 @@ export class TenantsController {
   @ApiOperation({ summary: 'Empresa del usuario autenticado' })
   me(@CurrentUser() user: RequestUser) {
     return this.tenants.findById(user.tenantId);
+  }
+
+  @Public()
+  @Get('resolve')
+  @ApiOperation({
+    summary: 'Qué empresa sirve un anfitrión',
+    description:
+      'Lo consulta el cliente al arrancar para saber si está en el dominio de la ' +
+      'plataforma o en el de una empresa. Devuelve `null` si el nombre no es de nadie.',
+  })
+  resolveHost(@Query('host') host: string) {
+    return this.domains.resolveHost(host ?? '');
   }
 
   @Get(':id')
@@ -84,8 +103,60 @@ export class TenantsController {
   @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
   @ApiOperation({ summary: 'Actualizar la empresa propia' })
   updateMine(@CurrentUser() user: RequestUser, @Body() dto: UpdateTenantDto) {
-    const { slug: _slug, ...safe } = dto;
+    // El identificador y el dominio se caen aquí a propósito. El primero es la
+    // dirección de la empresa dentro de la plataforma; el segundo enruta
+    // tráfico y necesita prueba de propiedad, que es lo que hacen las rutas de
+    // más abajo. Aceptarlo en este parche dejaría a cualquier empresa reclamar
+    // el nombre de otra sin comprobar nada.
+    const { slug: _slug, domain: _domain, ...safe } = dto;
     return this.tenants.update(user.tenantId, safe);
+  }
+
+  /* ----------------------------- Dominio propio --------------------------- */
+
+  @Get('me/domain')
+  @ApiBearerAuth()
+  @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
+  @ApiOperation({ summary: 'Estado del dominio propio y registros de DNS que hacen falta' })
+  domain(@CurrentUser() user: RequestUser) {
+    return this.domains.state(user.tenantId);
+  }
+
+  @Put('me/domain')
+  @ApiBearerAuth()
+  @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
+  @Audit(LogAction.Updated, 'tenant-domain')
+  @ApiOperation({
+    summary: 'Reservar un dominio propio',
+    description:
+      'Devuelve los registros de DNS que hay que crear. El dominio no sirve nada ' +
+      'hasta que la comprobación lo activa.',
+  })
+  setDomain(@CurrentUser() user: RequestUser, @Body() dto: SetTenantDomainDto) {
+    return this.domains.request(user.tenantId, dto.hostname);
+  }
+
+  @Post('me/domain/verify')
+  @ApiBearerAuth()
+  @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
+  @Audit(LogAction.Updated, 'tenant-domain')
+  @ApiOperation({
+    summary: 'Comprobar el DNS y activar el dominio',
+    description:
+      'Si algo falta, la respuesta lo cuenta en `lastError` en lugar de fallar: es ' +
+      'el resultado de la comprobación, no un error de la petición.',
+  })
+  verifyDomain(@CurrentUser() user: RequestUser) {
+    return this.domains.verify(user.tenantId);
+  }
+
+  @Delete('me/domain')
+  @ApiBearerAuth()
+  @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
+  @Audit(LogAction.Deleted, 'tenant-domain')
+  @ApiOperation({ summary: 'Quitar el dominio propio y volver al de la plataforma' })
+  removeDomain(@CurrentUser() user: RequestUser) {
+    return this.domains.remove(user.tenantId);
   }
 
   @Patch(':id')

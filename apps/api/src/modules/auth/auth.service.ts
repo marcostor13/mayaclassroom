@@ -59,6 +59,19 @@ interface LoginCandidate {
 /** Tipo del testigo que autoriza el segundo paso de la elección de empresa. */
 const TENANT_CHOICE = 'tenant-choice';
 
+/**
+ * Qué rol de la empresa representa a cada papel de la demostración.
+ *
+ * `editingteacher` y no `teacher`: el papel enseña el taller —crear cursos,
+ * subir contenido, calificar—, y el rol `teacher` a secas no puede editar, así
+ * que la visita se quedaría mirando una pantalla sin botones.
+ */
+const ROL_DE_DEMOSTRACION: Record<DemoRole, string> = {
+  [DemoRole.Admin]: 'manager',
+  [DemoRole.Teacher]: 'editingteacher',
+  [DemoRole.Student]: 'student',
+};
+
 /** Una empresa suspendida o archivada no deja entrar a nadie. */
 function isTenantOpen(status: TenantStatus): boolean {
   return status !== TenantStatus.Suspended && status !== TenantStatus.Archived;
@@ -291,7 +304,10 @@ export class AuthService {
     if (!enabled) return { enabled: false, tenantSlug, roles: [] };
 
     const roles: DemoRole[] = [];
-    for (const role of [DemoRole.Admin, DemoRole.Student]) {
+    // El orden es el del selector: de lo que menos compromete a lo que más
+    // enseña. Se recorre la lista entera aunque falle alguno, para que una
+    // siembra sin profesorado siga ofreciendo los otros dos.
+    for (const role of [DemoRole.Student, DemoRole.Teacher, DemoRole.Admin]) {
       if (await this.findDemoUser(role).catch(() => null)) roles.push(role);
     }
     return { enabled: roles.length > 0, tenantSlug, roles };
@@ -338,7 +354,7 @@ export class AuthService {
   private async findDemoUser(role: DemoRole): Promise<UserDocument> {
     const tenant = await this.tenants.requireBySlug(this.demo.tenantSlug);
     const context = await this.contexts.requireByInstance(ContextLevel.Tenant, tenant._id);
-    const shortName = role === DemoRole.Admin ? 'manager' : 'student';
+    const shortName = ROL_DE_DEMOSTRACION[role];
 
     const candidatos = await this.roles.assigneesByShortName(shortName, context._id, tenant._id);
 

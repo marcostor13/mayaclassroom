@@ -68,3 +68,54 @@ export interface TenantCreatedDto {
   tenant: TenantDto;
   admin: TenantAdminCredentials;
 }
+
+/* ----------------------------- Dominio propio ----------------------------- */
+
+/**
+ * En qué punto está el dominio propio de una empresa.
+ *
+ * Es un estado y no un par de banderas porque el camino tiene una sola
+ * dirección —se pide, se comprueba, queda activo— y con banderas sueltas
+ * aparecen combinaciones que no significan nada (verificado pero sin nombre).
+ */
+export enum TenantDomainStatus {
+  /** Nadie ha pedido ninguno. */
+  None = 'none',
+  /** Pedido y a la espera de que el DNS apunte a donde debe. */
+  Pending = 'pending',
+  /** Comprobado: el dominio sirve la página de la empresa. */
+  Active = 'active',
+  /** Estuvo activo y ha dejado de resolver; la página sigue en el de siempre. */
+  Failed = 'failed',
+}
+
+/** El dominio propio de una empresa tal y como lo ve quien la administra. */
+export interface TenantDomainDto {
+  status: TenantDomainStatus;
+  /** El nombre pedido, con o sin verificar. `null` si no hay ninguno. */
+  hostname: string | null;
+  /** Instrucciones de DNS que hay que dejar puestas. Siempre las dos. */
+  records: TenantDomainRecord[];
+  /** Cuándo se comprobó por última vez, en ISO. */
+  checkedAt: string | null;
+  /** Desde cuándo está activo, en ISO. */
+  verifiedAt: string | null;
+  /** Por qué falló la última comprobación, en cristiano. */
+  lastError: string | null;
+}
+
+/** Un registro que la empresa tiene que crear en su proveedor de DNS. */
+export interface TenantDomainRecord {
+  type: 'CNAME' | 'TXT';
+  /** Nombre completo del registro, para pegarlo tal cual. */
+  name: string;
+  value: string;
+  /** Para qué sirve, porque quien lo pega no suele saber de DNS. */
+  purpose: string;
+}
+
+/** Lo que la página pública necesita saber del anfitrión que la sirve. */
+export interface HostResolutionDto {
+  /** Empresa a la que pertenece el dominio, o `null` si es el de la plataforma. */
+  tenantSlug: string | null;
+}

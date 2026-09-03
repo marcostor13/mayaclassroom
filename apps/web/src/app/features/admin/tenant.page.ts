@@ -1,16 +1,24 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { DEFAULT_TIMEZONE, TenantDto } from '@maya/shared';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DEFAULT_TIMEZONE, TenantDomainStatus } from '@maya/shared';
+import type { TenantDomainDto, TenantDto } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/services/toast.service';
-import { IconComponent, ImageUploadComponent } from '../../shared';
+import { FormatDatePipe, IconComponent, ImageUploadComponent } from '../../shared';
 
 @Component({
   selector: 'maya-admin-tenant',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconComponent, ImageUploadComponent],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    FormatDatePipe,
+    IconComponent,
+    ImageUploadComponent,
+  ],
   templateUrl: './tenant.page.html',
+  styleUrl: './tenant.page.scss',
 })
 export class AdminTenantPage {
   private readonly admin = inject(AdminService);
@@ -26,7 +34,6 @@ export class AdminTenantPage {
     legalName: [''],
     contactEmail: [''],
     contactPhone: [''],
-    domain: [''],
   });
 
   readonly brandingForm = this.fb.nonNullable.group({
@@ -67,7 +74,6 @@ export class AdminTenantPage {
           legalName: tenant.legalName ?? '',
           contactEmail: tenant.contactEmail,
           contactPhone: tenant.contactPhone ?? '',
-          domain: tenant.domain ?? '',
         });
         this.brandingForm.patchValue({
           primaryColor: tenant.branding.primaryColor,
@@ -79,6 +85,7 @@ export class AdminTenantPage {
         this.settingsForm.patchValue(tenant.settings);
       },
     });
+    this.cargarDominio();
   }
 
   previewBranding(): void {
@@ -108,5 +115,89 @@ export class AdminTenantPage {
         },
         error: () => this.saving.set(false),
       });
+  }
+
+  /* ----------------------------- Dominio propio --------------------------- */
+
+  /**
+   * El dominio propio no va con el resto del formulario a propósito.
+   *
+   * Guardar aquí no cambia nada visible: el dominio empieza a servir cuando el
+   * DNS de la empresa apunta a donde debe y la API lo comprueba. Mezclarlo con
+   * «Guardar cambios» haría creer que con escribirlo ya está, que es
+   * exactamente lo que pasaba antes, cuando el campo se guardaba y no servía
+   * para nada.
+   */
+  readonly dominio = signal<TenantDomainDto | null>(null);
+  readonly hostname = signal('');
+  readonly trabajando = signal(false);
+
+  /** El despliegue no ofrece la función; la sección lo dice en vez de callar. */
+  readonly dominioNoDisponible = signal(false);
+
+  private cargarDominio(): void {
+    this.admin.myDomain().subscribe({
+      next: (estado) => {
+        this.dominio.set(estado);
+        this.hostname.set(estado.hostname ?? '');
+      },
+      // 503 es «este despliegue no lo admite»; cualquier otro fallo deja la
+      // sección en su estado inicial, que ya invita a reservar un dominio.
+      error: (error: { status?: number }) => this.dominioNoDisponible.set(error?.status === 503),
+    });
+  }
+
+  private aplicar(estado: TenantDomainDto, mensaje?: string): void {
+    this.dominio.set(estado);
+    this.hostname.set(estado.hostname ?? '');
+    this.trabajando.set(false);
+    if (mensaje) this.toast.success(mensaje);
+  }
+
+  guardarDominio(): void {
+    const host = this.hostname().trim();
+    if (!host) return;
+    this.trabajando.set(true);
+    this.admin.setMyDomain(host).subscribe({
+      next: (estado) =>
+        this.aplicar(estado, 'Dominio reservado. Cree los dos registros en su DNS.'),
+      error: () => this.trabajando.set(false),
+    });
+  }
+
+  /**
+   * Comprobar no falla aunque el DNS no esté: la API devuelve el estado con el
+   * motivo dentro, porque «todavía no se ve el registro» es el resultado
+   * normal de los primeros minutos, no un error que merezca una alerta roja.
+   */
+  comprobarDominio(): void {
+    this.trabajando.set(true);
+    this.admin.verifyMyDomain().subscribe({
+      next: (estado) => {
+        this.aplicar(estado);
+        if (estado.status === TenantDomainStatus.Active) {
+          this.toast.success(`${estado.hostname} ya sirve su página pública.`);
+        }
+      },
+      error: () => this.trabajando.set(false),
+    });
+  }
+
+  quitarDominio(): void {
+    this.trabajando.set(true);
+    this.admin.removeMyDomain().subscribe({
+      next: (estado) => this.aplicar(estado, 'Dominio retirado.'),
+      error: () => this.trabajando.set(false),
+    });
+  }
+
+  async copiar(valor: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(valor);
+      this.toast.success('Copiado');
+    } catch {
+      // Sin permiso de portapapeles (http, ajustes estrictos) el valor sigue
+      // a la vista para seleccionarlo a mano: no hace falta alarmar.
+    }
   }
 }

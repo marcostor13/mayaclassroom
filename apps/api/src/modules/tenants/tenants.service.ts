@@ -1,7 +1,8 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ContextLevel, SYSTEM_TENANT_SLUG, TenantStatus } from '@maya/shared';
+import { randomBytes } from 'node:crypto';
+import { ContextLevel, SYSTEM_TENANT_SLUG, TenantDomainStatus, TenantStatus } from '@maya/shared';
 import { Tenant, TenantDocument } from './schemas/tenant.schema';
 import { ContextsService } from '../contexts/contexts.service';
 import { RolesService } from '../rbac/roles.service';
@@ -76,8 +77,21 @@ export class TenantsService {
     return tenant;
   }
 
+  /**
+   * La empresa que sirve un dominio propio, solo si está verificado.
+   *
+   * El nombre se guarda desde que se pide, así que filtrar por el estado no es
+   * un detalle: sin él, un dominio a medio configurar empezaría a servir el
+   * día que alguien apuntase el DNS, sin haber demostrado que es suyo.
+   */
   async findByDomain(domain: string): Promise<TenantDocument | null> {
-    return this.model.findOne({ domain: domain.toLowerCase(), ...notDeleted }).exec();
+    return this.model
+      .findOne({
+        domain: domain.trim().toLowerCase().replace(/\.$/, ''),
+        domainStatus: TenantDomainStatus.Active,
+        ...notDeleted,
+      })
+      .exec();
   }
 
   /** Datos públicos usados por la pantalla de acceso (marca y políticas). */
@@ -151,13 +165,37 @@ export class TenantsService {
       if (clash) throw new ConflictException(`El identificador «${dto.slug}» ya está en uso.`);
       tenant.slug = dto.slug.toLowerCase();
     }
+    // Un dominio nuevo entra siempre sin verificar, lo ponga quien lo ponga: la
+    // administración de plataforma es de fiar, pero el DNS del cliente no está
+    // puesto todavía, y darlo por activo dejaría a la empresa con un dominio
+    // que la pantalla anuncia y el navegador no encuentra. Se asigna a mano y
+    // se saca del volcado de abajo, porque un `undefined` en `Object.assign`
+    // no borra el campo: lo deja como estaba.
+    if (dto.domain !== undefined) {
+      const host = dto.domain ? dto.domain.trim().toLowerCase().replace(/\.$/, '') : null;
+      if (host !== tenant.domain) {
+        tenant.domain = host;
+        tenant.domainStatus = host ? TenantDomainStatus.Pending : TenantDomainStatus.None;
+        tenant.domainToken = host ? `maya-verificacion=${randomBytes(16).toString('hex')}` : null;
+        tenant.domainVerifiedAt = null;
+        tenant.domainCheckedAt = null;
+        tenant.domainError = null;
+      }
+    }
+
     if (dto.branding) Object.assign(tenant.branding, dto.branding);
     if (dto.settings) {
       const { passwordPolicy, ...rest } = dto.settings;
       Object.assign(tenant.settings, rest);
       if (passwordPolicy) Object.assign(tenant.settings.passwordPolicy, passwordPolicy);
     }
-    const { branding: _branding, settings: _settings, slug: _slug, ...rest } = dto;
+    const {
+      branding: _branding,
+      settings: _settings,
+      slug: _slug,
+      domain: _domain,
+      ...rest
+    } = dto;
     Object.assign(tenant, rest);
     await tenant.save();
 

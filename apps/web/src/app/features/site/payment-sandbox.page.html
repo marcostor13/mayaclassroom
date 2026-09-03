@@ -5,7 +5,7 @@
     <div class="tarjeta">
       <span class="marca"><maya-icon name="alert" [size]="26" /></span>
       <h1>No encontramos ese pedido</h1>
-      <a class="maya-btn maya-btn--primary" [href]="'/p/' + slug()">Volver a los cursos</a>
+      <a class="maya-btn maya-btn--primary" [href]="enlace()">Volver a los cursos</a>
     </div>
   } @else if (result(); as r) {
     <div class="tarjeta">
@@ -45,7 +45,7 @@
         </p>
         <a
           class="maya-btn maya-btn--primary maya-btn--lg maya-btn--block"
-          [href]="'/p/' + slug() + '/pedido/' + reference()"
+          [href]="enlace('pedido', reference())"
         >
           Ver la compra
         </a>

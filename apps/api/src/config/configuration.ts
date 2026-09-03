@@ -113,6 +113,41 @@ export interface LiveConfig {
   recordingStagingPath: string;
 }
 
+/**
+ * Dominios propios de las empresas.
+ *
+ * Una empresa puede servir su página pública en su propio nombre
+ * —`cursos.dulcelima.pe`— en lugar de en el de la plataforma. Esta
+ * infraestructura no expone una IP pública: Cloudflare entrega el tráfico por
+ * un túnel, y a un túnel solo puede apuntar un dominio de la propia cuenta de
+ * Cloudflare. El dominio de un cliente no lo es, así que no puede apuntar al
+ * túnel directamente.
+ *
+ * La salida es Cloudflare for SaaS: el cliente apunta su nombre por CNAME a
+ * `target`, que sí es un dominio nuestro, y Cloudflare emite el certificado
+ * del nombre del cliente y entrega el tráfico por el mismo túnel de siempre.
+ * Sin infraestructura nueva y sin un despliegue por cada dominio.
+ *
+ * Con `target` vacío la función queda apagada: las pantallas lo dicen y los
+ * endpoints responden que no está disponible, en vez de aceptar dominios que
+ * nunca van a resolver.
+ */
+export interface DomainsConfig {
+  /** Nombre al que apuntan por CNAME los dominios de las empresas. */
+  target: string;
+  /** Resolutor DNS-over-HTTPS con el que se comprueban los registros. */
+  resolver: string;
+  /** Nombres que ninguna empresa puede reclamar (los de la propia plataforma). */
+  reserved: string[];
+  /**
+   * Zona de Cloudflare donde se dan de alta los nombres de cliente. Vacía, la
+   * comprobación de DNS funciona igual pero nadie emite el certificado: sirve
+   * para desarrollo y para despliegues que lo gestionen por su cuenta.
+   */
+  cloudflareZoneId: string;
+  cloudflareToken: string;
+}
+
 export interface SecurityConfig {
   bcryptRounds: number;
   throttleTtl: number;
@@ -265,6 +300,20 @@ export const securityConfig = registerAs(
   }),
 );
 
+export const domainsConfig = registerAs(
+  'domains',
+  (): DomainsConfig => ({
+    target: process.env.CUSTOM_DOMAIN_TARGET ?? '',
+    resolver: process.env.CUSTOM_DOMAIN_RESOLVER ?? 'https://cloudflare-dns.com/dns-query',
+    // Los nombres de la propia plataforma se reservan siempre, se listen o no:
+    // una empresa que reclamase el dominio del cliente se quedaría con el
+    // tráfico de todas las demás.
+    reserved: toList(process.env.CUSTOM_DOMAIN_RESERVED, []),
+    cloudflareZoneId: process.env.CLOUDFLARE_SAAS_ZONE_ID ?? '',
+    cloudflareToken: process.env.CLOUDFLARE_API_TOKEN ?? '',
+  }),
+);
+
 export const configurations = [
   appConfig,
   databaseConfig,
@@ -274,4 +323,5 @@ export const configurations = [
   securityConfig,
   demoConfig,
   liveConfig,
+  domainsConfig,
 ];

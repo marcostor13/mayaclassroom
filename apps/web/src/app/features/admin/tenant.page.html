@@ -36,10 +36,6 @@
         <label class="maya-label" for="t-phone">Teléfono</label>
         <input id="t-phone" class="maya-input" formControlName="contactPhone" />
       </div>
-      <div class="maya-field">
-        <label class="maya-label" for="t-domain">Dominio propio</label>
-        <input id="t-domain" class="maya-input" formControlName="domain" placeholder="aula.miempresa.com" />
-      </div>
     </div>
   </section>
 
@@ -163,3 +159,137 @@
     </section>
   }
 </div>
+
+<!-- ─────────────────────────── Dominio propio ────────────────────────────
+     Sección aparte y a lo ancho, no un campo más del formulario de datos: lo
+     que se escribe aquí no se guarda y ya está, hay que pasar por el DNS de la
+     empresa y por una comprobación. Meterlo entre el teléfono y el correo haría
+     creer que con escribirlo basta.                                        -->
+<section class="maya-card dominio">
+  <div class="maya-card__header">
+    <div>
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Dominio propio</h2>
+      <p class="maya-small maya-subtle">
+        Sirva su página pública en su propia dirección en lugar de en la de la plataforma.
+      </p>
+    </div>
+    @switch (dominio()?.status) {
+      @case ('active') {
+        <span class="maya-badge maya-badge--success">Activo</span>
+      }
+      @case ('pending') {
+        <span class="maya-badge maya-badge--warning">Pendiente de DNS</span>
+      }
+      @case ('failed') {
+        <span class="maya-badge maya-badge--danger">No resuelve</span>
+      }
+      @default {
+        <span class="maya-badge">Sin configurar</span>
+      }
+    }
+  </div>
+
+  <div class="maya-card__body maya-stack">
+    @if (dominioNoDisponible()) {
+      <p class="maya-small maya-subtle">
+        Este despliegue todavía no admite dominios propios. Escriba a soporte para activarlo.
+      </p>
+    } @else {
+      <div class="dominio__alta">
+        <div class="maya-field">
+          <label class="maya-label" for="t-domain">Su dominio</label>
+          <input
+            id="t-domain"
+            class="maya-input"
+            [(ngModel)]="hostname"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="cursos.suescuela.pe"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary"
+          (click)="guardarDominio()"
+          [disabled]="trabajando() || !hostname().trim()"
+        >
+          <maya-icon name="globe" [size]="16" />
+          {{ dominio()?.hostname ? 'Cambiar dominio' : 'Reservar dominio' }}
+        </button>
+      </div>
+
+      @if (dominio()?.records?.length) {
+        <div class="maya-stack">
+          <p class="maya-small">
+            Cree estos dos registros en el panel de su proveedor de dominios. El primero
+            trae las visitas hasta aquí; el segundo demuestra que el dominio es suyo.
+          </p>
+
+          <div class="dominio__registros">
+            @for (registro of dominio()!.records; track registro.name + registro.type) {
+              <div class="dominio__registro">
+                <span class="maya-badge maya-badge--info">{{ registro.type }}</span>
+                <div class="dominio__valores">
+                  <code class="dominio__nombre">{{ registro.name }}</code>
+                  <code class="dominio__valor">{{ registro.value }}</code>
+                  <span class="maya-tiny maya-subtle">{{ registro.purpose }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  (click)="copiar(registro.value)"
+                  [attr.aria-label]="'Copiar el valor del registro ' + registro.type"
+                >
+                  <maya-icon name="copy" [size]="16" />
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (dominio()?.lastError) {
+            <p class="maya-alert maya-alert--warning maya-small">
+              <maya-icon name="alert" [size]="16" />
+              {{ dominio()!.lastError }}
+            </p>
+          }
+
+          @if (dominio()?.status === 'active') {
+            <p class="maya-alert maya-alert--success maya-small">
+              <maya-icon name="circle-check" [size]="16" />
+              Su página pública ya se sirve en
+              <a [href]="'https://' + dominio()!.hostname" target="_blank" rel="noopener">
+                {{ dominio()!.hostname }}
+              </a>
+            </p>
+          }
+
+          <div class="dominio__acciones">
+            <button
+              type="button"
+              class="maya-btn maya-btn--secondary"
+              (click)="comprobarDominio()"
+              [disabled]="trabajando()"
+            >
+              <maya-icon name="refresh" [size]="16" />
+              {{ trabajando() ? 'Comprobando…' : 'Comprobar ahora' }}
+            </button>
+            <button
+              type="button"
+              class="maya-btn maya-btn--ghost"
+              (click)="quitarDominio()"
+              [disabled]="trabajando()"
+            >
+              <maya-icon name="trash" [size]="16" /> Quitar
+            </button>
+            @if (dominio()?.checkedAt) {
+              <span class="maya-tiny maya-subtle">
+                Última comprobación: {{ dominio()!.checkedAt | mayaDate: 'datetime' }}
+              </span>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+</section>

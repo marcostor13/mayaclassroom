@@ -6,7 +6,7 @@
       <span class="marca marca--aviso"><maya-icon name="alert" [size]="26" /></span>
       <h1>No encontramos ese pedido</h1>
       <p class="maya-muted">Compruebe el enlace del correo de confirmación.</p>
-      <a class="maya-btn maya-btn--primary" [href]="'/p/' + slug()">Volver a los cursos</a>
+      <a class="maya-btn maya-btn--primary" [href]="enlace()">Volver a los cursos</a>
     </div>
   } @else if (result(); as r) {
     <div class="tarjeta">
@@ -63,7 +63,7 @@
             Comprobar de nuevo
           </button>
         }
-        <a class="maya-btn maya-btn--ghost" [href]="'/p/' + slug()">Ver más cursos</a>
+        <a class="maya-btn maya-btn--ghost" [href]="enlace()">Ver más cursos</a>
       </div>
 
       @if (pendiente()) {
