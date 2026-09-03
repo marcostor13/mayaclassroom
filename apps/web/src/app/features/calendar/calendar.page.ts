@@ -14,6 +14,7 @@ import {
   IconComponent,
   ModalComponent,
 } from '../../shared';
+import { LiveSessionFormComponent } from '../live/live-session-form.component';
 
 interface CalendarCell {
   date: Date;
@@ -35,6 +36,7 @@ const COLOR_POR_DEFECTO = '#E4574D';
     EmptyStateComponent,
     FormatDatePipe,
     ModalComponent,
+    LiveSessionFormComponent,
   ],
   templateUrl: './calendar.page.html',
   styleUrl: './calendar.page.scss',
@@ -59,6 +61,14 @@ export class CalendarPage {
   readonly formOpen = signal(false);
   readonly saving = signal(false);
   readonly myCourses = signal<CourseSummary[]>([]);
+
+  /** Diálogo de convocatoria de una clase en vivo, abierto desde el calendario. */
+  readonly liveFormOpen = signal(false);
+
+  /** Quien puede convocar clases ve el botón; el resto solo las ve en la rejilla. */
+  readonly canCreateLive = computed(
+    () => this.auth.can(CAP.LIVE_CREATE) || this.auth.isTeacherAnywhere(),
+  );
 
   /** Quien puede gestionar el calendario del curso ve el selector de ámbito. */
   readonly canManageCourse = computed(() => this.auth.can(CAP.CALENDAR_MANAGE_COURSE));
@@ -253,6 +263,35 @@ export class CalendarPage {
           },
         });
       });
+  }
+
+  /* --------------------------- Clases en vivo --------------------------- */
+
+  /** Abre la convocatoria en el día que esté seleccionado, a las 9:00. */
+  openLive(): void {
+    this.liveFormOpen.set(true);
+  }
+
+  /** Día sugerido a la convocatoria: el seleccionado en la rejilla. */
+  liveStartAt(): Date {
+    const dia = this.selected() ?? new Date();
+    const inicio = new Date(dia);
+    inicio.setHours(9, 0, 0, 0);
+    return inicio;
+  }
+
+  onLiveSaved(): void {
+    this.liveFormOpen.set(false);
+    this.toast.success('Clase convocada', 'Ya aparece en el calendario de sus participantes.');
+    this.load();
+  }
+
+  /**
+   * Los eventos de una clase en vivo llevan a la sala, no a una actividad: se
+   * distinguen por su acción para poder ofrecer «Entrar» en lugar de «Ir a».
+   */
+  isLive(event: CalendarEventDto): boolean {
+    return Boolean(event.actionUrl?.startsWith('/live/'));
   }
 
   /**

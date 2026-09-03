@@ -27,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', shortLabel: 'Inicio', icon: 'home', route: '/dashboard', group: 'principal', mobile: true, exact: true },
   { label: 'Mis cursos', shortLabel: 'Cursos', icon: 'book', route: '/courses', group: 'principal', mobile: true },
   { label: 'Calendario', shortLabel: 'Agenda', icon: 'calendar', route: '/calendar', group: 'principal', mobile: true },
+  { label: 'Clases en vivo', shortLabel: 'En vivo', icon: 'play-circle', route: '/live', group: 'principal' },
   { label: 'Mensajes', shortLabel: 'Chats', icon: 'message-square', route: '/messages', group: 'principal', mobile: true },
   { label: 'Notificaciones', shortLabel: 'Avisos', icon: 'bell', route: '/notifications', group: 'principal' },
   { label: 'Insignias', shortLabel: 'Logros', icon: 'award', route: '/badges', group: 'principal' },

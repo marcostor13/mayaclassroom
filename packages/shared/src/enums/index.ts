@@ -351,3 +351,63 @@ export enum ScheduledTaskStatus {
   Running = 'running',
   Failed = 'failed',
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Aulas en vivo (videoconferencia nativa)                                    */
+/* -------------------------------------------------------------------------- */
+
+/** Estado del ciclo de vida de una sesión en vivo. */
+export enum LiveSessionStatus {
+  /** Creada y con fecha, todavía no abierta. */
+  Scheduled = 'scheduled',
+  /** Alguien la ha abierto: se puede entrar. */
+  Live = 'live',
+  /** Terminada; solo quedan la asistencia y las grabaciones. */
+  Ended = 'ended',
+  Cancelled = 'cancelled',
+}
+
+/**
+ * Cómo se reparte la palabra en la sala.
+ *
+ * `meeting` es una reunión entre iguales: todos publican cámara y micrófono.
+ * `class` es una clase magistral: solo publican quienes presentan, y el resto
+ * pide la palabra alzando la mano. La diferencia no es solo de permisos: en
+ * malla, cada emisor abre una conexión con cada asistente, así que una clase
+ * de treinta personas solo es viable si emite el profesorado.
+ */
+export enum LiveSessionMode {
+  Meeting = 'meeting',
+  Class = 'class',
+}
+
+/** Papel de cada persona dentro de la sala. */
+export enum LiveParticipantRole {
+  /** Quien creó la sesión: manda sobre todo lo demás. */
+  Host = 'host',
+  /** Ayuda a moderar y puede presentar y grabar. */
+  CoHost = 'cohost',
+  /** Asiste; publica o no según el modo de la sala. */
+  Attendee = 'attendee',
+}
+
+export enum LiveRecordingStatus {
+  /** Se están recibiendo los trozos desde el navegador que graba. */
+  Recording = 'recording',
+  /** Trozos recibidos, ensamblándose y guardándose. */
+  Processing = 'processing',
+  Ready = 'ready',
+  Failed = 'failed',
+}
+
+/** Herramientas de la pizarra colaborativa. */
+export enum WhiteboardTool {
+  Pen = 'pen',
+  Highlighter = 'highlighter',
+  Line = 'line',
+  Arrow = 'arrow',
+  Rectangle = 'rectangle',
+  Ellipse = 'ellipse',
+  Text = 'text',
+  Eraser = 'eraser',
+}

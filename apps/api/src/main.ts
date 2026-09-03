@@ -10,6 +10,7 @@ import { API_VERSION, MAYA_BRAND, TENANT_HEADER } from '@maya/shared';
 import { AppModule } from './app.module';
 import type { AppConfig } from './config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LiveIoAdapter } from './common/adapters/live-io.adapter';
 import { LoggingInterceptor, TransformInterceptor } from './common/interceptors';
 
 async function bootstrap(): Promise<void> {
@@ -50,6 +51,10 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  // La señalización de las aulas en vivo comparte el puerto de la API y, con
+  // ella, la lista de orígenes permitidos.
+  app.useWebSocketAdapter(new LiveIoAdapter(app, appConfig.corsOrigins, appConfig.globalPrefix));
+
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
   app.enableShutdownHooks();
@@ -79,6 +84,7 @@ async function bootstrap(): Promise<void> {
     .addTag('Actividades')
     .addTag('Calificaciones')
     .addTag('Comunicación')
+    .addTag('Aulas en vivo')
     .build();
 
   const document = SwaggerModule.createDocument(app, swagger);

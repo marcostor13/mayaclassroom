@@ -33,6 +33,32 @@ con Mercado Pago o PayPal y matrícula automática en cuanto el pago se confirma
 | `/admin/storefront` | Constructor visual de la página, catálogo, pedidos y solicitudes |
 | `/admin/payments` | Conexión de las pasarelas de cobro |
 
+### Aulas en vivo
+
+La videoconferencia es **nativa**: no hay iframe de Zoom ni de Meet. Los
+navegadores se conectan entre sí por WebRTC y la API solo hace de centralita de
+señalización, así que ni el audio ni el vídeo pasan por la plataforma.
+
+| Dirección | Qué es |
+|---|---|
+| `/live` | Clases convocadas, terminadas y biblioteca de grabaciones |
+| `/live/:codigo` | La sala: el enlace que se comparte |
+
+Dentro de la sala hay micrófono y cámara con selector de dispositivo, compartir
+pantalla, ventana o pestaña, pizarra colaborativa con todas sus herramientas,
+chat, mano alzada, sala de espera, moderación (silenciar, expulsar, ceder
+moderación) y grabación con un clic. Las clases se convocan desde el calendario
+o desde `/live`, quedan como evento con recordatorio y avisan por notificación a
+quien tiene que asistir.
+
+Las grabaciones las compone el navegador de quien presenta y se guardan como un
+fichero más de la plataforma —disco, S3 o R2, según `STORAGE_DRIVER`—, listas
+para volver a verlas tanto el profesorado como el alumnado matriculado.
+
+Con `LIVE_STUN_URLS` basta en redes domésticas. En redes corporativas hace falta
+además un TURN (`LIVE_TURN_URLS`); sin él, los participantes se ven en la lista
+pero no llegan a oírse. El detalle está en [`docs/LIVE.md`](./docs/LIVE.md).
+
 Con `DEMO_ENABLED=true`, la pantalla de acceso ofrece además ver el escaparate
 y entrar en la empresa de demostración como administrador o como estudiante,
 sin credenciales. Apagado por defecto: es para el despliegue que enseña la
@@ -173,10 +199,12 @@ update(@Param('id') id: string, @Body() dto: UpdateCourseDto) { … }
 | **2** | Categorías, cursos, secciones, actividades, matriculación, grupos, calificaciones, finalización, calendario, mensajería, panel | ✅ |
 | **3** | Competencias, insignias, certificados, cohortes, actividades avanzadas, analíticas, copias de seguridad, RGPD, servicios web, tareas programadas | ✅ |
 | **4** | Escaparate público, constructor visual de páginas, venta de cursos con Mercado Pago y PayPal, pedidos y guías interactivas | ✅ |
+| **5** | Aulas en vivo: videoconferencia WebRTC nativa, pizarra colaborativa, compartir pantalla, grabación y asistencia | ✅ |
 
 El detalle está en [`PLAN.md`](./PLAN.md) y la arquitectura técnica en
 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Para poner el almacenamiento
-de ficheros en Cloudflare R2, [`docs/R2.md`](./docs/R2.md).
+de ficheros en Cloudflare R2, [`docs/R2.md`](./docs/R2.md); para las aulas en
+vivo y el TURN, [`docs/LIVE.md`](./docs/LIVE.md).
 
 ---
 

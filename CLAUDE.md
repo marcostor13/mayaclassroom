@@ -53,6 +53,12 @@ dar por rota una herramienta.
   La regla `@typescript-eslint/consistent-type-imports` lo vigila.
 - **`@typescript-eslint/no-explicit-any` está en `error`.** No hay escapatoria
   con `any`; usar `unknown` y estrechar.
+- **La señalización de las aulas en vivo cuelga de `/api/live-socket`**, no del
+  `/socket.io` por defecto de Socket.IO. El proxy de desarrollo y el nginx del
+  despliegue solo reenvían `/api`: en la ruta por defecto el socket muere con un
+  404 del servidor de estáticos y la sala se queda cargando sin ningún error en
+  la consola. El proxy además necesita `ws: true` y nginx las cabeceras de
+  ascenso a WebSocket.
 - **Los medios de la demostración salen de Pexels.** Las fotos se componen de
   su identificador y no necesitan clave; los vídeos sí, porque el nombre del
   fichero depende de la resolución con la que se publicó cada uno. Sin

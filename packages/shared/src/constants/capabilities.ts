@@ -219,6 +219,22 @@ export const CAP = {
   CALENDAR_MANAGE_GROUP: 'moodle/calendar:managegroupentries',
   CALENDAR_MANAGE_COURSE: 'moodle/calendar:manageentries',
 
+  // --- Aulas en vivo -------------------------------------------------------
+  /** Crear reuniones y clases en vivo. */
+  LIVE_CREATE: 'maya/live:create',
+  /** Entrar a una sala en vivo. */
+  LIVE_JOIN: 'maya/live:join',
+  /** Moderar la sala: silenciar, expulsar, admitir y finalizar. */
+  LIVE_HOST: 'maya/live:host',
+  /** Grabar una sesión en vivo. */
+  LIVE_RECORD: 'maya/live:record',
+  /** Ver las grabaciones publicadas. */
+  LIVE_VIEW_RECORDINGS: 'maya/live:viewrecordings',
+  /** Publicar, renombrar y eliminar grabaciones. */
+  LIVE_MANAGE_RECORDINGS: 'maya/live:managerecordings',
+  /** Gestionar cualquier sesión de la empresa, sea de quien sea. */
+  LIVE_MANAGE_ANY: 'maya/live:manageany',
+
   // --- Informes ------------------------------------------------------------
   REPORT_VIEW_COURSE: 'moodle/site:viewreports',
   REPORT_VIEW_LOGS: 'report/log:view',
@@ -444,6 +460,15 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
   cap(CAP.CALENDAR_MANAGE_OWN, 'Gestionar eventos propios', L.System),
   cap(CAP.CALENDAR_MANAGE_GROUP, 'Gestionar eventos de grupo', L.Course),
   cap(CAP.CALENDAR_MANAGE_COURSE, 'Gestionar eventos del curso', L.Course),
+
+  // Aulas en vivo
+  cap(CAP.LIVE_CREATE, 'Crear reuniones y clases en vivo', L.Course, 'maya/live'),
+  cap(CAP.LIVE_JOIN, 'Entrar a una sala en vivo', L.Course, 'maya/live'),
+  cap(CAP.LIVE_HOST, 'Moderar una sala en vivo', L.Course, 'maya/live'),
+  cap(CAP.LIVE_RECORD, 'Grabar sesiones en vivo', L.Course, 'maya/live', R.PersonalData),
+  cap(CAP.LIVE_VIEW_RECORDINGS, 'Ver las grabaciones de las clases', L.Course, 'maya/live'),
+  cap(CAP.LIVE_MANAGE_RECORDINGS, 'Gestionar las grabaciones', L.Course, 'maya/live', R.PersonalData),
+  cap(CAP.LIVE_MANAGE_ANY, 'Gestionar cualquier sesión en vivo', L.Tenant, 'maya/live', R.PersonalData),
 
   // Informes
   cap(CAP.REPORT_VIEW_COURSE, 'Ver informes del curso', L.Course, 'core', R.PersonalData),

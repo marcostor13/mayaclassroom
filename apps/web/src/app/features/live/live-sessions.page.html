@@ -1,0 +1,227 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Clases en vivo</h1>
+    <p class="maya-page-header__subtitle">
+      Videoconferencia dentro de la plataforma, con pizarra y grabación
+    </p>
+  </div>
+  @if (canCreate()) {
+    <div class="maya-page-header__actions">
+      <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNew()">
+        <maya-icon name="plus" [size]="15" /> Nueva clase
+      </button>
+    </div>
+  }
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Secciones de clases en vivo">
+  <button
+    type="button"
+    role="tab"
+    class="tabs__item"
+    [class.is-active]="tab() === 'upcoming'"
+    [attr.aria-selected]="tab() === 'upcoming'"
+    (click)="tab.set('upcoming')"
+  >
+    Próximas @if (upcoming().length) { <span class="tabs__count">{{ upcoming().length }}</span> }
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="tabs__item"
+    [class.is-active]="tab() === 'past'"
+    [attr.aria-selected]="tab() === 'past'"
+    (click)="tab.set('past')"
+  >
+    Terminadas
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="tabs__item"
+    [class.is-active]="tab() === 'recordings'"
+    [attr.aria-selected]="tab() === 'recordings'"
+    (click)="tab.set('recordings')"
+  >
+    Grabaciones @if (recordings().length) { <span class="tabs__count">{{ recordings().length }}</span> }
+  </button>
+</nav>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 220px"></div>
+} @else {
+  @switch (tab()) {
+    @case ('recordings') {
+      @if (recordings().length) {
+        <ul class="cards">
+          @for (recording of recordings(); track recording.id) {
+            <li class="card">
+              <div class="card__icon card__icon--play">
+                <maya-icon name="play-circle" [size]="22" />
+              </div>
+              <div class="card__body">
+                <p class="card__title">{{ recording.title }}</p>
+                <p class="card__meta">
+                  {{ recording.startedAt | mayaDate: 'datetime' }}
+                  · {{ duration(recording.durationSeconds) }}
+                  · {{ recording.size | fileSize }}
+                  @if (!recording.visibleToStudents) { · <span class="card__flag">No publicada</span> }
+                </p>
+                <p class="card__meta">{{ recording.sessionTitle }}</p>
+              </div>
+              <div class="card__actions">
+                <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="play(recording)">
+                  Ver
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  aria-label="Descargar"
+                  title="Descargar"
+                  (click)="download(recording)"
+                >
+                  <maya-icon name="download" [size]="15" />
+                </button>
+                @if (recording.canManage) {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="recording.visibleToStudents ? 'Retirar del alumnado' : 'Publicar al alumnado'"
+                    [title]="recording.visibleToStudents ? 'Retirar del alumnado' : 'Publicar al alumnado'"
+                    (click)="togglePublished(recording)"
+                  >
+                    <maya-icon [name]="recording.visibleToStudents ? 'eye' : 'eye-off'" [size]="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    aria-label="Eliminar"
+                    title="Eliminar"
+                    (click)="removeRecording(recording)"
+                  >
+                    <maya-icon name="trash" [size]="15" />
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <maya-empty-state
+          icon="play-circle"
+          title="Todavía no hay grabaciones"
+          description="Las clases que se graben aparecerán aquí para volver a verlas."
+        />
+      }
+    }
+
+    @default {
+      @if (tab() === 'upcoming' ? upcoming().length : past().length) {
+        <ul class="cards">
+          @for (session of tab() === 'upcoming' ? upcoming() : past(); track session.id) {
+            <li class="card" [class.card--live]="session.status === 'live'">
+              <div class="card__icon" [class.card__icon--live]="session.status === 'live'">
+                <maya-icon [name]="session.status === 'live' ? 'play-circle' : 'calendar'" [size]="22" />
+              </div>
+
+              <div class="card__body">
+                <p class="card__title">
+                  {{ session.title }}
+                  @if (session.status === 'live') {
+                    <span class="card__live">En directo · {{ session.liveParticipants }}</span>
+                  }
+                </p>
+                <p class="card__meta">
+                  {{ session.scheduledStart | mayaDate: 'datetime' }}
+                  @if (session.courseName) { · {{ session.courseName }} }
+                  · {{ session.host.fullName }}
+                </p>
+                @if (session.recordingCount) {
+                  <p class="card__meta">
+                    <maya-icon name="play-circle" [size]="13" />
+                    {{ session.recordingCount }}
+                    {{ session.recordingCount === 1 ? 'grabación' : 'grabaciones' }}
+                  </p>
+                }
+              </div>
+
+              <div class="card__actions">
+                @if (joinable(session)) {
+                  <a class="maya-btn maya-btn--primary maya-btn--sm" [routerLink]="['/live', session.roomCode]">
+                    Entrar
+                  </a>
+                }
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                  [attr.aria-label]="'Copiar el enlace de ' + session.title"
+                  title="Copiar el enlace"
+                  (click)="copyLink(session)"
+                >
+                  <maya-icon [name]="copiedId() === session.id ? 'check' : 'link'" [size]="15" />
+                </button>
+                @if (session.canManage && session.status !== 'ended') {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="'Editar ' + session.title"
+                    title="Editar"
+                    (click)="openEdit(session)"
+                  >
+                    <maya-icon name="edit" [size]="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    [attr.aria-label]="'Cancelar ' + session.title"
+                    title="Cancelar"
+                    (click)="cancel(session)"
+                  >
+                    <maya-icon name="trash" [size]="15" />
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <maya-empty-state
+          icon="calendar"
+          [title]="tab() === 'upcoming' ? 'No hay clases convocadas' : 'Todavía no hay clases pasadas'"
+          [description]="
+            tab() === 'upcoming'
+              ? 'Convoque una clase y comparta el enlace con su alumnado.'
+              : 'Aquí quedarán las clases una vez terminen.'
+          "
+        />
+      }
+    }
+  }
+}
+
+@if (formOpen()) {
+  <maya-live-session-form
+    [session]="editing()"
+    (saved)="onSaved()"
+    (cancelled)="formOpen.set(false)"
+  />
+}
+
+@if (playing(); as recording) {
+  <maya-modal [title]="recording.title" (dismissed)="closePlayer()">
+    @if (playingUrl(); as url) {
+      <video class="player" [src]="url" controls autoplay></video>
+    } @else {
+      <div class="maya-skeleton" style="height: 300px"></div>
+      <p class="maya-small maya-muted" style="margin-top: var(--maya-space-3)">
+        Descargando la grabación…
+      </p>
+    }
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="closePlayer()">Cerrar</button>
+      <button type="button" class="maya-btn maya-btn--primary" (click)="download(recording)">
+        <maya-icon name="download" [size]="15" /> Descargar
+      </button>
+    </ng-container>
+  </maya-modal>
+}

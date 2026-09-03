@@ -18,6 +18,9 @@ export const NOTIFICATION_PROVIDERS: readonly NotificationProvider[] = [
   { component: 'message', eventName: 'message_received', label: 'Mensaje personal recibido', defaultWeb: true, defaultEmail: false },
   { component: 'core', eventName: 'course_completed', label: 'Curso completado', defaultWeb: true, defaultEmail: true },
   { component: 'core', eventName: 'calendar_reminder', label: 'Recordatorio de evento del calendario', defaultWeb: true, defaultEmail: true },
+  { component: 'maya/live', eventName: 'live_session_scheduled', label: 'Clase en vivo convocada', defaultWeb: true, defaultEmail: true },
+  { component: 'maya/live', eventName: 'live_session_started', label: 'Clase en vivo empezada', defaultWeb: true, defaultEmail: false },
+  { component: 'maya/live', eventName: 'live_recording_ready', label: 'Grabación de clase disponible', defaultWeb: true, defaultEmail: false },
   { component: 'badges', eventName: 'badge_awarded', label: 'Insignia obtenida', defaultWeb: true, defaultEmail: true },
   { component: 'competency', eventName: 'competency_rated', label: 'Competencia evaluada', defaultWeb: true, defaultEmail: false },
 ];

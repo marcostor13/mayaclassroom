@@ -1,0 +1,552 @@
+@if (prejoin()) {
+  <!-- ───────────────────────── Antesala ───────────────────────── -->
+  <section class="prejoin">
+    <div class="prejoin__preview">
+      <maya-live-tile
+        [stream]="previewStream()"
+        [name]="'Usted'"
+        [hasVideo]="wantVideo() && hasVideo(previewStream())"
+        [mirrored]="true"
+        [muted]="true"
+        [audio]="wantAudio()"
+      />
+      <div class="prejoin__toggles">
+        <button
+          type="button"
+          class="ctrl"
+          [class.ctrl--off]="!wantAudio()"
+          [attr.aria-pressed]="wantAudio()"
+          aria-label="Micrófono"
+          (click)="wantAudio.set(!wantAudio())"
+        >
+          <maya-icon [name]="wantAudio() ? 'phone' : 'eye-off'" [size]="20" />
+        </button>
+        <button
+          type="button"
+          class="ctrl"
+          [class.ctrl--off]="!wantVideo()"
+          [attr.aria-pressed]="wantVideo()"
+          aria-label="Cámara"
+          (click)="wantVideo.set(!wantVideo())"
+        >
+          <maya-icon [name]="wantVideo() ? 'play' : 'eye-off'" [size]="20" />
+        </button>
+      </div>
+    </div>
+
+    <div class="prejoin__panel">
+      <h1 class="prejoin__title">Listo para entrar</h1>
+      <p class="prejoin__subtitle">
+        Compruebe la cámara y el micrófono antes de unirse. Podrá cambiarlos dentro.
+      </p>
+
+      @if (mics().length > 1) {
+        <label class="maya-field">
+          <span class="maya-label">Micrófono</span>
+          <select class="maya-select" (change)="switchMic($any($event.target).value)">
+            @for (device of mics(); track device.deviceId) {
+              <option [value]="device.deviceId">{{ device.label || 'Micrófono' }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (cams().length > 1) {
+        <label class="maya-field">
+          <span class="maya-label">Cámara</span>
+          <select class="maya-select" (change)="switchCam($any($event.target).value)">
+            @for (device of cams(); track device.deviceId) {
+              <option [value]="device.deviceId">{{ device.label || 'Cámara' }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      @if (room.error()) {
+        <p class="prejoin__warning">{{ room.error() }}</p>
+      }
+
+      <div class="prejoin__actions">
+        <button type="button" class="maya-btn maya-btn--ghost" (click)="backToList()">
+          Volver
+        </button>
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary maya-btn--lg"
+          [disabled]="joining()"
+          (click)="enter()"
+        >
+          {{ joining() ? 'Entrando…' : 'Entrar ahora' }}
+        </button>
+      </div>
+    </div>
+  </section>
+} @else if (room.state() === 'waiting') {
+  <!-- ─────────────────────── Sala de espera ─────────────────────── -->
+  <section class="notice">
+    <maya-icon name="clock" [size]="44" [strokeWidth]="1.4" />
+    <h1 class="notice__title">Esperando a que le admitan</h1>
+    <p class="notice__text">Quien presenta la sesión verá su solicitud enseguida.</p>
+    <button type="button" class="maya-btn maya-btn--ghost" (click)="leave()">Cancelar</button>
+  </section>
+} @else if (room.state() === 'ended') {
+  <!-- ────────────────────────── Terminada ────────────────────────── -->
+  <section class="notice">
+    <maya-icon name="circle-check" [size]="44" [strokeWidth]="1.4" />
+    <h1 class="notice__title">La sesión ha terminado</h1>
+    <p class="notice__text">
+      {{ room.error() ?? 'Gracias por participar. La grabación aparecerá aquí cuando esté lista.' }}
+    </p>
+    <button type="button" class="maya-btn maya-btn--primary" (click)="backToList()">
+      Ir a las clases en vivo
+    </button>
+  </section>
+} @else {
+  <!-- ──────────────────────────── Sala ──────────────────────────── -->
+  <div class="room">
+    <header class="room__top">
+      <div class="room__identity">
+        <h1 class="room__title">{{ session()?.title }}</h1>
+        <p class="room__meta">
+          <span class="chip chip--live">
+            <span class="chip__dot"></span> En directo
+          </span>
+          <span class="chip">{{ modeLabel() }}</span>
+          <span class="chip">{{ roleLabel() }}</span>
+          @if (room.recordingActive()) {
+            <span class="chip chip--rec">
+              <span class="chip__dot"></span>
+              Grabando @if (recorder.recording()) { · {{ recordingClock() }} }
+            </span>
+          }
+        </p>
+      </div>
+
+      <div class="room__top-actions">
+        <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="copyLink()">
+          <maya-icon [name]="copied() ? 'check' : 'link'" [size]="15" />
+          {{ copied() ? 'Copiado' : 'Copiar enlace' }}
+        </button>
+        <button
+          type="button"
+          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+          aria-label="Pantalla completa"
+          (click)="toggleFullscreen()"
+        >
+          <maya-icon name="arrow-up-right" [size]="16" />
+        </button>
+      </div>
+    </header>
+
+    <div class="room__body">
+      <main class="stage" #stageEl [class.stage--with-panel]="panel()">
+        @switch (stage()) {
+          @case ('board') {
+            <maya-live-whiteboard
+              [board]="room.board()"
+              [canDraw]="room.canDraw()"
+              [moderator]="room.moderator()"
+              [authorId]="userId()"
+              (operation)="onBoardOp($event)"
+              (closed)="boardOpen.set(false)"
+            />
+          }
+          @case ('screen') {
+            <div class="stage__spotlight">
+              @if (sharingLocally()) {
+                <maya-live-tile
+                  [stream]="room.screenStream()"
+                  name="Su pantalla"
+                  [screen]="true"
+                  [muted]="true"
+                  [hasVideo]="true"
+                  [audio]="room.micOn()"
+                />
+              } @else if (presenter(); as presenting) {
+                <maya-live-tile
+                  [stream]="presenting.screenStream"
+                  [name]="presenting.participant.fullName + ' · pantalla'"
+                  [screen]="true"
+                  [hasVideo]="true"
+                  [audio]="presenting.participant.audio"
+                />
+              } @else {
+                <maya-live-tile
+                  [stream]="room.localStream()"
+                  [name]="room.self()?.fullName ?? 'Usted'"
+                  [avatarUrl]="room.self()?.avatarUrl ?? null"
+                  [mirrored]="true"
+                  [muted]="true"
+                  [hasVideo]="hasVideo(room.localStream(), room.camOn())"
+                  [audio]="room.micOn()"
+                />
+              }
+            </div>
+            <aside class="stage__filmstrip">
+              <maya-live-tile
+                [stream]="room.localStream()"
+                [name]="(room.self()?.fullName ?? 'Usted') + ' (usted)'"
+                [avatarUrl]="room.self()?.avatarUrl ?? null"
+                [mirrored]="true"
+                [muted]="true"
+                [audio]="room.micOn()"
+                [hand]="room.handUp()"
+                [hasVideo]="hasVideo(room.localStream(), room.camOn())"
+              />
+              @for (peer of participants(); track peer.socketId) {
+                <maya-live-tile
+                  [stream]="peer.stream"
+                  [name]="peer.participant.fullName"
+                  [avatarUrl]="peer.participant.avatarUrl"
+                  [audio]="peer.participant.audio"
+                  [hand]="peer.participant.hand"
+                  [connecting]="peer.connection !== 'connected'"
+                  [hasVideo]="hasVideo(peer.stream, peer.participant.video)"
+                />
+              }
+            </aside>
+          }
+          @default {
+            <div class="stage__grid" [style.--cols]="gridColumns()">
+              <maya-live-tile
+                [stream]="room.localStream()"
+                [name]="(room.self()?.fullName ?? 'Usted') + ' (usted)'"
+                [avatarUrl]="room.self()?.avatarUrl ?? null"
+                [mirrored]="true"
+                [muted]="true"
+                [audio]="room.micOn()"
+                [hand]="room.handUp()"
+                [hasVideo]="hasVideo(room.localStream(), room.camOn())"
+                [style.grid-column-start]="gridStart(0)"
+              />
+              @for (peer of participants(); track peer.socketId) {
+                <maya-live-tile
+                  [stream]="peer.stream"
+                  [name]="peer.participant.fullName"
+                  [avatarUrl]="peer.participant.avatarUrl"
+                  [audio]="peer.participant.audio"
+                  [hand]="peer.participant.hand"
+                  [connecting]="peer.connection !== 'connected'"
+                  [hasVideo]="hasVideo(peer.stream, peer.participant.video)"
+                  [style.grid-column-start]="gridStart($index + 1)"
+                />
+              }
+            </div>
+          }
+        }
+
+        @if (room.mutedByHost()) {
+          <p class="stage__toast">Quien presenta ha pedido silencio.</p>
+        }
+      </main>
+
+      @if (panel(); as open) {
+        <aside class="panel">
+          <header class="panel__head">
+            <h2 class="panel__title">
+              @switch (open) {
+                @case ('chat') { Chat }
+                @case ('people') { Participantes · {{ peopleCount() }} }
+                @default { Ajustes }
+              }
+            </h2>
+            <button
+              type="button"
+              class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+              aria-label="Cerrar panel"
+              (click)="panel.set(null)"
+            >
+              <maya-icon name="x" [size]="16" />
+            </button>
+          </header>
+
+          @switch (open) {
+            @case ('chat') {
+              <div class="chat">
+                <ul class="chat__list">
+                  @for (message of room.chat(); track message.id) {
+                    <li class="chat__item" [class.chat__item--system]="message.system">
+                      @if (!message.system) {
+                        <span class="chat__author">{{ message.author?.fullName }}</span>
+                      }
+                      <p class="chat__body">{{ message.body }}</p>
+                    </li>
+                  } @empty {
+                    <li class="chat__empty">Todavía no hay mensajes.</li>
+                  }
+                </ul>
+                <form class="chat__form" (ngSubmit)="sendChat()">
+                  <input
+                    class="maya-input"
+                    placeholder="Escriba un mensaje…"
+                    aria-label="Mensaje para la sala"
+                    [ngModel]="chatDraft()"
+                    (ngModelChange)="chatDraft.set($event)"
+                    name="chatDraft"
+                    maxlength="2000"
+                  />
+                  <button type="submit" class="maya-btn maya-btn--primary maya-btn--icon" aria-label="Enviar">
+                    <maya-icon name="send" [size]="16" />
+                  </button>
+                </form>
+              </div>
+            }
+
+            @case ('people') {
+              <div class="people">
+                @if (room.moderator() && waiting().length) {
+                  <h3 class="people__heading">En la sala de espera</h3>
+                  <ul class="people__list">
+                    @for (person of waiting(); track person.socketId) {
+                      <li class="person">
+                        <maya-avatar [name]="person.fullName" [src]="person.avatarUrl" size="sm" />
+                        <span class="person__name">{{ person.fullName }}</span>
+                        <button
+                          type="button"
+                          class="maya-btn maya-btn--primary maya-btn--sm"
+                          (click)="room.admit(person.socketId, true)"
+                        >
+                          Admitir
+                        </button>
+                        <button
+                          type="button"
+                          class="maya-btn maya-btn--ghost maya-btn--sm"
+                          (click)="room.admit(person.socketId, false)"
+                        >
+                          Rechazar
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+
+                @if (room.moderator()) {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--soft maya-btn--block"
+                    (click)="muteEveryone()"
+                  >
+                    <maya-icon name="eye-off" [size]="15" /> Silenciar a todos
+                  </button>
+                }
+
+                <ul class="people__list">
+                  <li class="person">
+                    <maya-avatar
+                      [name]="room.self()?.fullName ?? ''"
+                      [src]="room.self()?.avatarUrl ?? null"
+                      size="sm"
+                    />
+                    <span class="person__name">{{ room.self()?.fullName }} (usted)</span>
+                    <span class="person__role">{{ roleLabel() }}</span>
+                  </li>
+                  @for (peer of participants(); track peer.socketId) {
+                    <li class="person">
+                      <maya-avatar
+                        [name]="peer.participant.fullName"
+                        [src]="peer.participant.avatarUrl"
+                        size="sm"
+                      />
+                      <span class="person__name">
+                        {{ peer.participant.fullName }}
+                        @if (peer.participant.hand) { ✋ }
+                      </span>
+                      @if (room.moderator()) {
+                        <button
+                          type="button"
+                          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                          [attr.aria-label]="'Silenciar a ' + peer.participant.fullName"
+                          title="Silenciar"
+                          (click)="room.muteParticipant(peer.socketId)"
+                        >
+                          <maya-icon name="eye-off" [size]="14" />
+                        </button>
+                        <button
+                          type="button"
+                          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                          [attr.aria-label]="'Cambiar el papel de ' + peer.participant.fullName"
+                          title="Hacer co-anfitrión"
+                          (click)="promote(peer.participant)"
+                        >
+                          <maya-icon name="shield" [size]="14" />
+                        </button>
+                        <button
+                          type="button"
+                          class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                          [attr.aria-label]="'Expulsar a ' + peer.participant.fullName"
+                          title="Expulsar"
+                          (click)="kick(peer.participant)"
+                        >
+                          <maya-icon name="log-out" [size]="14" />
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @default {
+              <div class="settings">
+                <label class="maya-field">
+                  <span class="maya-label">Micrófono</span>
+                  <select class="maya-select" (change)="switchMic($any($event.target).value)">
+                    @for (device of mics(); track device.deviceId) {
+                      <option [value]="device.deviceId">{{ device.label || 'Micrófono' }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="maya-field">
+                  <span class="maya-label">Cámara</span>
+                  <select class="maya-select" (change)="switchCam($any($event.target).value)">
+                    @for (device of cams(); track device.deviceId) {
+                      <option [value]="device.deviceId">{{ device.label || 'Cámara' }}</option>
+                    }
+                  </select>
+                </label>
+                <button type="button" class="maya-btn maya-btn--soft maya-btn--block" (click)="toggleLayout()">
+                  <maya-icon name="grid" [size]="15" />
+                  {{ layout() === 'grid' ? 'Ver en modo foco' : 'Ver en rejilla' }}
+                </button>
+                <p class="settings__hint">
+                  El vídeo viaja directamente entre navegadores. Si la conexión falla, la sala
+                  reintenta sola por los servidores de retransmisión.
+                </p>
+              </div>
+            }
+          }
+        </aside>
+      }
+    </div>
+
+    <!-- ─────────────────────── Barra de controles ─────────────────────── -->
+    <footer class="controls">
+      <div class="controls__scroll">
+      <button
+        type="button"
+        class="ctrl"
+        [class.ctrl--off]="!room.micOn()"
+        [disabled]="!room.canPublish()"
+        [attr.aria-pressed]="room.micOn()"
+        [title]="room.micOn() ? 'Silenciar' : 'Activar micrófono'"
+        aria-label="Micrófono"
+        (click)="toggleMic()"
+      >
+        <maya-icon [name]="room.micOn() ? 'phone' : 'eye-off'" [size]="20" />
+      </button>
+
+      <button
+        type="button"
+        class="ctrl"
+        [class.ctrl--off]="!room.camOn()"
+        [attr.aria-pressed]="room.camOn()"
+        [title]="room.camOn() ? 'Apagar la cámara' : 'Encender la cámara'"
+        aria-label="Cámara"
+        (click)="toggleCam()"
+      >
+        <maya-icon [name]="room.camOn() ? 'play' : 'eye-off'" [size]="20" />
+      </button>
+
+      @if (room.canShareScreen()) {
+        <button
+          type="button"
+          class="ctrl"
+          [class.ctrl--active]="sharingLocally()"
+          [attr.aria-pressed]="sharingLocally()"
+          title="Compartir pantalla, ventana o pestaña"
+          aria-label="Compartir pantalla"
+          (click)="toggleScreen()"
+        >
+          <maya-icon name="upload" [size]="20" />
+        </button>
+      }
+
+      <button
+        type="button"
+        class="ctrl"
+        [class.ctrl--active]="boardOpen()"
+        [attr.aria-pressed]="boardOpen()"
+        title="Pizarra"
+        aria-label="Pizarra"
+        (click)="toggleBoard()"
+      >
+        <maya-icon name="edit" [size]="20" />
+      </button>
+
+      <button
+        type="button"
+        class="ctrl"
+        [class.ctrl--active]="room.handUp()"
+        [attr.aria-pressed]="room.handUp()"
+        title="Pedir la palabra"
+        aria-label="Pedir la palabra"
+        (click)="room.toggleHand()"
+      >
+        <maya-icon name="alert" [size]="20" />
+      </button>
+
+      <button
+        type="button"
+        class="ctrl ctrl--badge"
+        [class.ctrl--active]="panel() === 'chat'"
+        title="Chat"
+        aria-label="Chat"
+        (click)="togglePanel('chat')"
+      >
+        <maya-icon name="message-square" [size]="20" />
+        @if (unreadChat()) {
+          <span class="ctrl__count">{{ unreadChat() }}</span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="ctrl ctrl--badge"
+        [class.ctrl--active]="panel() === 'people'"
+        title="Participantes"
+        aria-label="Participantes"
+        (click)="togglePanel('people')"
+      >
+        <maya-icon name="users" [size]="20" />
+        <span class="ctrl__count">{{ peopleCount() }}</span>
+      </button>
+
+      @if (session()?.canRecord && recorderSupported) {
+        <button
+          type="button"
+          class="ctrl"
+          [class.ctrl--rec]="recorder.recording()"
+          [attr.aria-pressed]="recorder.recording()"
+          [title]="recorder.recording() ? 'Detener la grabación' : 'Grabar la clase'"
+          aria-label="Grabar"
+          (click)="toggleRecording()"
+        >
+          <maya-icon [name]="recorder.recording() ? 'circle-check' : 'circle'" [size]="20" />
+        </button>
+      }
+
+      <button
+        type="button"
+        class="ctrl"
+        [class.ctrl--active]="panel() === 'settings'"
+        title="Ajustes"
+        aria-label="Ajustes"
+        (click)="togglePanel('settings')"
+      >
+        <maya-icon name="settings" [size]="20" />
+      </button>
+
+      </div>
+
+      <div class="controls__end">
+        @if (room.moderator()) {
+          <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="endForEveryone()">
+            Finalizar
+          </button>
+        }
+        <button type="button" class="ctrl ctrl--leave" title="Salir de la sala" aria-label="Salir" (click)="leave()">
+          <maya-icon name="log-out" [size]="20" />
+        </button>
+      </div>
+    </footer>
+  </div>
+}

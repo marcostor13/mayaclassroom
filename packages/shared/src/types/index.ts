@@ -4,6 +4,7 @@ export * from './course';
 export * from './activity';
 export * from './grade';
 export * from './communication';
+export * from './live';
 export * from './advanced';
 export * from './tenant';
 export * from './site';
