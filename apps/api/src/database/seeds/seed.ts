@@ -217,6 +217,25 @@ async function seed(): Promise<void> {
   logger.log('4/10 · Equipo y alumnado');
   const password = process.env.SEED_PASSWORD ?? 'Maya2026!';
 
+  /**
+   * Un nombre de usuario que no esté cogido en la empresa.
+   *
+   * El nombre de usuario es único por empresa, y la siembra escribe sobre una
+   * empresa que puede tener cuentas que no creó ella: las de la demostración
+   * anterior, o las que haya dado de alta quien la administra. Con el nombre
+   * ocupado, `create` lanza y la siembra muere a medias —justo en el estado
+   * mezclado del que se venía huyendo—, así que se busca uno libre en vez de
+   * pelearse por él.
+   */
+  const usuarioLibre = async (deseado: string): Promise<string> => {
+    let candidato = deseado;
+    for (let intento = 2; intento < 50; intento += 1) {
+      if (!(await users.findByLogin(candidato, demo!._id))) return candidato;
+      candidato = `${deseado}${intento}`;
+    }
+    return candidato;
+  };
+
   const ensureUser = async (data: {
     email: string;
     username: string;
@@ -230,7 +249,7 @@ async function seed(): Promise<void> {
     if (existing) return existing;
     const user = await users.create(demo!._id, {
       email: data.email,
-      username: data.username,
+      username: await usuarioLibre(data.username),
       password,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -276,7 +295,7 @@ async function seed(): Promise<void> {
   // escaparate, los cobros y el alumnado, y no es administradora de plataforma.
   const manager = await ensureUser({
     email: 'gestora@dulcelima.pe',
-    username: 'gestora',
+    username: 'rosa.quispe',
     firstName: 'Rosa',
     lastName: 'Quispe',
     role: 'manager',
@@ -603,14 +622,18 @@ async function seed(): Promise<void> {
   const itemCuestionario = items.find((i) => i.name.includes('Cuestionario'))?.id ?? null;
 
   logger.log('8/10 · Cohortes, competencias e insignias');
-  const cohorteExistente = await cohorts.paginate(demo._id, {
+  // Se busca la cohorte por su nombre, no «si no hay ninguna»: sobre una base
+  // con la demostración anterior ya sembrada, esa condición dejaba la
+  // promoción vieja y no creaba la de la escuela.
+  const COHORTE = 'Promoción verano 2026';
+  const cohortesExistentes = await cohorts.paginate(demo._id, {
     page: 1,
-    limit: 10,
+    limit: 50,
     order: 'desc',
   } as never);
-  if (!cohorteExistente.items.length) {
+  if (!cohortesExistentes.items.some((c) => c.name === COHORTE)) {
     const cohorte = await cohorts.create(demo._id, {
-      name: 'Promoción verano 2026',
+      name: COHORTE,
       description: 'Alumnado matriculado en la temporada de verano.',
     });
     await cohorts.addMembers(
@@ -619,8 +642,10 @@ async function seed(): Promise<void> {
     );
   }
 
+  // Igual que la cohorte: por nombre corto, para que el marco de la escuela se
+  // cree aunque siga estando el de la demostración anterior.
   const marcos = await competencies.frameworks(demo._id);
-  if (!marcos.length) {
+  if (!marcos.some((m) => m.shortName === 'PAST-TEC')) {
     const marco = await competencies.createFramework(demo._id, {
       shortName: 'PAST-TEC',
       name: 'Técnicas de pastelería',
