@@ -76,6 +76,43 @@ export interface DemoConfig {
   tenantSlug: string;
 }
 
+/**
+ * Aulas en vivo. La conferencia es WebRTC entre navegadores: el servidor solo
+ * señaliza. Lo único que necesita configurarse es por dónde atraviesan los
+ * cortafuegos (STUN/TURN) y cuánto puede durar una grabación.
+ */
+export interface LiveConfig {
+  /** Servidores STUN, separados por comas. */
+  stunUrls: string[];
+  /** Servidores TURN. Sin ellos, las redes con NAT simétrico no conectan. */
+  turnUrls: string[];
+  /**
+   * Secreto compartido con coturn (`static-auth-secret`). Cuando está, las
+   * credenciales TURN se emiten firmadas y caducan solas, que es lo que
+   * recomienda el propio coturn: un usuario y una contraseña fijos en el
+   * cliente acaban en el portapapeles de cualquiera.
+   */
+  turnSecret: string;
+  turnUsername: string;
+  turnPassword: string;
+  /** Validez de las credenciales TURN temporales, en segundos. */
+  turnTtl: number;
+  /** Obliga a que todo el tráfico pase por TURN (diagnóstico y redes cerradas). */
+  forceRelay: boolean;
+  /** Tope de asistentes por sala. La malla se degrada por encima de esto. */
+  maxParticipants: number;
+  /** Tamaño máximo de un trozo de grabación, en bytes. */
+  recordingChunkSize: number;
+  /**
+   * Tamaño máximo de una grabación completa, en bytes. El ensamblado carga el
+   * fichero en memoria una vez para entregárselo al almacenamiento, así que
+   * subir este tope exige subir también la memoria del contenedor.
+   */
+  recordingMaxSize: number;
+  /** Directorio donde se acumulan los trozos hasta ensamblar la grabación. */
+  recordingStagingPath: string;
+}
+
 export interface SecurityConfig {
   bcryptRounds: number;
   throttleTtl: number;
@@ -196,6 +233,26 @@ export const demoConfig = registerAs(
   }),
 );
 
+export const liveConfig = registerAs(
+  'live',
+  (): LiveConfig => ({
+    stunUrls: toList(process.env.LIVE_STUN_URLS, [
+      'stun:stun.l.google.com:19302',
+      'stun:stun1.l.google.com:19302',
+    ]),
+    turnUrls: toList(process.env.LIVE_TURN_URLS, []),
+    turnSecret: process.env.LIVE_TURN_SECRET ?? '',
+    turnUsername: process.env.LIVE_TURN_USERNAME ?? '',
+    turnPassword: process.env.LIVE_TURN_PASSWORD ?? '',
+    turnTtl: toInt(process.env.LIVE_TURN_TTL, 8 * 60 * 60),
+    forceRelay: toBool(process.env.LIVE_FORCE_RELAY, false),
+    maxParticipants: toInt(process.env.LIVE_MAX_PARTICIPANTS, 25),
+    recordingChunkSize: toInt(process.env.LIVE_RECORDING_CHUNK_SIZE, 8 * 1024 * 1024),
+    recordingMaxSize: toInt(process.env.LIVE_RECORDING_MAX_SIZE, 1024 * 1024 * 1024),
+    recordingStagingPath: process.env.LIVE_RECORDING_STAGING_PATH ?? './storage/.live-chunks',
+  }),
+);
+
 export const securityConfig = registerAs(
   'security',
   (): SecurityConfig => ({
@@ -216,4 +273,5 @@ export const configurations = [
   storageConfig,
   securityConfig,
   demoConfig,
+  liveConfig,
 ];

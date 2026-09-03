@@ -1,0 +1,171 @@
+<div class="board">
+  <div class="board__toolbar" role="toolbar" aria-label="Herramientas de la pizarra">
+    @if (canDraw()) {
+      <div class="board__group">
+        @for (item of tools; track item.tool) {
+          <button
+            type="button"
+            class="board__tool"
+            [class.is-active]="tool() === item.tool"
+            [attr.aria-pressed]="tool() === item.tool"
+            [attr.aria-label]="item.label"
+            [title]="item.label"
+            (click)="tool.set(item.tool)"
+          >
+            <maya-icon [name]="item.icon" [size]="17" />
+          </button>
+        }
+      </div>
+
+      <div class="board__group">
+        @for (swatch of colors; track swatch) {
+          <button
+            type="button"
+            class="board__swatch"
+            [class.is-active]="color() === swatch"
+            [style.background]="swatch"
+            [attr.aria-label]="'Color ' + swatch"
+            (click)="color.set(swatch)"
+          ></button>
+        }
+        <label class="board__swatch board__swatch--custom" title="Otro color">
+          <input
+            type="color"
+            [value]="color()"
+            (input)="color.set($any($event.target).value)"
+            aria-label="Elegir otro color"
+          />
+        </label>
+      </div>
+
+      <div class="board__group">
+        @for (size of widths; track size) {
+          <button
+            type="button"
+            class="board__width"
+            [class.is-active]="width() === size"
+            [attr.aria-label]="'Grosor ' + size"
+            (click)="width.set(size)"
+          >
+            <span [style.width.px]="size + 2" [style.height.px]="size + 2"></span>
+          </button>
+        }
+        <button
+          type="button"
+          class="board__tool"
+          [class.is-active]="filled()"
+          title="Figuras rellenas"
+          aria-label="Figuras rellenas"
+          (click)="filled.set(!filled())"
+        >
+          <maya-icon [name]="filled() ? 'circle-check' : 'circle-dashed'" [size]="17" />
+        </button>
+      </div>
+
+      <div class="board__group">
+        <button
+          type="button"
+          class="board__tool"
+          [disabled]="!canUndo()"
+          title="Deshacer"
+          aria-label="Deshacer"
+          (click)="undo()"
+        >
+          <maya-icon name="arrow-left" [size]="17" />
+        </button>
+        <button
+          type="button"
+          class="board__tool"
+          [disabled]="!canRedo()"
+          title="Rehacer"
+          aria-label="Rehacer"
+          (click)="redo()"
+        >
+          <maya-icon name="arrow-right" [size]="17" />
+        </button>
+        <button
+          type="button"
+          class="board__tool"
+          title="Vaciar la página"
+          aria-label="Vaciar la página"
+          (click)="clearPage()"
+        >
+          <maya-icon name="refresh" [size]="17" />
+        </button>
+      </div>
+    }
+
+    <div class="board__group board__group--pages">
+      @for (page of pages(); track page.id) {
+        <button
+          type="button"
+          class="board__page"
+          [class.is-active]="activePage()?.id === page.id"
+          (click)="selectPage(page.id)"
+        >
+          {{ $index + 1 }}
+        </button>
+      }
+      @if (moderator()) {
+        <button type="button" class="board__tool" title="Añadir página" aria-label="Añadir página" (click)="addPage()">
+          <maya-icon name="plus" [size]="17" />
+        </button>
+        @if (pages().length > 1) {
+          <button
+            type="button"
+            class="board__tool"
+            title="Eliminar la página"
+            aria-label="Eliminar la página"
+            (click)="removePage()"
+          >
+            <maya-icon name="minus" [size]="17" />
+          </button>
+        }
+      }
+    </div>
+
+    <div class="board__group board__group--end">
+      <button type="button" class="board__tool" title="Descargar como imagen" aria-label="Descargar como imagen" (click)="exportPng()">
+        <maya-icon name="download" [size]="17" />
+      </button>
+      <button type="button" class="board__tool" title="Cerrar la pizarra" aria-label="Cerrar la pizarra" (click)="closed.emit()">
+        <maya-icon name="x" [size]="17" />
+      </button>
+    </div>
+  </div>
+
+  <div class="board__canvas">
+    <div class="board__frame" #wrap>
+    <canvas
+      #canvas
+      class="board__surface"
+      [class.is-readonly]="!canDraw()"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerUp($event)"
+    ></canvas>
+
+    @if (textDraft(); as draft) {
+      <textarea
+        class="board__text"
+        [style.left.%]="draft.x * 100"
+        [style.top.%]="draft.y * 100"
+        [value]="draft.value"
+        placeholder="Escriba y pulse Intro…"
+        aria-label="Texto de la pizarra"
+        autofocus
+        (input)="updateTextDraft($any($event.target).value)"
+        (keydown.enter)="$event.preventDefault(); commitText()"
+        (keydown.escape)="cancelText()"
+        (blur)="commitText()"
+      ></textarea>
+    }
+
+    </div>
+
+    @if (!canDraw()) {
+      <p class="board__hint">Solo quien presenta puede dibujar en esta sala.</p>
+    }
+  </div>
+</div>

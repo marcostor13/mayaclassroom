@@ -10,6 +10,11 @@
     <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="exportIcs()">
       <maya-icon name="download" [size]="15" /> Exportar
     </button>
+    @if (canCreateLive()) {
+      <button type="button" class="maya-btn maya-btn--soft maya-btn--sm" (click)="openLive()">
+        <maya-icon name="play-circle" [size]="15" /> Clase en vivo
+      </button>
+    }
     <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNew()">
       <maya-icon name="plus" [size]="15" /> Nuevo evento
     </button>
@@ -98,7 +103,11 @@
                   {{ event.startAt | mayaDate: 'datetime' }}
                   @if (event.location) { · {{ event.location }} }
                 </p>
-                @if (event.actionUrl) {
+                @if (isLive(event)) {
+                  <a [routerLink]="event.actionUrl" class="maya-btn maya-btn--primary maya-btn--sm" style="margin-top: var(--maya-space-2)">
+                    <maya-icon name="play-circle" [size]="14" /> Entrar a la clase
+                  </a>
+                } @else if (event.actionUrl) {
                   <a [routerLink]="event.actionUrl" class="maya-tiny">Ir a la actividad</a>
                 }
               </div>
@@ -214,4 +223,12 @@
       </button>
     </ng-container>
   </maya-modal>
+}
+
+@if (liveFormOpen()) {
+  <maya-live-session-form
+    [startAt]="liveStartAt()"
+    (saved)="onLiveSaved()"
+    (cancelled)="liveFormOpen.set(false)"
+  />
 }

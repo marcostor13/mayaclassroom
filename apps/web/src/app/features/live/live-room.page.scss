@@ -1,0 +1,570 @@
+@use '../../../styles/tokens' as *;
+
+:host {
+  display: block;
+  /* Altura de ventana real: en móvil, `100vh` deja la barra de controles bajo
+     la barra del navegador y no se puede colgar la llamada. */
+  height: 100dvh;
+  background: var(--maya-bg-alt);
+  color: var(--maya-text);
+  overflow: hidden;
+}
+
+/* ────────────────────────────── Antesala ────────────────────────────── */
+
+.prejoin {
+  display: grid;
+  gap: var(--maya-space-6);
+  align-content: center;
+  height: 100%;
+  padding: var(--maya-space-5);
+  max-width: 1040px;
+  margin: 0 auto;
+  overflow-y: auto;
+
+  @include from($maya-bp-md) {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  &__preview {
+    position: relative;
+    display: flex;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--maya-radius-xl);
+    overflow: hidden;
+    box-shadow: var(--maya-shadow-lg);
+
+    /* El recuadro es un bloque: dentro de un contenedor con proporción fija
+       hay que estirarlo a mano o se queda en su alto mínimo con el marco
+       vacío debajo. */
+    > maya-live-tile {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+    }
+  }
+
+  &__toggles {
+    position: absolute;
+    left: 50%;
+    /* Por encima del rótulo del recuadro, que ocupa los 34 px de abajo. */
+    bottom: var(--maya-space-10);
+    transform: translateX(-50%);
+    display: flex;
+    gap: var(--maya-space-3);
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--maya-space-4);
+    padding: var(--maya-space-6);
+    background: var(--maya-surface);
+    border-radius: var(--maya-radius-xl);
+    box-shadow: var(--maya-shadow-sm);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-2xl);
+    line-height: var(--maya-leading-tight);
+  }
+
+  &__subtitle {
+    margin: 0;
+    color: var(--maya-text-muted);
+    font-size: var(--maya-text-sm);
+  }
+
+  &__warning {
+    margin: 0;
+    padding: var(--maya-space-3);
+    border-radius: var(--maya-radius-sm);
+    background: var(--maya-warning-soft);
+    color: var(--maya-text);
+    font-size: var(--maya-text-sm);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--maya-space-3);
+    justify-content: flex-end;
+    margin-top: var(--maya-space-2);
+  }
+}
+
+/* ─────────────────────────────── Avisos ─────────────────────────────── */
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--maya-space-4);
+  height: 100%;
+  padding: var(--maya-space-6);
+  text-align: center;
+  color: var(--maya-text-muted);
+
+  &__title {
+    margin: 0;
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-xl);
+    color: var(--maya-text);
+  }
+
+  &__text {
+    margin: 0;
+    max-width: 46ch;
+    font-size: var(--maya-text-sm);
+  }
+}
+
+/* ──────────────────────────────── Sala ──────────────────────────────── */
+
+.room {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.room__top {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3) var(--maya-space-4);
+  padding-top: calc(var(--maya-space-3) + var(--maya-safe-top));
+  background: var(--maya-surface);
+  border-bottom: 1px solid var(--maya-border);
+}
+
+.room__identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.room__title {
+  margin: 0;
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-md);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room__meta {
+  display: flex;
+  gap: var(--maya-space-2);
+  margin: var(--maya-space-1) 0 0;
+  /* En móvil los distintivos se desplazan en una línea en vez de apilarse:
+     tres filas de cabecera se comen el escenario, que es lo que se ha venido
+     a ver. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  .chip { flex: 0 0 auto; }
+
+  @include from($maya-bp-md) {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+.room__top-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px var(--maya-space-2);
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface-3);
+  color: var(--maya-text-muted);
+  font-size: var(--maya-text-xs);
+  font-weight: 600;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: latido 1.6s var(--maya-ease) infinite;
+  }
+
+  &--live {
+    background: var(--maya-success-soft);
+    color: var(--maya-success);
+  }
+
+  &--rec {
+    background: var(--maya-danger-soft);
+    color: var(--maya-danger);
+  }
+}
+
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip__dot { animation: none; }
+}
+
+.room__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3);
+}
+
+/* ───────────────────────────── Escenario ───────────────────────────── */
+
+.stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: var(--maya-space-3);
+  flex-direction: column;
+
+  @include from($maya-bp-lg) {
+    flex-direction: row;
+  }
+
+  &__grid {
+    flex: 1;
+    min-height: 0;
+    /* Con mucha gente la rejilla se desplaza en lugar de aplastar los
+       recuadros: comprimirlos hasta que no cabe nadie más es lo que hacía que
+       el último quedara debajo de la barra de controles. */
+    overflow-y: auto;
+    display: grid;
+    gap: var(--maya-space-3);
+    /* El número de columnas lo calcula el componente a partir de cuánta gente
+       hay: `auto-fit` reparte el ancho pero no sabe nada del alto, y dejaba
+       recuadros altísimos y estrechos con un hueco en la última fila. */
+    grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+    /* Las filas se reparten el alto a partes iguales. La proporción de cada
+       recuadro la consigue el número de columnas, calculado en el componente
+       a partir del hueco real; fijarla aquí con `aspect-ratio` obligaría a
+       desplazarse en cuanto hubiera tres filas. */
+    grid-auto-rows: minmax(0, 1fr);
+    align-content: stretch;
+  }
+
+  &__spotlight {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+
+    /* El recuadro es un bloque, y un bloque dentro de un flex estira a lo
+       ancho pero no a lo alto: sin este `flex: 1` la pantalla compartida
+       quedaba en una franja de 120 px con todo el hueco vacío debajo. */
+    > maya-live-tile {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+    }
+  }
+
+  &__filmstrip {
+    display: flex;
+    flex-direction: row;
+    gap: var(--maya-space-2);
+    overflow-x: auto;
+    flex: 0 0 auto;
+
+    maya-live-tile {
+      flex: 0 0 168px;
+      height: 100px;
+    }
+
+    @include from($maya-bp-lg) {
+      flex-direction: column;
+      overflow-x: visible;
+      overflow-y: auto;
+      flex: 0 0 210px;
+
+      maya-live-tile {
+        flex: 0 0 126px;
+        height: 126px;
+      }
+    }
+  }
+
+  &__toast {
+    position: absolute;
+    left: 50%;
+    bottom: var(--maya-space-4);
+    transform: translateX(-50%);
+    margin: 0;
+    padding: var(--maya-space-2) var(--maya-space-4);
+    border-radius: var(--maya-radius-pill);
+    background: rgba(16, 17, 20, 0.78);
+    color: #fff;
+    font-size: var(--maya-text-xs);
+  }
+}
+
+/* ────────────────────────────── Panel ─────────────────────────────── */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  background: var(--maya-surface);
+  border-radius: var(--maya-radius-lg);
+  box-shadow: var(--maya-shadow-sm);
+  overflow: hidden;
+
+  /* En móvil el panel tapa el escenario: partir la pantalla dejaría los
+     dos usos inservibles. */
+  position: absolute;
+  inset: var(--maya-space-3);
+  z-index: var(--maya-z-dropdown);
+
+  @include from($maya-bp-lg) {
+    position: static;
+    inset: auto;
+    width: 330px;
+    flex: 0 0 330px;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--maya-space-2);
+    padding: var(--maya-space-3) var(--maya-space-4);
+    border-bottom: 1px solid var(--maya-border);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: var(--maya-text-sm);
+    font-weight: 700;
+  }
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  &__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: var(--maya-space-3) var(--maya-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--maya-space-3);
+  }
+
+  &__item--system {
+    color: var(--maya-text-subtle);
+    font-style: italic;
+  }
+
+  &__author {
+    display: block;
+    font-size: var(--maya-text-xs);
+    font-weight: 700;
+    color: var(--maya-primary-ink);
+  }
+
+  &__body {
+    margin: 2px 0 0;
+    font-size: var(--maya-text-sm);
+    word-break: break-word;
+  }
+
+  &__empty {
+    color: var(--maya-text-subtle);
+    font-size: var(--maya-text-sm);
+    text-align: center;
+    padding: var(--maya-space-6) 0;
+  }
+
+  &__form {
+    display: flex;
+    gap: var(--maya-space-2);
+    padding: var(--maya-space-3);
+    border-top: 1px solid var(--maya-border);
+
+    .maya-input { flex: 1; min-width: 0; }
+  }
+}
+
+.people,
+.settings {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--maya-space-3) var(--maya-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-3);
+}
+
+.people__heading {
+  margin: 0;
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--maya-text-subtle);
+}
+
+.people__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--maya-space-2);
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--maya-text-sm);
+  }
+
+  &__role {
+    font-size: var(--maya-text-xs);
+    color: var(--maya-text-subtle);
+  }
+}
+
+.settings__hint {
+  margin: 0;
+  font-size: var(--maya-text-xs);
+  color: var(--maya-text-subtle);
+  line-height: var(--maya-leading-normal);
+}
+
+/* ───────────────────────────── Controles ───────────────────────────── */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-3) var(--maya-space-4);
+  padding-bottom: calc(var(--maya-space-3) + var(--maya-safe-bottom));
+  background: var(--maya-surface);
+  border-top: 1px solid var(--maya-border);
+
+  /* Los conmutadores se desplazan si no caben, pero salir y finalizar quedan
+     siempre anclados: en un móvil, la barra entera desplazable dejaba el botón
+     de colgar fuera de la pantalla, que es el único que no puede faltar. */
+  &__scroll {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-2);
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__end {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-2);
+    flex: 0 0 auto;
+    padding-left: var(--maya-space-2);
+  }
+}
+
+.ctrl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface-3);
+  color: var(--maya-text);
+  transition:
+    background var(--maya-duration-fast) var(--maya-ease),
+    transform var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover:not(:disabled) { background: var(--maya-border); }
+  &:active:not(:disabled) { transform: scale(0.94); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &--active {
+    background: var(--maya-primary-soft);
+    color: var(--maya-primary-deep);
+  }
+
+  &--off {
+    background: var(--maya-danger);
+    color: #fff;
+  }
+
+  &--rec {
+    background: var(--maya-danger);
+    color: #fff;
+    animation: latido 1.6s var(--maya-ease) infinite;
+  }
+
+  &--leave {
+    background: var(--maya-danger);
+    color: #fff;
+    width: 62px;
+
+    &:hover { background: var(--maya-primary-active); }
+  }
+
+  &__count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-primary);
+    color: var(--maya-text-on-primary);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ctrl--rec { animation: none; }
+}

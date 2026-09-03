@@ -38,6 +38,7 @@ import { ActivitiesModule } from './modules/activities/activities.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
+import { LiveModule } from './modules/live/live.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SearchModule } from './modules/search/search.module';
 
@@ -101,6 +102,7 @@ import { GuidesModule } from './modules/guides/guides.module';
     NotificationsModule,
     CalendarModule,
     MessagingModule,
+    LiveModule,
     ActivitiesModule,
     DashboardModule,
     SearchModule,

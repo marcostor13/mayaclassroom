@@ -1,0 +1,221 @@
+@use '../../../styles/tokens' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--maya-surface);
+  border-radius: var(--maya-radius-lg);
+  overflow: hidden;
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--maya-space-2);
+    padding: var(--maya-space-2) var(--maya-space-3);
+    background: var(--maya-surface-2);
+    border-bottom: 1px solid var(--maya-border);
+
+    /* En móvil, una sola fila que se desplaza. Repartida en cuatro filas se
+       comía la mitad de la pantalla, y en una pizarra lo que hay que ver es
+       lo dibujado, no las herramientas. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+
+    @include from($maya-bp-md) {
+      flex-wrap: wrap;
+      overflow-x: visible;
+    }
+  }
+
+  &__group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+    padding: 2px;
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-surface);
+    box-shadow: var(--maya-shadow-xs);
+
+    &--end {
+      @include from($maya-bp-md) {
+        margin-left: auto;
+      }
+    }
+  }
+
+  &__tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--maya-radius-pill);
+    color: var(--maya-text-muted);
+    transition: background var(--maya-duration-fast) var(--maya-ease);
+
+    &:hover:not(:disabled) { background: var(--maya-surface-3); color: var(--maya-text); }
+    &:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    &.is-active {
+      background: var(--maya-primary-soft);
+      color: var(--maya-primary-deep);
+    }
+  }
+
+  &__swatch {
+    width: 22px;
+    height: 22px;
+    margin: 5px 2px;
+    border-radius: 50%;
+    border: 2px solid var(--maya-border-strong);
+    cursor: pointer;
+
+    &.is-active {
+      outline: 2px solid var(--maya-primary);
+      outline-offset: 2px;
+    }
+
+    &--custom {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--maya-gradient);
+
+      input {
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+    }
+  }
+
+  &__width {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--maya-radius-pill);
+
+    span {
+      display: block;
+      border-radius: 50%;
+      background: var(--maya-text-muted);
+    }
+
+    &.is-active {
+      background: var(--maya-primary-soft);
+      span { background: var(--maya-primary-deep); }
+    }
+  }
+
+  &__page {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 var(--maya-space-2);
+    border-radius: var(--maya-radius-pill);
+    font-size: var(--maya-text-xs);
+    font-weight: 700;
+    color: var(--maya-text-muted);
+
+    &:hover { background: var(--maya-surface-3); }
+
+    &.is-active {
+      background: var(--maya-primary);
+      color: var(--maya-text-on-primary);
+    }
+  }
+
+  &__canvas {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 0;
+    padding: var(--maya-space-2);
+    background: var(--maya-surface-3);
+    /* Consultas de contenedor por tamaño: es lo que permite calcular el ancho
+       del marco a partir del alto disponible. Con `max-height` a secas, las dos
+       dimensiones quedan definidas y el navegador ignora `aspect-ratio`. */
+    container-type: size;
+  }
+
+  /**
+   * El lienzo tiene proporción fija y se centra con bandas a los lados.
+   *
+   * No es estético: los trazos se guardan en coordenadas de 0 a 1 sobre cada
+   * eje, así que sin una proporción común un círculo dibujado en un portátil
+   * llegaría ovalado a un móvil. Con el marco fijo, todo el mundo ve
+   * exactamente la misma pizarra.
+   */
+  &__frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    /* Tan ancho como quepa sin desbordar por arriba: o el ancho completo, o
+       el que le permita el alto disponible manteniendo la proporción. */
+    width: min(100%, calc(100cqh * 16 / 9));
+    border-radius: var(--maya-radius-md);
+    overflow: hidden;
+    /* Blanco fijo y no `--maya-surface`: la pizarra es papel, y en tema oscuro
+       un lienzo gris haría ilegibles los trazos negros que llegan de otros. */
+    background: #ffffff;
+    background-image:
+      radial-gradient(circle, rgba(16, 17, 20, 0.09) 1px, transparent 1px);
+    background-size: 26px 26px;
+    box-shadow: var(--maya-shadow-sm);
+  }
+
+  &__surface {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* Sin esto, arrastrar el dedo desplaza la página en lugar de dibujar. */
+    touch-action: none;
+    cursor: crosshair;
+
+    &.is-readonly { cursor: default; }
+  }
+
+  &__text {
+    position: absolute;
+    min-width: 180px;
+    min-height: 44px;
+    padding: var(--maya-space-2);
+    border: 2px dashed var(--maya-primary);
+    border-radius: var(--maya-radius-sm);
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--maya-text);
+    font-size: var(--maya-text-md);
+    resize: none;
+  }
+
+  &__hint {
+    position: absolute;
+    left: 50%;
+    bottom: var(--maya-space-3);
+    transform: translateX(-50%);
+    margin: 0;
+    padding: var(--maya-space-2) var(--maya-space-4);
+    border-radius: var(--maya-radius-pill);
+    background: rgba(16, 17, 20, 0.72);
+    color: #fff;
+    font-size: var(--maya-text-xs);
+  }
+}

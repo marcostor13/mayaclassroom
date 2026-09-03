@@ -27,5 +27,10 @@ export default {
     target: `http://127.0.0.1:${puertoApi()}`,
     secure: false,
     changeOrigin: true,
+    // `ws` es imprescindible para la señalización de las aulas en vivo: sin
+    // ella el proxy responde a `/api/live-socket` con HTTP normal, el socket
+    // no llega a ascender a WebSocket y la sala se queda cargando para
+    // siempre sin ningún error en la consola.
+    ws: true,
   },
 };

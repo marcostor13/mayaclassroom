@@ -95,6 +95,17 @@ export const routes: Routes = [
     ],
   },
 
+  /* ─────────────────────────── Sala en vivo ──────────────────────────── */
+  {
+    // Fuera del armazón a propósito: durante una clase la pantalla entera es
+    // el escenario, y la barra lateral solo restaría sitio a los rostros y a
+    // lo que se comparte.
+    path: 'live/:ref',
+    title: 'Clase en vivo · Maya Classroom',
+    canActivate: [authGuard, passwordChangeGuard],
+    loadComponent: () => import('./features/live/live-room.page').then((m) => m.LiveRoomPage),
+  },
+
   /* ──────────────────────── Aplicación autenticada ───────────────────── */
   {
     path: '',
@@ -200,6 +211,12 @@ export const routes: Routes = [
         title: 'Calendario · Maya Classroom',
         loadComponent: () =>
           import('./features/calendar/calendar.page').then((m) => m.CalendarPage),
+      },
+      {
+        path: 'live',
+        title: 'Clases en vivo · Maya Classroom',
+        loadComponent: () =>
+          import('./features/live/live-sessions.page').then((m) => m.LiveSessionsPage),
       },
       {
         path: 'messages',
