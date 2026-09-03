@@ -122,6 +122,53 @@ const eventos = (() => {
   ];
 })();
 
+/**
+ * Las clases en vivo del alumno: las que vienen, las que ya pasaron y sus
+ * grabaciones.
+ *
+ * La sala en sí no se captura: pide cámara, micrófono y una conexión WebRTC
+ * de verdad, y en un navegador headless saldría una rejilla de cuadros negros.
+ * El listado enseña lo mismo que hay que contar —que la clase vive dentro de
+ * la plataforma y que la grabación se queda ahí— y sale siempre igual.
+ */
+const enVivo = (() => {
+  const hoy = new Date();
+  const cuando = (dias, hora, minutos = 0) =>
+    new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + dias, hora, minutos, 0).toISOString();
+  const ajustes = {
+    lobby: false, muteOnJoin: true, allowChat: true, allowWhiteboard: true,
+    allowAttendeeScreenShare: false, allowAttendeeCamera: true, autoRecord: true,
+    recordingVisibleToStudents: true, joinBeforeHostMinutes: 15, maxParticipants: 25,
+  };
+  const elena = { id: 'u9', fullName: 'Elena Chávez', avatarUrl: null };
+  const base = (i, titulo, curso, cuandoIso, estado, extra = {}) => ({
+    id: `ls${i}`, title: titulo, description: null,
+    roomCode: `DL-${String(1000 + i * 7)}`, joinUrl: `https://tuacademia.pe/live/DL-${String(1000 + i * 7)}`,
+    status: estado, mode: 'class', courseId: cursosAdmin[0].id, courseName: curso,
+    groupId: null, host: elena, coHosts: [], calendarEventId: null,
+    scheduledStart: cuandoIso, scheduledEnd: null, startedAt: null, endedAt: null,
+    settings: ajustes, openToTenant: false, liveParticipants: 0, recordingCount: 0,
+    canManage: false, canRecord: false, createdAt: cuandoIso, ...extra,
+  });
+
+  return {
+    proximas: [
+      base(1, 'Merengue italiano sin fallos', datos.cursos[0].title, cuando(0, 19), 'live', { liveParticipants: 14, startedAt: cuando(0, 19) }),
+      base(2, 'El punto del manjarblanco', datos.cursos[0].title, cuando(2, 19), 'scheduled'),
+      base(3, 'Masa que no se rompe', datos.cursos[1].title, cuando(6, 19), 'scheduled'),
+      base(4, 'Suspiro limeño paso a paso', datos.cursos[2].title, cuando(9, 19), 'scheduled'),
+    ],
+    pasadas: [
+      base(5, 'Alfajores: masa y armado', datos.cursos[0].title, cuando(-7, 19), 'ended', { endedAt: cuando(-7, 20, 30), recordingCount: 1 }),
+      base(6, 'Temperado del chocolate', datos.cursos[1].title, cuando(-14, 19), 'ended', { endedAt: cuando(-14, 20, 30), recordingCount: 1 }),
+    ],
+    grabaciones: [
+      { id: 'r1', sessionId: 'ls5', sessionTitle: 'Alfajores: masa y armado', title: 'Alfajores: masa y armado', status: 'ready', startedAt: cuando(-7, 19), durationSeconds: 5280, size: 486_000_000, mimeType: 'video/webm', url: '/x', recordedBy: elena, visibleToStudents: true, canManage: false, createdAt: cuando(-7, 19) },
+      { id: 'r2', sessionId: 'ls6', sessionTitle: 'Temperado del chocolate', title: 'Temperado del chocolate', status: 'ready', startedAt: cuando(-14, 19), durationSeconds: 4620, size: 412_000_000, mimeType: 'video/webm', url: '/x', recordedBy: elena, visibleToStudents: true, canManage: false, createdAt: cuando(-14, 19) },
+    ],
+  };
+})();
+
 const usuario = (rol) => ({
   id: 'u1', tenantId: 't1', tenantSlug: 'demo',
   email: rol === 'manager' ? 'gestora@dulcelima.pe' : 'ana.quispe@dulcelima.pe',
@@ -212,6 +259,11 @@ async function pagina(rol) {
     if (p === '/orders') return j(pedidos);
     if (p === '/payments/settings') return j({ currency: 'PEN', mercadoPago: { enabled: true, publicKey: 'APP_USR-…', hasAccessToken: true, sandbox: false }, paypal: { enabled: true, clientId: 'AY…', hasSecret: true, sandbox: false }, manual: { enabled: true, instructions: 'Transferencia o depósito al BCP, cuenta corriente soles 194-1234567-0-89. También Yape al 987 654 321.' }, simulated: { enabled: false } });
     if (p === '/calendar/events' || p === '/calendar/upcoming') return j(eventos);
+    if (p === '/live/sessions') {
+      const q = new URL(route.request().url()).searchParams;
+      return j(q.get('status') === 'ended' ? enVivo.pasadas : enVivo.proximas);
+    }
+    if (p === '/live/recordings') return j(enVivo.grabaciones);
     if (p === '/guides') return j({ guides: [], progress: [] });
     if (p === '/messages/unread-count') return j({ count: 1 });
     if (p.startsWith('/tenants/public')) return j({ id: 't1', slug: 'demo', name: 'Dulce Lima', branding: { primaryColor: '#E11D64', accentColor: '#F2A93B', logoUrl: '/demo/dulce-lima.svg' }, allowSelfRegistration: true, allowGuestAccess: false, defaultLanguage: 'es' });
@@ -278,6 +330,11 @@ const cerrarGuia = async (p) => { await p.locator('button:has-text("Ahora no")')
   await p.waitForTimeout(1800);
   await cerrarGuia(p);
   await p.screenshot({ path: `${salida}/11-calendario.png` });
+
+  await p.goto('http://127.0.0.1:4310/live', { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1800);
+  await cerrarGuia(p);
+  await p.screenshot({ path: `${salida}/12-clases-en-vivo.png` });
   await p.close();
 }
 

@@ -41,16 +41,30 @@ Consecuencias en la página:
 No se ha perdido nada del argumento de propiedad: sigue en los dolores, en la
 tabla y en las preguntas. Solo ha dejado de ser lo primero.
 
-### Zoom y Google Meet
+### Las clases en vivo
 
-La página anuncia la integración **antes de que exista**, con su etiqueta «En
-camino» y una línea que separa lo que hoy se puede hacer (programar la sesión
-en el calendario del curso y enlazarla desde la lección) de lo que llegará
-(crearla desde el curso, entrar con un botón, grabación en la lección y
-asistencia automática). Prometerlo como presente se descubre en la primera
-demostración y cuesta la venta entera. Cuando se implemente, hay que quitar la
-etiqueta en `VIVO` de `landing.data.ts`, la fila «Clases en vivo» de la
-comparativa, la línea del plan Crece y el guion del vídeo (escena 07).
+La videoconferencia es **nativa** y eso es un argumento de venta, no un detalle
+de arquitectura. La página lo cuenta como la consecuencia natural de su propia
+tesis: si la clase vive en Zoom, la grabación, la asistencia y los treinta
+minutos en los que más se mira la pantalla son de Zoom; si vive en tu aula, son
+tuyos. El razonamiento técnico y sus límites están en
+[`LIVE.md`](LIVE.md).
+
+Lo que la página **no** debe prometer, por si se retoca:
+
+- Que sustituye a un SFU. La malla pone el techo del formato «reunión» en 8-12
+  cámaras; el modo «clase» aguanta grupos grandes porque solo emite quien
+  presenta. La página dice «hasta 25 por sala», que es el tope por defecto.
+- Que funciona en cualquier red sin configurar nada. Sin TURN, una red
+  corporativa con NAT simétrico no conecta. Eso es cosa de la implementación,
+  no del cliente, y por eso no sale en la página; pero no se promete lo
+  contrario.
+- Que graba sola sin nadie delante. Graba el navegador de quien presenta y la
+  pestaña tiene que seguir abierta.
+
+Una versión anterior de esta página anunciaba una integración con Zoom y Meet
+como «en camino». Se retiró al entregarse la videoconferencia propia: además de
+haber quedado falsa, contaba una historia más débil que la real.
 
 ---
 

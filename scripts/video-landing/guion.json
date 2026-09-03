@@ -51,11 +51,11 @@
     },
     {
       "id": "07",
-      "tipo": "gancho",
-      "dur": 6.5,
-      "kicker": "En camino",
-      "titular": "Zoom y Meet,\ndentro del curso",
-      "sub": "Y estamos integrando Zoom y Google Meet: la clase se programa en el curso y la grabación queda en la lección."
+      "captura": "12-clases-en-vivo.png",
+      "dur": 7.0,
+      "kicker": "Sin salir de la plataforma",
+      "titular": "La clase en vivo,\ndentro del aula",
+      "sub": "Y la clase en vivo es tuya también: con pizarra, y la grabación se queda dentro al terminar."
     },
     {
       "id": "08",

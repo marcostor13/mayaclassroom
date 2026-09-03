@@ -88,7 +88,7 @@ export const PLANES: Plan[] = [
     incluye: [
       'Hasta 2 000 alumnos activos',
       'Todo lo del plan Inicia, y además:',
-      'Clases en vivo con Zoom y Meet (en camino)',
+      'Clases en vivo con pizarra, grabación y asistencia',
       'Grupos, cohortes y matrícula por lotes',
       'Venta y cobro: Mercado Pago, PayPal, transferencia y Yape',
       'Insignias, competencias y rutas de aprendizaje',
@@ -172,6 +172,13 @@ export const AULA_ALUMNO: BloqueAula[] = [
     icono: 'book-open',
   },
   {
+    titulo: 'Entra a clase con un botón',
+    texto:
+      'Cuando empieza la clase en vivo, entra desde su aula. Sin instalar nada y sin buscar el ' +
+      'enlace en un grupo. Y si no pudo, la grabación se queda ahí.',
+    icono: 'play-circle',
+  },
+  {
     titulo: 'Sabe siempre por dónde va',
     texto:
       'Cada lección se marca al completarla y su avance se ve en una barra. Vuelve tres días ' +
@@ -218,6 +225,13 @@ export const AULA_DOCENTE: BloqueAula[] = [
     icono: 'layers',
   },
   {
+    titulo: 'Das la clase sin salir de la plataforma',
+    texto:
+      'Convocas la sesión desde el curso y la das ahí mismo, con pizarra, chat y pantalla ' +
+      'compartida. Al colgar, la grabación y la asistencia ya están guardadas.',
+    icono: 'play-circle',
+  },
+  {
     titulo: 'Evalúas de verdad',
     texto:
       'Tareas con entrega y corrección, cuestionarios con banco de preguntas reutilizable, ' +
@@ -257,28 +271,33 @@ export const AULA_DOCENTE: BloqueAula[] = [
 /* ----------------------------- Clases en vivo ----------------------------- */
 
 /**
- * Zoom y Google Meet dentro del curso.
+ * La videoconferencia, que es nativa.
  *
- * Se anuncia en la página **antes** de estar construido, y por eso lleva su
- * etiqueta de «en camino» bien visible y un texto que separa lo que ya se
- * puede hacer de lo que llegará. Prometer como presente algo que no existe se
- * descubre en la primera demostración y cuesta la venta entera; anunciarlo
- * como lo que es no cuesta nada y además ordena la expectativa.
+ * No se integra Zoom ni Meet a propósito: con un iframe de un tercero, el
+ * vídeo, la grabación y la asistencia se van a otra empresa y la marca de la
+ * academia desaparece de la pantalla justo en el momento en que más se la ve.
+ * El razonamiento completo está en `docs/LIVE.md`.
+ *
+ * Que sea propia es el mismo argumento que el resto de la página —el aula es
+ * tuya— llevado al sitio donde más se nota, así que se cuenta como una
+ * consecuencia y no como una ficha técnica.
  */
 export const VIVO = {
-  etiqueta: 'En camino',
-  titulo: 'Tus clases en vivo, dentro del curso',
+  etiqueta: 'Incluido y funcionando',
+  titulo: 'La clase en vivo es parte del aula',
   entrada:
-    'Estamos integrando Zoom y Google Meet con el aula. La sesión se programa desde el curso, ' +
-    'aparece en el calendario del alumno con su aviso, y cuando termina la grabación queda ' +
-    'guardada en la lección que le corresponde.',
-  hoy: 'Hoy ya puedes programar tus sesiones en el calendario del curso y enlazarlas desde la lección.',
+    'La videoconferencia es de tu plataforma, no un enlace que lleva a otra aplicación. La ' +
+    'clase se convoca desde el curso, tu alumno entra con un botón desde su aula, y al ' +
+    'terminar la grabación se queda dentro, junto al resto del material.',
+  nota:
+    'Se abre en el navegador, sin instalar nada ni crear cuentas en ningún otro sitio. Cada ' +
+    'sala admite hasta 25 personas.',
   puntos: [
-    'La clase se crea desde el curso, no desde otra aplicación',
-    'El alumno entra desde su aula, con un botón',
-    'Queda en su calendario y le llega el aviso',
-    'La grabación se guarda dentro de la lección',
+    'Pizarra compartida y chat durante la clase',
+    'Pantalla compartida para enseñar el paso a paso',
+    'Sala de espera y micrófonos cerrados al entrar, si los quieres',
     'La asistencia se registra sola',
+    'La grabación queda publicada para tu alumnado',
   ],
 };
 
@@ -337,9 +356,21 @@ export const COMPARATIVA: FilaComparativa[] = [
   },
   {
     concepto: 'Clases en vivo',
-    suelto: 'Zoom por su cuenta',
+    suelto: 'Zoom, en otra aplicación',
     marketplace: 'Fuera de la plataforma',
-    maya: 'Zoom y Meet en el curso (en camino)',
+    maya: 'Dentro del aula, con pizarra',
+  },
+  {
+    concepto: 'Grabación de la clase',
+    suelto: 'La subes tú a Drive',
+    marketplace: 'No la recogen',
+    maya: 'Se guarda y se publica sola',
+  },
+  {
+    concepto: 'Asistencia',
+    suelto: 'La cuentas a mano',
+    marketplace: 'No existe',
+    maya: 'Se registra en cada clase',
   },
   {
     concepto: 'Quién cobra',
@@ -414,13 +445,22 @@ export const PREGUNTAS: { pregunta: string; respuesta: string }[] = [
       'necesitas, y si no, tu plataforma es privada y se entra por invitación.',
   },
   {
-    pregunta: '¿Reemplaza a Zoom o a Google Meet?',
+    pregunta: '¿Necesito Zoom, o las clases en vivo son de la plataforma?',
     respuesta:
-      'No, y no queremos. Tus clases en vivo las sigues dando en Zoom o en Meet; lo que ' +
-      'hacemos es meterlas dentro del curso, para que el alumno entre desde su aula, le quede ' +
-      'en el calendario y la grabación se guarde en la lección. Esa integración está en ' +
-      'construcción ahora mismo: hoy ya puedes programar las sesiones en el calendario del ' +
-      'curso y enlazarlas desde la lección.',
+      'Son de la plataforma. La videoconferencia va por dentro: se convoca desde el curso, tu ' +
+      'alumno entra con un botón desde su aula, y hay pizarra, chat y pantalla compartida. No ' +
+      'integramos Zoom ni Meet a propósito, porque con un iframe de otra empresa el vídeo, la ' +
+      'grabación y la asistencia se van con ellos y tu marca desaparece de la pantalla justo ' +
+      'cuando más se la ve. Se abre en el navegador, sin instalar nada, y cada sala admite ' +
+      'hasta 25 personas.',
+  },
+  {
+    pregunta: '¿Qué pasa con la grabación y con quién asistió?',
+    respuesta:
+      'Se quedan contigo. La grabación se guarda al terminar y se publica a tu alumnado ' +
+      'matriculado, junto al resto del material del curso; la asistencia se registra sola ' +
+      'durante la clase, sin pasar lista. Las dos cosas son tuyas y las exportas cuando ' +
+      'quieras.',
   },
   {
     pregunta: '¿En qué se diferencia esto de Google Classroom, que es gratis?',
