@@ -159,11 +159,15 @@ async function configurarCobros(env: EntornoDemo): Promise<void> {
 
 /* --------------------------------- Pedidos -------------------------------- */
 
-/** Pedidos de ejemplo, para que la pantalla no aparezca vacía en la demostración. */
+/**
+ * Pedidos de ejemplo, para que la pantalla no aparezca vacía en la demostración.
+ *
+ * Se escriben por referencia y no «solo si no hay ninguno»: con esa condición,
+ * un despliegue que ya tuviera los pedidos de la demostración anterior se
+ * quedaba con ellos —en euros y de cursos que ya no existen— porque la siembra
+ * salía antes de tocarlos.
+ */
 async function sembrarPedidos(env: EntornoDemo): Promise<void> {
-  const existentes = await env.orderModel.countDocuments({ tenant: env.tenantId }).exec();
-  if (existentes > 0) return;
-
   const dias = (n: number): Date => new Date(Date.now() - n * 86_400_000);
   const idDe = (shortName: string): Types.ObjectId | null =>
     env.cursos.get(shortName)?._id ?? null;
@@ -176,7 +180,7 @@ async function sembrarPedidos(env: EntornoDemo): Promise<void> {
   const intro = idDe('INTRO-10');
   if (!pasteleria || !chocolate || !panaderia || !intro) return;
 
-  await env.orderModel.create([
+  const pedidos = [
     {
       tenant: env.tenantId,
       reference: 'MC-7K3F9A',
@@ -280,7 +284,19 @@ async function sembrarPedidos(env: EntornoDemo): Promise<void> {
       paidAt: dias(2),
       createdAt: dias(2),
     },
-  ]);
+  ];
 
-  logger.log('   · 5 pedidos de ejemplo');
+  for (const pedido of pedidos) {
+    const { reference, ...datos } = pedido;
+    await env.orderModel
+      .updateOne({ tenant: env.tenantId, reference }, { $set: datos }, { upsert: true })
+      .exec();
+  }
+
+  // No se borra ningún pedido que no esté en esta lista: un pedido es el
+  // registro de una compra, y en la empresa de demostración puede haber
+  // pruebas de verdad hechas con la pasarela simulada. Las cuatro referencias
+  // que usaba la demostración anterior son estas mismas, así que quedan
+  // convertidas a soles por el propio upsert.
+  logger.log(`   · ${pedidos.length} pedidos de ejemplo`);
 }

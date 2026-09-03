@@ -227,6 +227,31 @@ directamente a la API. La URL se incrusta en el paquete al construir la imagen
 (`ARG API_URL` en `apps/web/Dockerfile`) y el acceso lo autoriza `CORS_ORIGINS`
 en la API.
 
+#### Sembrar la demostración en producción
+
+El despliegue **no siembra**: los datos de la demostración viven en MongoDB, no
+en el código, así que publicar una versión nueva no los cambia. Y con razón —
+la siembra escribe contenido y suspende cuentas, y eso no puede pasar solo cada
+vez que se sube un commit.
+
+Para actualizarla hay que ejecutarla a mano, una vez, desde el contenedor de la
+API (en Coolify: la aplicación → *Terminal*). La imagen ya lleva la siembra
+compilada y la conexión a la base en el entorno:
+
+```bash
+bun apps/api/dist/database/seeds/seed.js
+
+# Con los vídeos de Pexels, si hay clave (pexels.com/api):
+PEXELS_API_KEY=xxxxx bun apps/api/dist/database/seeds/seed.js
+```
+
+Es idempotente y **converge**: actualiza el nombre, la marca y el logotipo de
+la empresa de demostración aunque ya exista, reescribe el escaparate y los
+pedidos de ejemplo, y retira lo que dejó la versión anterior —los cursos de
+programación salen del catálogo y se ocultan, y sus cuentas
+`@academiamaya.example` se suspenden— sin borrar nada y sin tocar lo que haya
+creado la empresa. Todo se deshace desde la interfaz.
+
 #### Utilidad de despliegue
 
 ```bash

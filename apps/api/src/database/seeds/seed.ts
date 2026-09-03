@@ -42,8 +42,10 @@ import { Order } from '../../modules/commerce/schemas/order.schema';
 import type { OrderDocument } from '../../modules/commerce/schemas/order.schema';
 import { Course } from '../../modules/courses/schemas/course.schema';
 import type { CourseDocument } from '../../modules/courses/schemas/course.schema';
+import { User } from '../../modules/users/schemas/user.schema';
 import type { UserDocument } from '../../modules/users/schemas/user.schema';
 import { seedStorefront } from './demo-storefront';
+import { retirarDemoAnterior } from './demo-retire';
 import { cursosDemo, avatar } from './demo-courses';
 import type { CursoDemo } from './demo-courses';
 import { leccion } from './demo-content';
@@ -115,6 +117,7 @@ async function seed(): Promise<void> {
   const payments = app.get(PaymentsService);
   const orderModel = app.get<Model<OrderDocument>>(getModelToken(Order.name));
   const courseModel = app.get<Model<CourseDocument>>(getModelToken(Course.name));
+  const userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
 
   logger.log('1/10 · Contexto de sistema y roles globales');
   const systemContext = await contexts.getSystemContext();
@@ -136,32 +139,49 @@ async function seed(): Promise<void> {
     });
   }
 
+  /**
+   * Identidad de la escuela de demostración.
+   *
+   * Se aplica exista o no la empresa: la siembra se ejecuta muchas veces sobre
+   * la misma base, y si al cambiar la demostración solo se creara lo nuevo, un
+   * despliegue con datos anteriores se quedaría con el nombre, la marca y el
+   * logotipo viejos mientras el resto de la página ya es otra cosa.
+   */
+  const escuela = {
+    name: 'Dulce Lima',
+    legalName: 'Dulce Lima Escuela de Pastelería S.A.C.',
+    contactEmail: 'hola@dulcelima.pe',
+    branding: {
+      // Frambuesa y caramelo: la marca de la escuela, distinta de la de la
+      // plataforma, para que se vea que la personalización por empresa manda.
+      primaryColor: '#E11D64',
+      accentColor: '#F2A93B',
+      logoUrl: '/demo/dulce-lima.svg',
+      welcomeMessage: 'Bienvenido al aula de Dulce Lima. Póngase el mandil.',
+    },
+    settings: {
+      allowSelfRegistration: true,
+      requireEmailVerification: false,
+      defaultLanguage: 'es',
+      timezone: DEFAULT_TIMEZONE,
+    },
+  };
+
   let demo = await tenants.findBySlug('demo');
-  if (!demo) {
+  if (demo) {
+    await tenants.update(demo._id, escuela);
+    demo = await tenants.requireBySlug('demo');
+  } else {
     demo = await tenants.create({
       slug: 'demo',
-      name: 'Dulce Lima',
-      legalName: 'Dulce Lima Escuela de Pastelería S.A.C.',
-      contactEmail: 'hola@dulcelima.pe',
       plan: TenantPlan.Business,
       status: TenantStatus.Active,
-      branding: {
-        // Frambuesa y caramelo: la marca de la escuela, distinta de la de la
-        // plataforma, para que se vea que la personalización por empresa manda.
-        primaryColor: '#E11D64',
-        accentColor: '#F2A93B',
-        logoUrl: '/demo/dulce-lima.svg',
-        welcomeMessage: 'Bienvenido al aula de Dulce Lima. Póngase el mandil.',
-      },
-      settings: {
-        allowSelfRegistration: true,
-        requireEmailVerification: false,
-        defaultLanguage: 'es',
-        timezone: DEFAULT_TIMEZONE,
-      },
+      ...escuela,
     });
   }
   await tasks.provision(demo._id);
+
+  await retirarDemoAnterior({ tenantId: demo._id, courseModel, userModel });
 
   const tenantContext = await contexts.requireByInstance(ContextLevel.Tenant, demo._id);
 
