@@ -8,7 +8,7 @@
  * Si hay locución (carpeta `audio/` con un mp3 por escena), la duración de
  * cada escena la manda el audio y no el guion.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -33,11 +33,29 @@ fs.mkdirSync(path.dirname(SALIDA), { recursive: true });
 const FPS = 30;
 const FUNDIDO = 0.6;
 
-const ffprobeDur = (fichero) => {
-  // El binario estático trae ffprobe al lado; si no, se deduce con ffmpeg.
-  const salida = execFileSync(FFMPEG, ['-hide_banner', '-i', fichero], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
-    .toString();
-  const m = salida.match(/Duration: (\d+):(\d+):(\d+\.\d+)/);
+/**
+ * Cuánto dura un audio, preguntándoselo a ffmpeg.
+ *
+ * Se decodifica a la nada (`-f null -`) en lugar de pasar solo `-i`: sin
+ * fichero de salida ffmpeg termina con error, `execFileSync` lanza y la
+ * duración se perdía en el `catch` de quien llama. El efecto era silencioso y
+ * malo: cada escena se quedaba con la duración del guion, así que en cuanto
+ * una locución fuese más larga la voz se cortaba a mitad de frase.
+ *
+ * Aun así se lee la duración también del error, por si alguna versión de
+ * ffmpeg se queja de algo por otro motivo: la traza ya la trae.
+ */
+const duracionAudio = (fichero) => {
+  // `spawnSync` y no `execFileSync` por dos motivos que juntos hacían que esto
+  // devolviera siempre `null`: la duración la escribe ffmpeg en **stderr**, y
+  // `execFileSync` solo devuelve stdout —y encima lanza cuando el proceso sale
+  // con error, que es lo que hace `ffmpeg -i` sin fichero de salida—. El fallo
+  // era mudo y caro: cada escena se quedaba con la duración del guion, así que
+  // en cuanto una locución fuese más larga, la voz se cortaba a mitad de frase.
+  const r = spawnSync(FFMPEG, ['-hide_banner', '-i', fichero, '-f', 'null', '-'], {
+    encoding: 'utf8',
+  });
+  const m = `${r.stderr ?? ''}`.match(/Duration: (\d+):(\d+):(\d+\.\d+)/);
   return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : null;
 };
 
@@ -48,7 +66,7 @@ const escenas = guion.escenas.map((e) => {
   const mp3 = `${dirAudio}/${e.id}.mp3`;
   if (hayAudio && fs.existsSync(mp3)) {
     let dur = null;
-    try { dur = ffprobeDur(mp3); } catch { /* se usa la del guion */ }
+    dur = duracionAudio(mp3);
     // Un respiro antes y después de la frase: encadenar locuciones sin aire
     // hace que se pisen y se entienda peor.
     if (dur) return { ...e, dur: Math.max(e.dur, dur + 1.2), mp3 };

@@ -34,7 +34,15 @@ async function cargarPlaywright() {
   return await import(pathToFileURL(require.resolve('playwright')).href);
 }
 
-const { chromium } = await cargarPlaywright();
+const playwright = await cargarPlaywright();
+// El paquete es CommonJS: según cómo lo cargue Node, los nombres salen en la
+// raíz o colgando de `default`. Se contemplan los dos.
+const chromium = playwright.chromium ?? playwright.default?.chromium;
+if (!chromium) {
+  console.error('No se pudo cargar Chromium desde Playwright.');
+  process.exit(1);
+}
+
 /** El navegador de la imagen si está; si no, el que Playwright traiga. */
 const navegador = () =>
   chromium.launch(

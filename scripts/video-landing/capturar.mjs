@@ -2,6 +2,7 @@
    Se usan las pantallas reales con la API simulada: lo que se enseña en el
    vídeo tiene que ser la plataforma, no una maqueta. */
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -35,7 +36,15 @@ async function cargarPlaywright() {
   return await import(pathToFileURL(require.resolve('playwright')).href);
 }
 
-const { chromium } = await cargarPlaywright();
+const playwright = await cargarPlaywright();
+// El paquete es CommonJS: según cómo lo cargue Node, los nombres salen en la
+// raíz o colgando de `default`. Se contemplan los dos.
+const chromium = playwright.chromium ?? playwright.default?.chromium;
+if (!chromium) {
+  console.error('No se pudo cargar Chromium desde Playwright.');
+  process.exit(1);
+}
+
 /** El navegador de la imagen si está; si no, el que Playwright traiga. */
 const navegador = () =>
   chromium.launch(
@@ -91,6 +100,54 @@ const usuario = (rol) => ({
     ? ['maya/site:manage', 'maya/site:manage-requests', 'maya/payment:manage', 'maya/order:manage', 'maya/course:update', 'maya/course:view', 'maya/user:view']
     : ['maya/course:view'],
 });
+
+/**
+ * El propio guion sirve el cliente construido.
+ *
+ * Antes había que acordarse de levantar un servidor en el 4310 por separado, y
+ * la orden no estaba en ninguna parte: quien lo intentaba veía diez capturas
+ * en blanco sin saber por qué. Con `Range` incluido, porque el navegador pide
+ * los vídeos por trozos.
+ */
+const RAIZ = path.resolve(BASE, '../../apps/web/dist/web/browser');
+if (!fs.existsSync(path.join(RAIZ, 'index.html'))) {
+  console.error(`No encuentro el cliente construido en ${RAIZ}.\nEjecute antes: bun run build:web`);
+  process.exit(1);
+}
+
+const TIPOS = {
+  '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
+  '.ico': 'image/x-icon', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+};
+
+const servidor = http.createServer((req, res) => {
+  const url = decodeURIComponent(req.url.split('?')[0]);
+  let f = path.join(RAIZ, url);
+  // Cualquier ruta desconocida es una ruta del cliente: es una sola página.
+  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(RAIZ, 'index.html');
+  const tipo = TIPOS[path.extname(f)] ?? 'application/octet-stream';
+  const total = fs.statSync(f).size;
+  const rango = /bytes=(\d*)-(\d*)/.exec(req.headers.range ?? '');
+  if (rango) {
+    const inicio = rango[1] ? Number(rango[1]) : 0;
+    const fin = rango[2] ? Number(rango[2]) : total - 1;
+    res.writeHead(206, {
+      'content-type': tipo,
+      'content-range': `bytes ${inicio}-${fin}/${total}`,
+      'accept-ranges': 'bytes',
+      'content-length': fin - inicio + 1,
+    });
+    fs.createReadStream(f, { start: inicio, end: fin }).pipe(res);
+    return;
+  }
+  res.writeHead(200, { 'content-type': tipo, 'content-length': total, 'accept-ranges': 'bytes' });
+  fs.createReadStream(f).pipe(res);
+});
+
+await new Promise((listo) => servidor.listen(4310, '127.0.0.1', listo));
+console.log('cliente servido en http://127.0.0.1:4310');
 
 const browser = await navegador();
 
@@ -193,3 +250,4 @@ const cerrarGuia = async (p) => { await p.locator('button:has-text("Ahora no")')
 
 console.log('capturas:', fs.readdirSync(salida).join(' '));
 await browser.close();
+servidor.close();
