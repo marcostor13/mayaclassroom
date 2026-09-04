@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res } from '@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CAP, ContextLevel } from '@maya/shared';
-import { CurrentUser, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { GradesService } from './grades.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';
@@ -21,6 +21,7 @@ import {
 
 @ApiTags('Calificaciones')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('courses/:courseId/grades')
 export class GradesController {
   constructor(

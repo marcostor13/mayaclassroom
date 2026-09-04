@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, CompetencyProficiency, ContextLevel } from '@maya/shared';
-import { CurrentUser, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CompetenciesService } from './competencies.service';
 import {
@@ -13,6 +13,7 @@ import {
 
 @ApiTags('Competencias')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('competencies')
 export class CompetenciesController {
   constructor(private readonly competencies: CompetenciesService) {}

@@ -22,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CAP, ContextLevel, LogAction } from '@maya/shared';
-import { Audit, CurrentUser, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, Audit, CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { LiveRequester, LiveService } from './live.service';
 import { LiveBoardService } from './live-board.service';
@@ -47,6 +47,7 @@ const requester = (user: RequestUser): LiveRequester => ({
 
 @ApiTags('Aulas en vivo')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('live')
 export class LiveController {
   constructor(

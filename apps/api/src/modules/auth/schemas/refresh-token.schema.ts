@@ -36,6 +36,18 @@ export class RefreshToken extends BaseDocument {
 
   @Prop({ type: Date, default: Date.now })
   lastUsedAt!: Date;
+
+  /**
+   * La sesión nació del acceso de demostración.
+   *
+   * Va aquí y no solo en el testigo de acceso porque `refresh()` emite uno
+   * nuevo a partir de este documento: sin guardarla, la primera renovación
+   * devolvería una sesión de gestión con todas las capacidades y las
+   * restricciones de la demostración se evaporarían solas a los quince
+   * minutos.
+   */
+  @Prop({ default: false })
+  demo!: boolean;
 }
 
 export type RefreshTokenDocument = HydratedDocument<RefreshToken>;

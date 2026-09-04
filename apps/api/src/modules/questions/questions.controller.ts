@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
-import { CurrentUser, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { QuestionsService } from './questions.service';
 import {
@@ -14,6 +14,7 @@ import {
 
 @ApiTags('Banco de preguntas')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('questions')
 export class QuestionsController {
   constructor(private readonly questions: QuestionsService) {}

@@ -3,12 +3,13 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel, EnrolmentRequestStatus, LogAction } from '@maya/shared';
 import type { EnrolmentRequestDto } from '@maya/shared';
-import { Audit, CurrentUser, Public, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, Audit, CurrentUser, Public, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { SiteService } from './site.service';
 import { CreateEnrolmentRequestDto, ResolveRequestDto, UpdateSiteDto } from './dto/site.dto';
 
 @ApiTags('Página pública')
+@AllowInDemo()
 @Controller('site')
 export class SiteController {
   constructor(private readonly site: SiteService) {}

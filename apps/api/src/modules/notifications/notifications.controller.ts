@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from '../../common/decorators';
+import { AllowInDemo, CurrentUser } from '../../common/decorators';
 import { PaginationQueryDto } from '../../common/dto';
 import type { RequestUser } from '../../common/types/request-context';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('Comunicación')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}

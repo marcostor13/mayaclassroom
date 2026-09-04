@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Res } from '@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CAP, CalendarEventType } from '@maya/shared';
-import { CurrentUser } from '../../common/decorators';
+import { AllowInDemo, CurrentUser } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CalendarService, CreateEventInput } from './calendar.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';
@@ -10,6 +10,7 @@ import { dayjs } from '../../common/utils';
 
 @ApiTags('Comunicación')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('calendar')
 export class CalendarController {
   constructor(

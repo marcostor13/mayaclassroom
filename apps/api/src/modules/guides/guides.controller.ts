@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ContextLevel } from '@maya/shared';
 import type { GuideDefinition, GuideProgressDto } from '@maya/shared';
-import { CurrentUser } from '../../common/decorators';
+import { AllowInDemo, CurrentUser } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { AccessService } from '../rbac/access.service';
 import { ContextsService } from '../contexts/contexts.service';
@@ -11,6 +11,7 @@ import { UpdateGuideProgressDto } from './dto/guide.dto';
 
 @ApiTags('Guías interactivas')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('guides')
 export class GuidesController {
   constructor(

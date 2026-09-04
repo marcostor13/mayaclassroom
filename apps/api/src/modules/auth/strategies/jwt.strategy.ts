@@ -14,6 +14,8 @@ export interface JwtPayload {
   tenantSlug: string;
   email: string;
   admin: boolean;
+  /** La sesión viene del acceso de demostración; `DemoGuard` la limita. */
+  demo?: boolean;
   type: 'access';
 }
 
@@ -45,6 +47,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       ...user,
       _id: new Types.ObjectId(user.id),
       _tenantId: new Types.ObjectId(user.tenantId),
+      // La marca sale del testigo firmado y no de la cuenta: la misma cuenta
+      // de gestión que usa la demostración podría usarla una persona de
+      // verdad con su contraseña, y esa sesión no tiene por qué estar limitada.
+      isDemo: payload.demo === true,
     };
   }
 }

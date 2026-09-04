@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { CAP, ContextLevel, LogAction, OrderStatus, PaymentProvider } from '@maya/shared';
 import type { OrderDto, PaymentSettingsDto } from '@maya/shared';
-import { Audit, CurrentUser, Public, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, Audit, CurrentUser, Public, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { OrdersService } from './orders.service';
 import { PaymentsService } from './payments.service';
@@ -136,6 +136,7 @@ export class CommerceController {
     return this.orders.list(user.tenantId, status);
   }
 
+  @AllowInDemo()
   @Patch('orders/:id')
   @ApiBearerAuth()
   @RequireCapability(CAP.ORDER_MANAGE, { contextLevel: ContextLevel.Tenant })

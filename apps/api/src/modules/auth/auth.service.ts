@@ -337,7 +337,9 @@ export class AuthService {
 
     return {
       user: await this.buildSessionUser(user._id),
-      tokens: await this.issueTokens(user, client, randomUUID()),
+      // La sesión queda marcada: `DemoGuard` le niega todo lo que no sea
+      // contenido docente, por muchas capacidades que traiga la cuenta.
+      tokens: await this.issueTokens(user, client, randomUUID(), { demo: true }),
     };
   }
 
@@ -405,10 +407,20 @@ export class AuthService {
 
   /* ------------------------------- Tokens -------------------------------- */
 
+  /**
+   * Emite la pareja de testigos de una sesión.
+   *
+   * `demo` marca la sesión, no la cuenta: la misma cuenta de gestión que
+   * enseña la demostración podría usarla una persona con su contraseña, y esa
+   * sesión no tiene por qué estar limitada. La marca viaja en el testigo
+   * firmado y se guarda con el de refresco, para que sobreviva a las
+   * renovaciones.
+   */
   async issueTokens(
     user: UserDocument,
     client: ClientInfo,
     familyId: string,
+    options: { demo?: boolean } = {},
   ): Promise<AuthTokens> {
     const tenant = await this.tenants.findById(user.tenant);
     const payload = {
@@ -417,6 +429,7 @@ export class AuthService {
       tenantSlug: tenant.slug,
       email: user.email,
       admin: user.isPlatformAdmin,
+      ...(options.demo ? { demo: true as const } : {}),
       type: 'access' as const,
     };
 
@@ -435,6 +448,7 @@ export class AuthService {
       tenant: user.tenant,
       tokenHash: this.hashToken(refreshToken),
       familyId,
+      demo: options.demo === true,
       expiresAt,
       userAgent: client.userAgent.slice(0, 400),
       ip: client.ip,
@@ -481,11 +495,13 @@ export class AuthService {
       throw new UnauthorizedException('La cuenta no está activa.');
     }
 
-    const tokens = await this.issueTokens(
-      user,
-      client,
-      this.security.refreshTokenRotation ? stored.familyId : stored.familyId,
-    );
+    // La marca de demostración se arrastra de la sesión anterior. Sin esto,
+    // renovar convertiría una sesión de demostración en una de gestión con
+    // todas las capacidades, que es la forma más silenciosa de saltarse
+    // `DemoGuard`: basta con esperar a que caduque el testigo de acceso.
+    const tokens = await this.issueTokens(user, client, stored.familyId, {
+      demo: stored.demo === true,
+    });
 
     stored.revokedAt = new Date();
     stored.replacedByHash = this.hashToken(tokens.refreshToken);

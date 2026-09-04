@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { CAP, ContextLevel } from '@maya/shared';
-import { CurrentUser, Public, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, Public, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CertificatesService } from './certificates.service';
 import { AppConfig } from '../../config';
@@ -13,6 +13,7 @@ import {
 } from './dto/certificate.dto';
 
 @ApiTags('Certificados')
+@AllowInDemo()
 @Controller('certificates')
 export class CertificatesController {
   constructor(

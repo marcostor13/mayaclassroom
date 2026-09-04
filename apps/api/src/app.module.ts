@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { CapabilityGuard } from './common/guards/capability.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { PasswordChangeGuard } from './common/guards/password-change.guard';
+import { DemoGuard } from './common/guards/demo.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 // Fase 1 — núcleo
@@ -124,6 +125,10 @@ import { GuidesModule } from './modules/guides/guides.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_GUARD, useClass: PasswordChangeGuard },
+    // Después de `JwtAuthGuard`, que es quien deja el usuario en la petición,
+    // y antes de comprobar capacidades: una sesión de demostración no debe
+    // llegar a que se le mire si «puede», porque la respuesta sería que sí.
+    { provide: APP_GUARD, useClass: DemoGuard },
     { provide: APP_GUARD, useClass: CapabilityGuard },
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],

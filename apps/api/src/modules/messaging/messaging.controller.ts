@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from '../../common/decorators';
+import { AllowInDemo, CurrentUser } from '../../common/decorators';
 import { PaginationQueryDto } from '../../common/dto';
 import type { RequestUser } from '../../common/types/request-context';
 import { MessagingService } from './messaging.service';
 
 @ApiTags('Comunicación')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('messages')
 export class MessagingController {
   constructor(private readonly messaging: MessagingService) {}

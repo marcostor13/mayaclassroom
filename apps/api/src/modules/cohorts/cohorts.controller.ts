@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
-import { CurrentUser, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, RequireCapability } from '../../common/decorators';
 import { PaginationQueryDto } from '../../common/dto';
 import type { RequestUser } from '../../common/types/request-context';
 import { CohortsService } from './cohorts.service';
@@ -14,6 +14,7 @@ import {
 
 @ApiTags('Cohortes')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('cohorts')
 export class CohortsController {
   constructor(private readonly cohorts: CohortsService) {}

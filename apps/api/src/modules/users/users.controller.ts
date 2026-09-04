@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel, LogAction, UserStatus } from '@maya/shared';
-import { Audit, CurrentUser, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, Audit, CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { UsersService } from './users.service';
 import {
@@ -40,11 +40,13 @@ export class UsersController {
     return this.users.updateProfile(user.id, dto);
   }
 
+  @AllowInDemo()
   @Patch('me/preferences')
   updatePreferences(@CurrentUser() user: RequestUser, @Body() dto: UpdatePreferencesDto) {
     return this.users.updatePreferences(user.id, dto);
   }
 
+  @AllowInDemo()
   @Post('me/accept-policy')
   async acceptPolicy(@CurrentUser() user: RequestUser) {
     await this.users.acceptPolicy(user.id);

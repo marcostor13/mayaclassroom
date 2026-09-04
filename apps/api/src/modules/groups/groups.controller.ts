@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
-import { RequireCapability } from '../../common/decorators';
+import { AllowInDemo, RequireCapability } from '../../common/decorators';
 import { GroupsService } from './groups.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';
 import {
@@ -15,6 +15,7 @@ import {
 
 @ApiTags('Grupos')
 @ApiBearerAuth()
+@AllowInDemo()
 @Controller('courses/:courseId/groups')
 export class GroupsController {
   constructor(

@@ -16,7 +16,7 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CAP, ContextLevel } from '@maya/shared';
-import { CurrentUser, Public } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, Public } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { FilesService } from './files.service';
 import { StorageService } from './storage.service';
@@ -67,6 +67,7 @@ export class FilesController {
     private readonly contexts: ContextsService,
   ) {}
 
+  @AllowInDemo()
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -100,6 +101,7 @@ export class FilesController {
     return this.files.toRef(stored);
   }
 
+  @AllowInDemo()
   @Post('upload/image')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -167,6 +169,7 @@ export class FilesController {
     return this.files.toRef(stored);
   }
 
+  @AllowInDemo()
   @Post('upload-many')
   @UseInterceptors(FilesInterceptor('files', 20))
   @ApiConsumes('multipart/form-data')

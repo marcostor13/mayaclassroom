@@ -6,6 +6,12 @@ export interface RequestUser extends AuthenticatedUser {
   /** Identificadores en formato ObjectId para consultas directas. */
   _id: Types.ObjectId;
   _tenantId: Types.ObjectId;
+  /**
+   * La sesión entró por el acceso de demostración. Es propiedad de la sesión,
+   * no de la cuenta: `DemoGuard` la usa para negar toda escritura que no sea
+   * contenido docente.
+   */
+  isDemo?: boolean;
 }
 
 export interface MayaRequest extends Request {

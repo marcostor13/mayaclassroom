@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
-import { CurrentUser, Public, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, Public, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { BadgesService } from './badges.service';
 import {
@@ -11,6 +11,7 @@ import {
 } from './dto/badge.dto';
 
 @ApiTags('Insignias')
+@AllowInDemo()
 @Controller('badges')
 export class BadgesController {
   constructor(private readonly badges: BadgesService) {}

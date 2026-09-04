@@ -12,7 +12,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CAP, ContextLevel, CustomFieldScope } from '@maya/shared';
-import { CurrentUser, PlatformAdminOnly, RequireCapability } from '../../common/decorators';
+import { AllowInDemo, CurrentUser, PlatformAdminOnly, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CustomFieldsService } from './custom-fields.service';
 import { TagsService } from './tags.service';
@@ -99,6 +99,7 @@ export class TagsController {
     return this.tags.comments(component, itemId);
   }
 
+  @AllowInDemo()
   @Post('comments/:component/:itemId')
   @ApiOperation({ summary: 'Publicar un comentario' })
   async addComment(
@@ -118,6 +119,7 @@ export class TagsController {
     });
   }
 
+  @AllowInDemo()
   @Delete('comments/:id')
   async removeComment(@CurrentUser() user: RequestUser, @Param('id') id: string) {
     await this.tags.removeComment(
