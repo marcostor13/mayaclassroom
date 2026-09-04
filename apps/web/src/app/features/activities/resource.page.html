@@ -114,7 +114,7 @@
                Las páginas antiguas se siguen viendo igual hasta que alguien
                las edite, momento en que pasan a bloques. -->
           @if (item.blocks?.length) {
-            <maya-lesson-view [blocks]="item.blocks!" />
+            <maya-lesson-view [blocks]="item.blocks!" [moduleId]="moduleId" />
           } @else {
             <div class="maya-rich" [innerHTML]="item.content | safeHtml"></div>
           }
@@ -126,7 +126,7 @@
       <section class="maya-card">
         <div class="maya-card__body">
           @if (item.blocks?.length) {
-            <maya-lesson-view [blocks]="item.blocks!" />
+            <maya-lesson-view [blocks]="item.blocks!" [moduleId]="moduleId" />
           } @else {
             <div class="maya-rich" [innerHTML]="item.content | safeHtml"></div>
           }

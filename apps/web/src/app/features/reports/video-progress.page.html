@@ -1,0 +1,177 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    <li><a [routerLink]="['/courses', courseId]">Curso</a></li>
+    <li>Visualización de vídeos</li>
+  </ol>
+</nav>
+
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Visualización de vídeos</h1>
+    <p class="maya-page-header__subtitle">
+      {{ report()?.totalVideos ?? 0 }} vídeos ·
+      {{ duracion(report()?.totalSeconds ?? 0) }} de contenido ·
+      avance medio {{ report()?.averagePercent ?? 0 }} %
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="exportCsv()">
+      <maya-icon name="download" [size]="15" /> Exportar CSV
+    </button>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 320px"></div>
+} @else if (report(); as data) {
+  @if (!data.totalVideos) {
+    <maya-empty-state
+      icon="play"
+      title="Este curso todavía no tiene vídeos"
+      description="Añada bloques de vídeo a las lecciones y aquí aparecerá quién los ha visto."
+    />
+  } @else if (!data.rows.length) {
+    <maya-empty-state
+      icon="users"
+      title="Sin alumnado matriculado"
+      description="En cuanto haya matrículas activas se registrará su avance."
+    />
+  } @else {
+    <!-- Tres cifras antes de la tabla: quién terminó, quién va por el camino y
+         quién no ha empezado. Es lo que se mira primero. -->
+    <section class="resumen">
+      <article class="maya-card resumen__caja">
+        <div class="maya-card__body">
+          <p class="maya-tiny maya-subtle">Han visto todo</p>
+          <p class="resumen__cifra">{{ buckets().done }}</p>
+          <p class="maya-tiny maya-subtle">de {{ buckets().total }} alumnos</p>
+        </div>
+      </article>
+      <article class="maya-card resumen__caja">
+        <div class="maya-card__body">
+          <p class="maya-tiny maya-subtle">En curso</p>
+          <p class="resumen__cifra">{{ buckets().started }}</p>
+          <p class="maya-tiny maya-subtle">han empezado y no han terminado</p>
+        </div>
+      </article>
+      <article class="maya-card resumen__caja">
+        <div class="maya-card__body">
+          <p class="maya-tiny maya-subtle">Sin empezar</p>
+          <p class="resumen__cifra resumen__cifra--alerta">{{ buckets().idle }}</p>
+          <p class="maya-tiny maya-subtle">no han abierto ningún vídeo</p>
+        </div>
+      </article>
+    </section>
+
+    <div class="filtros">
+      <label class="maya-field" style="flex: 1 1 220px">
+        <span class="maya-sr-only">Buscar alumno</span>
+        <input
+          type="search"
+          class="maya-input"
+          placeholder="Buscar por nombre o correo"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+      </label>
+      <label class="maya-field">
+        <span class="maya-sr-only">Ordenar</span>
+        <select class="maya-input" [ngModel]="order()" (ngModelChange)="order.set($event)">
+          <option value="pending">Menor avance primero</option>
+          <option value="name">Nombre</option>
+          <option value="recent">Actividad reciente</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="maya-table-wrap">
+      <table class="maya-table">
+        <thead>
+          <tr>
+            <th scope="col">Alumno</th>
+            <th scope="col">Avance</th>
+            <th scope="col">Vídeos</th>
+            <th scope="col">Tiempo visto</th>
+            <th scope="col">Última reproducción</th>
+            <th scope="col"><span class="maya-sr-only">Detalle</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.user.id) {
+            <tr>
+              <th scope="row">
+                <div class="alumno">
+                  <maya-avatar [name]="row.user.fullName" [src]="row.user.avatarUrl" size="sm" />
+                  <div>
+                    <p class="maya-small maya-bold">{{ row.user.fullName }}</p>
+                    <p class="maya-tiny maya-subtle">{{ row.user.email }}</p>
+                  </div>
+                </div>
+              </th>
+              <td style="min-width: 160px">
+                <maya-progress [value]="row.percent" size="thin" [label]="'Avance de vídeo'" />
+                <span class="maya-tiny maya-subtle">{{ row.percent }} %</span>
+              </td>
+              <td>{{ row.completedVideos }} / {{ row.totalVideos }}</td>
+              <td>{{ duracion(row.watchedSeconds) }}</td>
+              <td class="maya-small maya-subtle">
+                {{ row.lastPlayedAt ? (row.lastPlayedAt | mayaDate: 'datetime') : 'Nunca' }}
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--sm"
+                  (click)="open(row)"
+                >
+                  Ver detalle
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (detail(); as row) {
+  <maya-modal [title]="'Vídeos de ' + row.user.fullName" (dismissed)="close()">
+    @if (detailLoading()) {
+      <div class="maya-skeleton" style="height: 200px"></div>
+    } @else if (detailData(); as data) {
+      <p class="maya-small maya-subtle" style="margin-bottom: var(--maya-space-4)">
+        {{ data.completedVideos }} de {{ data.totalVideos }} vídeos completados ·
+        {{ duracion(data.watchedSeconds) }} reproducidos
+      </p>
+      <ul class="detalle">
+        @for (item of data.items; track item.id) {
+          <li class="detalle__fila">
+            <maya-icon
+              [name]="item.completed ? 'check' : 'play'"
+              [size]="16"
+              [class.detalle__icono--hecho]="item.completed"
+            />
+            <div style="flex: 1">
+              <p class="maya-small">{{ item.title ?? 'Vídeo sin título' }}</p>
+              @if (esExterno(item.kind)) {
+                <p class="maya-tiny maya-subtle">
+                  Vídeo alojado fuera · {{ item.completed ? 'confirmado' : 'sin confirmar' }}
+                </p>
+              } @else {
+                <maya-progress [value]="item.percent" size="thin" label="Avance del vídeo" />
+                <p class="maya-tiny maya-subtle">
+                  {{ item.percent }} % · {{ duracion(item.watchedSeconds) }} de
+                  {{ duracion(item.durationSeconds) }}
+                </p>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+    <div footer>
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="close()">Cerrar</button>
+    </div>
+  </maya-modal>
+}

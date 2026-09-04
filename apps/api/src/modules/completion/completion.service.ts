@@ -24,6 +24,8 @@ export interface CompletionRules {
   submit?: boolean;
   /** Requiere haber realizado un intento (cuestionarios). */
   attempt?: boolean;
+  /** Requiere haber visto todos los vídeos de la actividad. */
+  video?: boolean;
 }
 
 /**
@@ -124,7 +126,9 @@ export class CompletionService {
   }
 
   private hasOtherConditions(rules: CompletionRules): boolean {
-    return Boolean(rules.grade || rules.passGrade || rules.posts || rules.submit || rules.attempt);
+    return Boolean(
+      rules.grade || rules.passGrade || rules.posts || rules.submit || rules.attempt || rules.video,
+    );
   }
 
   /**
@@ -140,6 +144,7 @@ export class CompletionService {
       graded?: boolean;
       passed?: boolean;
       posts?: number;
+      videoWatched?: boolean;
     },
   ): Promise<void> {
     const module = await this.courseModuleModel.findById(toObjectId(moduleId)).exec();
@@ -157,6 +162,7 @@ export class CompletionService {
     if (rules.grade) checks.push(Boolean(signals.graded));
     if (rules.passGrade) checks.push(Boolean(signals.passed));
     if (rules.posts) checks.push((signals.posts ?? 0) >= rules.posts);
+    if (rules.video) checks.push(Boolean(signals.videoWatched));
 
     if (!checks.length) return;
 

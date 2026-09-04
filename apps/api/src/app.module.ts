@@ -30,6 +30,7 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { EnrolmentsModule } from './modules/enrolments/enrolments.module';
 import { CompletionModule } from './modules/completion/completion.module';
+import { MediaProgressModule } from './modules/media-progress/media-progress.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { GradesModule } from './modules/grades/grades.module';
 import { QuestionsModule } from './modules/questions/questions.module';
@@ -96,6 +97,7 @@ import { GuidesModule } from './modules/guides/guides.module';
     GroupsModule,
     EnrolmentsModule,
     CompletionModule,
+    MediaProgressModule,
     GradesModule,
     AvailabilityModule,
     QuestionsModule,

@@ -204,6 +204,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/grades/my-grades.page').then((m) => m.MyGradesPage),
       },
       {
+        path: 'courses/:id/video-progress',
+        title: 'Visualización de vídeos · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.MEDIA_VIEW_REPORTS] },
+        loadComponent: () =>
+          import('./features/reports/video-progress.page').then((m) => m.VideoProgressPage),
+      },
+      {
         path: 'courses/:id/gradebook',
         canActivate: [capabilityGuard],
         data: { capabilities: [CAP.GRADE_VIEW_ALL, CAP.GRADE_EDIT] },

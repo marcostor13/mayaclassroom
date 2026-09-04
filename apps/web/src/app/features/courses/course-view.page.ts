@@ -66,6 +66,11 @@ export class CourseViewPage {
       (this.auth.can(CAP.GRADE_VIEW_ALL) || this.auth.isTeacherOf(this.courseId)) &&
       !this.preview.studentView(),
   );
+  readonly canSeeMediaReports = computed(
+    () =>
+      (this.auth.can(CAP.MEDIA_VIEW_REPORTS) || this.auth.isTeacherOf(this.courseId)) &&
+      !this.preview.studentView(),
+  );
 
   /** Puede alternar la vista quien podría editar. */
   readonly canPreview = computed(() => this.esDocente());

@@ -21,3 +21,4 @@ export * from './components/site-render/site-render.component';
 export * from './utils/embed';
 export * from './components/guide-tour/guide-tour.component';
 export * from './components/guide-host/guide-host.component';
+export * from './components/video-tracker.directive';

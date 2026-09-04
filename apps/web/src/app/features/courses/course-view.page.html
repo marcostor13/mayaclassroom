@@ -61,6 +61,14 @@
           <maya-icon name="chart" [size]="16" /> Calificaciones
         </a>
       }
+      @if (canSeeMediaReports()) {
+        <a
+          [routerLink]="['/courses', courseId, 'video-progress']"
+          class="maya-btn maya-btn--secondary maya-btn--sm"
+        >
+          <maya-icon name="play" [size]="16" /> Visualización
+        </a>
+      }
     </div>
   </header>
 

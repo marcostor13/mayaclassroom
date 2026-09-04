@@ -1,0 +1,56 @@
+@use '../../../styles/tokens' as *;
+
+.resumen {
+  display: grid;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-5);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-sm) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.resumen__cifra {
+  margin: var(--maya-space-1) 0;
+  font-size: var(--maya-text-2xl);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.resumen__cifra--alerta {
+  color: var(--maya-primary-ink);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-4);
+}
+
+.alumno {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  text-align: left;
+  font-weight: 400;
+}
+
+.detalle {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-4);
+}
+
+.detalle__fila {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+}
+
+.detalle__icono--hecho {
+  color: var(--maya-success);
+}

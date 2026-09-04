@@ -1,8 +1,18 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { LessonBlock, LessonBlockType } from '@maya/shared';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
+import { LessonBlock, LessonBlockType, MediaProgressDto, MediaSourceKind } from '@maya/shared';
 import { IconComponent } from './icon.component';
+import { VideoTrackerDirective } from './video-tracker.directive';
 import { SafeHtmlPipe } from '../pipes/safe-html.pipe';
 import { SafeResourcePipe } from '../pipes/safe-resource.pipe';
+import { MediaProgressService } from '../../core/services/media-progress.service';
 import { resolveVideo } from '../utils/embed';
 import type { VideoResuelto } from '../utils/embed';
 
@@ -15,7 +25,7 @@ import type { VideoResuelto } from '../utils/embed';
 @Component({
   selector: 'maya-lesson-view',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, SafeHtmlPipe, SafeResourcePipe],
+  imports: [IconComponent, VideoTrackerDirective, SafeHtmlPipe, SafeResourcePipe],
   template: `
     <div class="leccion">
       @for (block of blocks(); track block.id) {
@@ -36,6 +46,24 @@ import type { VideoResuelto } from '../utils/embed';
           @case (Tipo.Media) {
             @if (esAudio(block)) {
               <audio controls preload="metadata" [src]="block.url"></audio>
+            } @else if (moduleId(); as modulo) {
+              <video
+                class="medio"
+                controls
+                preload="metadata"
+                [src]="block.url"
+                mayaVideoTracker
+                [moduleId]="modulo"
+                [mediaId]="block.id"
+                [mediaTitle]="block.title ?? null"
+                (progress)="anotar($event)"
+              ></video>
+              @if (avance(block.id); as visto) {
+                <p class="visto maya-tiny" [class.visto--hecho]="visto.completed">
+                  <maya-icon [name]="visto.completed ? 'check' : 'play'" [size]="14" />
+                  {{ visto.completed ? 'Vídeo completado' : 'Visto el ' + visto.percent + ' %' }}
+                </p>
+              }
             } @else {
               <video class="medio" controls preload="metadata" [src]="block.url"></video>
             }
@@ -44,7 +72,19 @@ import type { VideoResuelto } from '../utils/embed';
           @case (Tipo.Embed) {
             @if (video(block.url); as clip) {
               <div class="marco">
-                @if (clip.tipo === 'fichero') {
+                @if (clip.tipo === 'fichero' && moduleId()) {
+                  <video
+                    [src]="clip.src"
+                    controls
+                    playsinline
+                    preload="metadata"
+                    mayaVideoTracker
+                    [moduleId]="moduleId()!"
+                    [mediaId]="block.id"
+                    [mediaTitle]="block.title ?? null"
+                    (progress)="anotar($event)"
+                  ></video>
+                } @else if (clip.tipo === 'fichero') {
                   <video [src]="clip.src" controls playsinline preload="metadata"></video>
                 } @else if (clip.src | safeResource; as src) {
                   <iframe
@@ -56,6 +96,21 @@ import type { VideoResuelto } from '../utils/embed';
                   ></iframe>
                 }
               </div>
+
+              <!-- Un vídeo alojado fuera no informa de la posición: su avance
+                   no se puede medir, así que se confirma a mano. -->
+              @if (moduleId() && clip.tipo !== 'fichero') {
+                @if (estaVisto(block.id)) {
+                  <p class="visto visto--hecho maya-tiny">
+                    <maya-icon name="check" [size]="14" /> Vídeo confirmado como visto
+                  </p>
+                } @else {
+                  <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm"
+                          (click)="confirmarExterno(block)">
+                    <maya-icon name="check" [size]="16" /> He terminado de ver este vídeo
+                  </button>
+                }
+              }
             }
           }
 
@@ -141,6 +196,18 @@ import type { VideoResuelto } from '../utils/embed';
       width: 100%;
     }
 
+    .visto {
+      display: flex;
+      align-items: center;
+      gap: var(--maya-space-2);
+      margin: 0;
+      color: var(--maya-text-soft);
+    }
+
+    .visto--hecho {
+      color: var(--maya-success);
+    }
+
     .marco {
       position: relative;
       width: 100%;
@@ -215,9 +282,71 @@ import type { VideoResuelto } from '../utils/embed';
   `,
 })
 export class LessonViewComponent {
+  private readonly media = inject(MediaProgressService);
+
   readonly blocks = input<LessonBlock[]>([]);
 
+  /**
+   * Actividad que contiene la lección.
+   *
+   * Sin ella la lección se ve igual pero no se registra nada: es lo que pasa
+   * en la vista previa del editor y en el escaparate público, donde todavía no
+   * hay ni matrícula ni a quién atribuir el avance.
+   */
+  readonly moduleId = input<string | null>(null);
+
   readonly Tipo = LessonBlockType;
+
+  /** Avance por bloque, tal como lo devuelve el servidor. */
+  private readonly progreso = signal<Record<string, MediaProgressDto>>({});
+
+  /** Vídeos de la lección ya completados, para la barra de la actividad. */
+  readonly completados = computed(
+    () => Object.values(this.progreso()).filter((p) => p.completed).length,
+  );
+
+  constructor() {
+    // El avance ya registrado se pide al conocerse la actividad: sin esto,
+    // volver a una lección terminada la enseñaría como si no se hubiera visto
+    // nunca. Va en un efecto y no en el constructor porque una entrada de
+    // señal todavía no tiene valor cuando se construye el componente.
+    effect((onCleanup) => {
+      const modulo = this.moduleId();
+      if (!modulo) return;
+      const sub = this.media.ofModule(modulo).subscribe({
+        next: (items) =>
+          this.progreso.set(Object.fromEntries(items.map((item) => [item.mediaId, item]))),
+        error: () => undefined,
+      });
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
+
+  avance(mediaId: string): MediaProgressDto | null {
+    return this.progreso()[mediaId] ?? null;
+  }
+
+  estaVisto(mediaId: string): boolean {
+    return this.progreso()[mediaId]?.completed ?? false;
+  }
+
+  anotar(dto: MediaProgressDto): void {
+    this.progreso.update((map) => ({ ...map, [dto.mediaId]: dto }));
+  }
+
+  /** Marca como visto un vídeo alojado fuera, que no se puede medir. */
+  confirmarExterno(block: LessonBlock): void {
+    const modulo = this.moduleId();
+    if (!modulo) return;
+    this.media
+      .play(modulo, {
+        mediaId: block.id,
+        kind: MediaSourceKind.Embed,
+        title: block.title ?? null,
+        durationSeconds: 0,
+      })
+      .subscribe({ next: (dto) => this.anotar(dto), error: () => undefined });
+  }
 
   /**
    * Un bloque incrustado puede traer un vídeo de YouTube o la dirección de un
