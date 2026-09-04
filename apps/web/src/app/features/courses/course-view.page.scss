@@ -189,3 +189,22 @@
     &:disabled { cursor: default; }
   }
 }
+
+/* Aviso de encuesta pendiente al terminar el curso. */
+.encuesta-aviso {
+  margin-bottom: var(--maya-space-5);
+  border-left: 3px solid var(--maya-primary);
+}
+
+.encuesta-aviso__cuerpo {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  flex-wrap: wrap;
+  color: var(--maya-primary-ink);
+}
+
+.encuesta-aviso__cuerpo p {
+  margin: 0;
+  color: var(--maya-text);
+}

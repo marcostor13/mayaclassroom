@@ -213,6 +213,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/grades/my-grades.page').then((m) => m.MyGradesPage),
       },
       {
+        path: 'courses/:id/surveys',
+        title: 'Encuestas del curso · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.SURVEY_MANAGE, CAP.SURVEY_VIEW_RESULTS] },
+        loadComponent: () =>
+          import('./features/surveys/surveys.page').then((m) => m.SurveysPage),
+      },
+      {
+        path: 'surveys/:id',
+        title: 'Encuesta · Maya Classroom',
+        loadComponent: () =>
+          import('./features/surveys/survey-respond.page').then((m) => m.SurveyRespondPage),
+      },
+      {
         path: 'courses/:id/video-progress',
         title: 'Visualización de vídeos · Maya Classroom',
         canActivate: [capabilityGuard],

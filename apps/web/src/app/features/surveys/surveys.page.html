@@ -1,0 +1,335 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    <li><a [routerLink]="['/courses', courseId]">Curso</a></li>
+    <li>Encuestas</li>
+  </ol>
+</nav>
+
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Encuestas del curso</h1>
+    <p class="maya-page-header__subtitle">
+      Las respuestas se guardan sin autor: nadie, tampoco la administración, puede saber
+      quién ha contestado qué.
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    <button type="button" class="maya-btn maya-btn--primary maya-btn--sm" (click)="openNew()">
+      <maya-icon name="plus" [size]="15" /> Nueva encuesta
+    </button>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 260px"></div>
+} @else if (!items().length) {
+  <maya-empty-state
+    icon="inbox"
+    title="Todavía sin encuestas"
+    description="Cree una encuesta de satisfacción para pedir opinión al terminar el curso."
+  />
+} @else {
+  <ul class="encuestas">
+    @for (survey of items(); track survey.id) {
+      <li class="maya-card encuesta">
+        <div class="maya-card__body">
+          <div class="encuesta__cabecera">
+            <div style="flex: 1; min-width: 0">
+              <p class="maya-bold">{{ survey.title }}</p>
+              <p class="maya-tiny maya-subtle">
+                {{ survey.questions.length }} preguntas ·
+                {{ survey.responseCount }}
+                {{ survey.responseCount === 1 ? 'respuesta' : 'respuestas' }}
+                @if (survey.trigger === SurveyTrigger.OnCompletion) {
+                  · se ofrece al terminar el curso
+                } @else {
+                  · disponible desde su publicación
+                }
+              </p>
+            </div>
+            <span
+              class="maya-badge"
+              [class.maya-badge--success]="survey.status === SurveyStatus.Published"
+            >
+              {{ statusLabel(survey.status) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="maya-card__footer encuesta__acciones">
+          @if (survey.responseCount) {
+            <button
+              type="button"
+              class="maya-btn maya-btn--primary maya-btn--sm"
+              (click)="openResults(survey)"
+            >
+              <maya-icon name="chart" [size]="15" /> Ver resultados
+            </button>
+          }
+          @if (survey.status === SurveyStatus.Draft) {
+            <button
+              type="button"
+              class="maya-btn maya-btn--secondary maya-btn--sm"
+              (click)="publish(survey)"
+            >
+              <maya-icon name="send" [size]="15" /> Publicar
+            </button>
+          } @else if (survey.status === SurveyStatus.Published) {
+            <button
+              type="button"
+              class="maya-btn maya-btn--secondary maya-btn--sm"
+              (click)="close(survey)"
+            >
+              <maya-icon name="lock" [size]="15" /> Cerrar
+            </button>
+          }
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--sm"
+            (click)="openEdit(survey)"
+          >
+            <maya-icon name="edit" [size]="15" /> Editar
+          </button>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+            aria-label="Eliminar la encuesta"
+            (click)="remove(survey)"
+          >
+            <maya-icon name="trash" [size]="15" />
+          </button>
+        </div>
+      </li>
+    }
+  </ul>
+}
+
+<!-- ─────────────────────────────── Editor ──────────────────────────────── -->
+@if (editorOpen()) {
+  <maya-modal
+    [title]="editingId() ? 'Editar encuesta' : 'Nueva encuesta'"
+    (dismissed)="editorOpen.set(false)"
+  >
+    <div class="maya-stack">
+      <label class="maya-field">
+        <span class="maya-label">Título</span>
+        <input class="maya-input" [ngModel]="title()" (ngModelChange)="title.set($event)" />
+      </label>
+
+      <label class="maya-field">
+        <span class="maya-label">Introducción</span>
+        <textarea
+          class="maya-input"
+          rows="2"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
+        ></textarea>
+      </label>
+
+      <div class="pareja">
+        <label class="maya-field">
+          <span class="maya-label">Cuándo se ofrece</span>
+          <select class="maya-input" [ngModel]="trigger()" (ngModelChange)="trigger.set($event)">
+            <option [value]="SurveyTrigger.OnCompletion">Al terminar el curso</option>
+            <option [value]="SurveyTrigger.Always">Desde que se publica</option>
+          </select>
+        </label>
+        <label class="maya-field">
+          <span class="maya-label">Se cierra el (opcional)</span>
+          <input
+            type="datetime-local"
+            class="maya-input"
+            [ngModel]="closesAt()"
+            (ngModelChange)="closesAt.set($event)"
+          />
+        </label>
+      </div>
+
+      <hr class="maya-divider" />
+
+      <ol class="preguntas">
+        @for (question of questions(); track $index) {
+          <li class="pregunta">
+            <div class="pregunta__fila">
+              <span class="pregunta__numero">{{ $index + 1 }}</span>
+              <input
+                class="maya-input"
+                [value]="question.text"
+                (input)="setQuestion($index, { text: $any($event.target).value })"
+                placeholder="Enunciado de la pregunta"
+              />
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon"
+                aria-label="Subir"
+                [disabled]="$index === 0"
+                (click)="moveQuestion($index, -1)"
+              >
+                <maya-icon name="chevron-up" [size]="15" />
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon"
+                aria-label="Bajar"
+                [disabled]="$index === questions().length - 1"
+                (click)="moveQuestion($index, 1)"
+              >
+                <maya-icon name="chevron-down" [size]="15" />
+              </button>
+              <button
+                type="button"
+                class="maya-btn maya-btn--ghost maya-btn--icon"
+                aria-label="Quitar la pregunta"
+                (click)="removeQuestion($index)"
+              >
+                <maya-icon name="x" [size]="15" />
+              </button>
+            </div>
+
+            <div class="pregunta__ajustes">
+              <span class="maya-chip">{{ typeLabel(question.type) }}</span>
+
+              @if (question.type === SurveyQuestionType.Scale) {
+                <label class="maya-tiny">
+                  Escala hasta
+                  <select
+                    class="maya-input maya-input--sm"
+                    [ngModel]="question.scaleMax"
+                    (ngModelChange)="setQuestion($index, { scaleMax: +$event })"
+                  >
+                    <option [value]="5">5</option>
+                    <option [value]="10">10</option>
+                  </select>
+                </label>
+              }
+
+              <label class="maya-tiny">
+                <input
+                  type="checkbox"
+                  [ngModel]="question.required"
+                  (ngModelChange)="setQuestion($index, { required: $event })"
+                />
+                Obligatoria
+              </label>
+            </div>
+
+            @if (needsOptions(question.type)) {
+              <label class="maya-field">
+                <span class="maya-tiny maya-subtle">Una opción por línea</span>
+                <textarea
+                  class="maya-input"
+                  rows="3"
+                  [value]="question.optionsText"
+                  (input)="setQuestion($index, { optionsText: $any($event.target).value })"
+                  placeholder="Muy de acuerdo&#10;De acuerdo&#10;En desacuerdo"
+                ></textarea>
+              </label>
+            }
+          </li>
+        }
+      </ol>
+
+      <div class="tipos">
+        @for (tipo of tipos; track tipo.type) {
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--sm"
+            (click)="addQuestion(tipo.type)"
+          >
+            <maya-icon name="plus" [size]="14" /> {{ tipo.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div footer>
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="editorOpen.set(false)">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        [disabled]="!editorValid() || saving()"
+        (click)="save()"
+      >
+        {{ saving() ? 'Guardando…' : 'Guardar encuesta' }}
+      </button>
+    </div>
+  </maya-modal>
+}
+
+<!-- ───────────────────────────── Resultados ────────────────────────────── -->
+@if (results(); as data) {
+  <maya-modal [title]="'Resultados · ' + data.survey.title" (dismissed)="closeResults()">
+    <div class="maya-stack">
+      <p class="maya-small maya-subtle">
+        {{ data.responseCount }} respuestas de {{ data.invited }} matriculados ·
+        {{ data.participation }} % de participación
+      </p>
+
+      @for (question of data.questions; track question.questionId) {
+        <section class="resultado">
+          <p class="maya-small maya-bold">{{ question.text }}</p>
+          <p class="maya-tiny maya-subtle">
+            {{ question.answered }} respuestas
+            @if (question.average !== null) {
+              · media {{ question.average }}
+            }
+          </p>
+
+          @if (question.distribution.length) {
+            <ul class="barras">
+              @for (item of question.distribution; track item.label) {
+                <li class="barra">
+                  <span class="barra__etiqueta maya-tiny">{{ item.label }}</span>
+                  <span class="barra__pista">
+                    <span class="barra__relleno" [style.width.%]="item.percent"></span>
+                  </span>
+                  <span class="barra__valor maya-tiny">
+                    {{ item.count }} · {{ item.percent }} %
+                  </span>
+                </li>
+              }
+            </ul>
+          } @else if (question.texts.length) {
+            <!-- Las respuestas abiertas van barajadas: en orden de llegada, dos
+                 de la misma posición serían de la misma persona. -->
+            <ul class="textos">
+              @for (texto of question.texts; track $index) {
+                <li class="textos__item maya-small">{{ texto }}</li>
+              }
+            </ul>
+          } @else {
+            <p class="maya-tiny maya-subtle">Sin respuestas todavía.</p>
+          }
+        </section>
+      }
+    </div>
+
+    <div footer>
+      <button
+        type="button"
+        class="maya-btn maya-btn--secondary"
+        [disabled]="downloading() !== null"
+        (click)="download('csv')"
+      >
+        <maya-icon name="download" [size]="15" /> CSV
+      </button>
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        [disabled]="downloading() !== null"
+        (click)="download('xlsx')"
+      >
+        <maya-icon name="download" [size]="15" />
+        {{ downloading() === 'xlsx' ? 'Preparando…' : 'Excel' }}
+      </button>
+    </div>
+  </maya-modal>
+} @else if (resultsLoading()) {
+  <maya-modal title="Resultados" (dismissed)="closeResults()">
+    <div class="maya-skeleton" style="height: 220px"></div>
+    <div footer></div>
+  </maya-modal>
+}

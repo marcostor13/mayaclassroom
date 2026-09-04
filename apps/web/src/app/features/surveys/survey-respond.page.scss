@@ -1,0 +1,146 @@
+@use '../../../styles/tokens' as *;
+
+.anonimato {
+  margin-bottom: var(--maya-space-5);
+  border-left: 3px solid var(--maya-info);
+}
+
+.anonimato__cuerpo {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  color: var(--maya-info);
+}
+
+.anonimato__cuerpo p {
+  margin: 0;
+  color: var(--maya-text);
+}
+
+.preguntas {
+  display: grid;
+  gap: var(--maya-space-3);
+  max-width: 720px;
+}
+
+.pregunta {
+  border: 1px solid var(--maya-border);
+  margin: 0;
+  padding: 0;
+}
+
+.pregunta__enunciado {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-3);
+  font-weight: 600;
+  padding: 0;
+}
+
+.pregunta__numero {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--maya-primary-soft);
+  color: var(--maya-primary-deep);
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+}
+
+/* Escala: botones grandes, que se pulsan con el pulgar. */
+.escala {
+  display: flex;
+  gap: var(--maya-space-2);
+  flex-wrap: wrap;
+}
+
+.escala__punto {
+  flex: 1 1 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface);
+  color: var(--maya-text);
+  font-weight: 700;
+  cursor: pointer;
+
+  &.is-active {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary);
+    color: #fff;
+  }
+}
+
+.escala__extremos {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--maya-space-2);
+}
+
+.opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+}
+
+.opciones--columna {
+  flex-direction: column;
+}
+
+.opcion {
+  min-height: 44px;
+  padding: 0 var(--maya-space-4);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  background: var(--maya-surface);
+  color: var(--maya-text);
+  text-align: left;
+  cursor: pointer;
+
+  &.is-active {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-soft);
+    color: var(--maya-primary-deep);
+    font-weight: 600;
+  }
+}
+
+.envio {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--maya-space-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--maya-safe-bottom, 0);
+}
+
+.gracias {
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.gracias__icono {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--maya-space-4);
+  border-radius: 50%;
+  background: var(--maya-success-soft);
+  color: var(--maya-success);
+}
+
+.gracias__titulo {
+  margin: 0 0 var(--maya-space-2);
+  font-size: var(--maya-text-xl);
+}
+
+.gracias .maya-btn {
+  margin-top: var(--maya-space-5);
+}

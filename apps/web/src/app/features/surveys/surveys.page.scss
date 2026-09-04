@@ -1,0 +1,148 @@
+@use '../../../styles/tokens' as *;
+
+.encuestas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+.encuesta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+}
+
+.encuesta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+}
+
+.pareja {
+  display: grid;
+  gap: var(--maya-space-3);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-sm) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ------------------------------ Editor ---------------------------------- */
+
+.preguntas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-4);
+}
+
+.pregunta {
+  display: grid;
+  gap: var(--maya-space-2);
+  padding: var(--maya-space-3);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+}
+
+.pregunta__fila {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+
+  .maya-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.pregunta__numero {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--maya-primary-soft);
+  color: var(--maya-primary-deep);
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+}
+
+.pregunta__ajustes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maya-space-3);
+}
+
+.tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+}
+
+/* ---------------------------- Resultados -------------------------------- */
+
+.resultado {
+  padding-bottom: var(--maya-space-4);
+  border-bottom: 1px solid var(--maya-border);
+}
+
+.barras {
+  list-style: none;
+  margin: var(--maya-space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+.barra {
+  display: grid;
+  grid-template-columns: minmax(64px, auto) 1fr minmax(80px, auto);
+  align-items: center;
+  gap: var(--maya-space-3);
+}
+
+.barra__etiqueta {
+  /* Una etiqueta larga no debe empujar la barra fuera de la caja. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra__pista {
+  height: 8px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface-alt);
+  overflow: hidden;
+}
+
+.barra__relleno {
+  display: block;
+  height: 100%;
+  background: var(--maya-primary);
+}
+
+.barra__valor {
+  text-align: right;
+  color: var(--maya-text-soft);
+}
+
+.textos {
+  list-style: none;
+  margin: var(--maya-space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+.textos__item {
+  padding: var(--maya-space-3);
+  background: var(--maya-surface-alt);
+  border-radius: var(--maya-radius-md);
+  white-space: pre-wrap;
+}

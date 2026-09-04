@@ -1,0 +1,175 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 380px"></div>
+} @else if (survey(); as data) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/courses">Mis cursos</a></li>
+      <li><a [routerLink]="['/courses', data.courseId]">Curso</a></li>
+      <li>Encuesta</li>
+    </ol>
+  </nav>
+
+  @if (sent() || data.answered) {
+    <section class="maya-card gracias">
+      <div class="maya-card__body">
+        <span class="gracias__icono"><maya-icon name="check" [size]="28" /></span>
+        <h1 class="gracias__titulo">Gracias por responder</h1>
+        <p class="maya-small maya-subtle">
+          Su respuesta se ha guardado sin autor. No se puede saber quién la escribió, ni
+          siquiera desde la administración de la plataforma.
+        </p>
+        <button type="button" class="maya-btn maya-btn--primary" (click)="volverAlCurso()">
+          Volver al curso
+        </button>
+      </div>
+    </section>
+  } @else {
+    <header class="maya-page-header">
+      <div>
+        <h1 class="maya-page-header__title">{{ data.title }}</h1>
+        @if (data.description) {
+          <p class="maya-page-header__subtitle">{{ data.description }}</p>
+        }
+      </div>
+    </header>
+
+    <!-- El aviso va arriba: quien va a opinar decide si es franco antes de
+         escribir, no después de haberlo escrito. -->
+    <aside class="anonimato maya-card">
+      <div class="maya-card__body anonimato__cuerpo">
+        <maya-icon name="shield" [size]="20" />
+        <p class="maya-small">
+          <span class="maya-bold">Esta encuesta es anónima.</span>
+          Las respuestas se guardan sin su nombre y no pueden atribuirse a ninguna
+          persona. Solo se registra que ya la ha respondido, para no volver a pedírsela.
+        </p>
+      </div>
+    </aside>
+
+    <form class="preguntas" (ngSubmit)="submit()">
+      @for (question of data.questions; track question.id; let i = $index) {
+        <fieldset class="pregunta maya-card">
+          <div class="maya-card__body">
+            <legend class="pregunta__enunciado">
+              <span class="pregunta__numero">{{ i + 1 }}</span>
+              <span>
+                {{ question.text }}
+                @if (question.required) {
+                  <span class="maya-required" aria-label="obligatoria">*</span>
+                }
+              </span>
+            </legend>
+            @if (question.help) {
+              <p class="maya-tiny maya-subtle">{{ question.help }}</p>
+            }
+
+            @switch (question.type) {
+              @case (SurveyQuestionType.Scale) {
+                <div class="escala">
+                  @for (point of scalePoints(question); track point) {
+                    <button
+                      type="button"
+                      class="escala__punto"
+                      [class.is-active]="value(question.id) === point"
+                      [attr.aria-pressed]="value(question.id) === point"
+                      (click)="set(question.id, point)"
+                    >
+                      {{ point }}
+                    </button>
+                  }
+                </div>
+                <div class="escala__extremos maya-tiny maya-subtle">
+                  <span>{{ question.scaleMinLabel ?? 'Nada satisfecho' }}</span>
+                  <span>{{ question.scaleMaxLabel ?? 'Muy satisfecho' }}</span>
+                </div>
+              }
+
+              @case (SurveyQuestionType.Boolean) {
+                <div class="opciones">
+                  <button
+                    type="button"
+                    class="opcion"
+                    [class.is-active]="value(question.id) === true"
+                    (click)="set(question.id, true)"
+                  >
+                    Sí
+                  </button>
+                  <button
+                    type="button"
+                    class="opcion"
+                    [class.is-active]="value(question.id) === false"
+                    (click)="set(question.id, false)"
+                  >
+                    No
+                  </button>
+                </div>
+              }
+
+              @case (SurveyQuestionType.Single) {
+                <div class="opciones opciones--columna">
+                  @for (option of question.options; track option) {
+                    <button
+                      type="button"
+                      class="opcion"
+                      [class.is-active]="value(question.id) === option"
+                      (click)="set(question.id, option)"
+                    >
+                      {{ option }}
+                    </button>
+                  }
+                </div>
+              }
+
+              @case (SurveyQuestionType.Multiple) {
+                <div class="opciones opciones--columna">
+                  @for (option of question.options; track option) {
+                    <button
+                      type="button"
+                      class="opcion"
+                      [class.is-active]="isChecked(question.id, option)"
+                      (click)="toggle(question.id, option)"
+                    >
+                      {{ option }}
+                    </button>
+                  }
+                </div>
+              }
+
+              @case (SurveyQuestionType.Paragraph) {
+                <textarea
+                  class="maya-input"
+                  rows="4"
+                  [ngModel]="value(question.id)"
+                  (ngModelChange)="set(question.id, $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="Escriba con confianza; nadie sabrá que lo ha escrito usted"
+                ></textarea>
+              }
+
+              @default {
+                <input
+                  class="maya-input"
+                  [ngModel]="value(question.id)"
+                  (ngModelChange)="set(question.id, $event)"
+                  [ngModelOptions]="{ standalone: true }"
+                />
+              }
+            }
+          </div>
+        </fieldset>
+      }
+
+      <div class="envio">
+        @if (missing().length) {
+          <p class="maya-small maya-subtle">
+            Faltan {{ missing().length }}
+            {{ missing().length === 1 ? 'pregunta obligatoria' : 'preguntas obligatorias' }}.
+          </p>
+        }
+        <button type="submit" class="maya-btn maya-btn--primary maya-btn--lg" [disabled]="!canSubmit()">
+          {{ sending() ? 'Enviando…' : 'Enviar respuestas' }}
+        </button>
+      </div>
+    </form>
+  }
+}

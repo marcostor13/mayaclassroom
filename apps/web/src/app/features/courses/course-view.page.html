@@ -69,8 +69,35 @@
           <maya-icon name="play" [size]="16" /> Visualización
         </a>
       }
+      @if (canManageSurveys()) {
+        <a
+          [routerLink]="['/courses', courseId, 'surveys']"
+          class="maya-btn maya-btn--secondary maya-btn--sm"
+        >
+          <maya-icon name="inbox" [size]="16" /> Encuestas
+        </a>
+      }
     </div>
   </header>
+
+  @if (pendingSurvey(); as encuesta) {
+    <!-- Se pide la opinión donde el alumno acaba de terminar, no en un correo
+         que se lee tres días después. -->
+    <aside class="encuesta-aviso maya-card">
+      <div class="maya-card__body encuesta-aviso__cuerpo">
+        <maya-icon name="inbox" [size]="20" />
+        <div style="flex: 1; min-width: 0">
+          <p class="maya-small maya-bold">{{ encuesta.title }}</p>
+          <p class="maya-tiny maya-subtle">
+            Ha terminado el curso. Cuéntenos qué le ha parecido; es anónimo y lleva un minuto.
+          </p>
+        </div>
+        <a [routerLink]="['/surveys', encuesta.id]" class="maya-btn maya-btn--primary maya-btn--sm">
+          Responder
+        </a>
+      </div>
+    </aside>
+  }
 
   @if (detail.summary) {
     <section class="maya-card" style="margin-bottom: var(--maya-space-5)">

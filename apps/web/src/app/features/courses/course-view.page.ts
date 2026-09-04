@@ -7,6 +7,7 @@ import {
   CourseModuleDto,
   ModuleType,
   SectionDto,
+  SurveyDto,
 } from '@maya/shared';
 import { AuthService } from '../../core/services/auth.service';
 import { CoursesService } from '../../core/services/courses.service';
@@ -14,6 +15,7 @@ import { ActivitiesService } from '../../core/services/activities.service';
 import { ToastService } from '../../core/services/toast.service';
 import { moduleIcon, moduleLink } from '../../core/module-links';
 import { PreviewService } from '../../core/services/preview.service';
+import { SurveysService } from '../../core/services/surveys.service';
 import {
   EmptyStateComponent,
   FormatDatePipe,
@@ -66,6 +68,22 @@ export class CourseViewPage {
       (this.auth.can(CAP.GRADE_VIEW_ALL) || this.auth.isTeacherOf(this.courseId)) &&
       !this.preview.studentView(),
   );
+  readonly canManageSurveys = computed(
+    () =>
+      (this.auth.can(CAP.SURVEY_MANAGE) || this.auth.isTeacherOf(this.courseId)) &&
+      !this.preview.studentView(),
+  );
+
+  /** Encuesta que le toca responder al alumno, si la hay. */
+  private readonly surveys = inject(SurveysService);
+  private readonly surveysPendientes = signal<SurveyDto[]>([]);
+  readonly pendingSurvey = computed(
+    () =>
+      this.surveysPendientes().find(
+        (survey) => survey.available && !survey.answered,
+      ) ?? null,
+  );
+
   readonly canSeeMediaReports = computed(
     () =>
       (this.auth.can(CAP.MEDIA_VIEW_REPORTS) || this.auth.isTeacherOf(this.courseId)) &&
@@ -114,6 +132,10 @@ export class CourseViewPage {
     });
     this.activities.courseProgress(this.courseId).subscribe({
       next: (result) => this.progress.set(result.progress),
+    });
+    this.surveys.mineInCourse(this.courseId).subscribe({
+      next: (surveys) => this.surveysPendientes.set(surveys),
+      error: () => undefined,
     });
   }
 

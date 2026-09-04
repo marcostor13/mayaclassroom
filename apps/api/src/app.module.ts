@@ -54,6 +54,7 @@ import { SiteModule } from './modules/site/site.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { GuidesModule } from './modules/guides/guides.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { SurveysModule } from './modules/surveys/surveys.module';
 
 @Module({
   imports: [
@@ -124,6 +125,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     CommerceModule,
     GuidesModule,
     ReportsModule,
+    SurveysModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

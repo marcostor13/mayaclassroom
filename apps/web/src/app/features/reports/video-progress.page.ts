@@ -151,7 +151,9 @@ export class VideoProgressPage {
       ),
     ];
 
-    const blob = new Blob([`﻿${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' });
+    // La marca de orden de bytes hace que Excel abra el CSV en UTF-8; sin ella
+    // las tildes salen rotas, que es lo primero que se ve en español.
+    const blob = new Blob([`\ufeff${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
