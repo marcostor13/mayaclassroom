@@ -29,7 +29,17 @@
 /* -------------------------------------------------------------------------- */
 
 /** Número al que va todo botón de contacto. */
-export const WHATSAPP = '51975760418';
+export const WHATSAPP = '51948780715';
+
+/**
+ * El mismo número escrito como se lee en Perú.
+ *
+ * Se deriva del anterior en lugar de escribirse aparte porque el pie de la
+ * página ya lo llevaba a mano: al cambiar de número, los botones apuntaban al
+ * nuevo y el texto seguía enseñando el viejo. El formato es el del móvil
+ * peruano: prefijo de país y tres grupos de tres.
+ */
+export const WHATSAPP_VISIBLE = `+${WHATSAPP.slice(0, 2)} ${WHATSAPP.slice(2, 5)} ${WHATSAPP.slice(5, 8)} ${WHATSAPP.slice(8)}`;
 
 /** Enlace de WhatsApp con el mensaje ya escrito, para que abrir sea responder. */
 export function whatsapp(mensaje: string): string {

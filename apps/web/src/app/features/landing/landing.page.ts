@@ -16,7 +16,7 @@ import {
   PLANES,
   PREGUNTAS,
   VIVO,
-  WHATSAPP,
+  WHATSAPP_VISIBLE,
   whatsapp,
 } from './landing.data';
 import type { Plan } from './landing.data';
@@ -151,7 +151,7 @@ export class LandingPage {
     'Hola, vi la página de Maya Classroom y quiero mi propia aula virtual. ¿Lo vemos?',
   );
 
-  readonly telefono = WHATSAPP;
+  readonly telefono = WHATSAPP_VISIBLE;
 
   /** Cada plan escribe su propio mensaje: la conversación empieza ya situada. */
   whatsappPlan(plan: Plan): string {

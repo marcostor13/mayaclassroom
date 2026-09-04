@@ -22,6 +22,23 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Google tag (gtag.js)
+         Va aquí y no en un componente porque el cliente es una sola página: el
+         guion se carga una vez y las navegaciones posteriores las cuenta la
+         medición mejorada de GA4, que escucha los cambios del historial del
+         navegador. Sin ella solo se contaría la primera pantalla de cada
+         visita. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2SZ1YFKHCC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+
+      gtag('config', 'G-2SZ1YFKHCC');
+    </script>
   </head>
   <body>
     <app-root></app-root>
