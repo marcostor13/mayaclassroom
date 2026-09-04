@@ -13,6 +13,7 @@ import {
   CourseFormat,
   CourseModuleDto,
   GroupDto,
+  ModuleType,
   SectionDto,
 } from '@maya/shared';
 import { ActivityType, CoursesService } from '../../core/services/courses.service';
@@ -390,10 +391,17 @@ export class CourseEditorPage {
         settings: {},
       })
       .subscribe({
-        next: () => {
+        next: (module) => {
           this.activityName.set('');
           this.addingTo.set(null);
           this.loadSections(id);
+
+          // Un examen recién creado no tiene preguntas y no sirve de nada: se
+          // entra directamente a componerlo, que es lo que se venía a hacer.
+          if (module.moduleType === ModuleType.Quiz) {
+            void this.router.navigate(['/mod/quiz', module.id, 'edit']);
+            return;
+          }
           this.toast.success('Actividad añadida');
         },
       });

@@ -65,6 +65,17 @@ dar por rota una herramienta.
   `PEXELS_API_KEY` la siembra funciona igual y deja la demostración con
   imágenes y sin vídeos, avisando por el registro.
 
+- **El sello de los certificados depende de `SIGNING_SECRET`.** Cambiarlo
+  invalida la verificación de todo lo ya emitido: los certificados pasan a
+  responder «el contenido no coincide con su sello». Por omisión cae a
+  `JWT_ACCESS_SECRET`, así que rotar ese arrastra el mismo efecto; en
+  producción conviene darle uno propio y no tocarlo.
+- **Las respuestas de una encuesta no guardan autor, a propósito.** Quién ha
+  respondido vive en `survey_participations`, sin ninguna referencia a la
+  respuesta. No añadir un campo de usuario a `survey_responses` ni una marca de
+  tiempo fina que permita emparejarlas por orden: rompería lo único que la
+  encuesta promete.
+
 ## Convenciones
 
 Las reglas detalladas viven en `.claude/rules/` y se cargan solas al tocar los
@@ -90,4 +101,8 @@ ficheros que les corresponden. Los procedimientos de varios pasos son skills:
   los importes se escriben como allí. Nada de `Intl.NumberFormat` a mano ni de
   `'EUR'` suelto: `DEFAULT_CURRENCY`, `DEFAULT_LOCALE`, `DEFAULT_TIMEZONE`,
   `formatMoney()` y `currencySymbol()` viven en `@maya/shared`.
+- Los documentos que acreditan algo —certificados, actas de firma— guardan una
+  copia congelada de lo que acreditan y un sello HMAC sobre ella. No resolver
+  esos datos al enseñarlos: renombrar un curso cambiaría lo que dice un
+  documento ya entregado y rompería su sello.
 - Antes de dar algo por terminado, ejecutar `/verificar`.

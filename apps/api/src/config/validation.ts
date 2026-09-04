@@ -23,6 +23,16 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     if (config.JWT_ACCESS_SECRET === config.JWT_REFRESH_SECRET) {
       errors.push('JWT_ACCESS_SECRET y JWT_REFRESH_SECRET deben ser distintos.');
     }
+
+    // No es obligatoria —cae al secreto de acceso—, pero conviene avisar de la
+    // consecuencia: rotar el de los tokens invalidaría el sello de todos los
+    // certificados ya emitidos, que pasarían a no verificarse.
+    if (typeof config.SIGNING_SECRET !== 'string' || config.SIGNING_SECRET.length < 32) {
+      console.warn(
+        '[config] SIGNING_SECRET sin definir: se usará JWT_ACCESS_SECRET para sellar ' +
+          'certificados y firmas. Rotar ese secreto invalidará los ya emitidos.',
+      );
+    }
   }
 
   const port = Number(config.PORT ?? 3000);

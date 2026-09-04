@@ -64,6 +64,50 @@ y entrar en la empresa de demostración como administrador o como estudiante,
 sin credenciales. Apagado por defecto: es para el despliegue que enseña la
 plataforma, no para el de un cliente.
 
+### Evaluación, acreditación y seguimiento
+
+Un curso decide cómo se aprueba y qué acredita. La nota final se calcula sobre
+la escala del curso —20 por omisión, la de Perú— y a la nota mínima se le pueden
+sumar tres condiciones: aprobar todos los exámenes marcados como obligatorios,
+completar las actividades y haber visto un porcentaje de los vídeos.
+
+| Dirección | Qué es |
+|---|---|
+| `/mod/quiz/:actividad/edit` | Editor de examen: preguntas, puntuación y ajustes |
+| `/mod/quiz/:actividad/grading` | Cola de corrección de las preguntas de desarrollo |
+| `/courses/:curso/video-progress` | Quién ha visto qué vídeo y cuánto |
+| `/courses/:curso/surveys` | Encuestas del curso y sus resultados |
+| `/admin/users/:usuario/report` | Expediente completo del alumno |
+| `/certificates/verify/:codigo` | Comprobación pública de un certificado |
+
+**Exámenes.** Se componen en una sola pantalla —tipo de pregunta, enunciado,
+alternativas y puntuación— sin pasar por el banco de preguntas, que sigue ahí
+para reutilizar lo ya escrito. Un examen puede marcarse obligatorio para superar
+el módulo, y las preguntas de desarrollo las evalúa una persona desde una cola
+que agrupa por pregunta, no por alumno, para que el criterio se mantenga.
+
+**Vídeo.** Se mide el tiempo distinto realmente reproducido, no la posición de
+la barra: arrastrar hasta el final no da el vídeo por visto. Un vídeo alojado
+fuera (YouTube, Vimeo) no informa de la posición, así que se confirma a mano.
+
+**Firma electrónica.** Cada persona registra su firma una vez desde su perfil.
+Aparece en sus certificados y en las actas de asistencia a las clases en vivo, y
+se guarda sellada con HMAC junto a cuándo y desde dónde se firmó.
+
+**Certificados.** Llevan número correlativo por empresa y un sello HMAC sobre
+una copia congelada de lo que acreditan, así que no se pueden falsificar ni
+alterar sin que la verificación lo detecte. El curso decide si se descargan o si
+solo se acreditan por enlace y código QR. Un certificado no se borra: se anula, y
+su código sigue respondiendo.
+
+**Encuestas.** Anónimas de verdad: la respuesta se guarda sin autor y quién ha
+respondido va en otra colección sin ninguna referencia que las una. Los
+resultados salen agregados por pregunta y se descargan en Excel o CSV.
+
+**Expediente del alumno.** Matrículas, avance, notas, exámenes, actividades,
+asistencia, firma e indicadores en una pantalla, descargable en Excel (cinco
+hojas) y en PDF con el logo de la empresa.
+
 ---
 
 ## Instalación rápida
@@ -200,6 +244,7 @@ update(@Param('id') id: string, @Body() dto: UpdateCourseDto) { … }
 | **3** | Competencias, insignias, certificados, cohortes, actividades avanzadas, analíticas, copias de seguridad, RGPD, servicios web, tareas programadas | ✅ |
 | **4** | Escaparate público, constructor visual de páginas, venta de cursos con Mercado Pago y PayPal, pedidos y guías interactivas | ✅ |
 | **5** | Aulas en vivo: videoconferencia WebRTC nativa, pizarra colaborativa, compartir pantalla, grabación y asistencia | ✅ |
+| **6** | Evaluación y acreditación: editor de exámenes, corrección manual, nota mínima del curso, seguimiento de visualización, firma electrónica, certificados sellados, expediente del alumno y encuestas anónimas | ✅ |
 
 El detalle está en [`PLAN.md`](./PLAN.md) y la arquitectura técnica en
 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Para poner el almacenamiento

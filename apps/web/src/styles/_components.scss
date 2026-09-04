@@ -467,7 +467,12 @@
   border-collapse: collapse;
   font-size: var(--maya-text-sm);
 
-  th {
+  /* Solo la cabecera de columna. Antes esto alcanzaba también a los
+     `<th scope="row">`, que son la primera celda de cada fila: un nombre de
+     alumno o de curso salía en versalitas apagadas y sin poder partirse, que
+     es justo lo contrario de lo que se quiere en la columna que identifica la
+     fila. */
+  thead th {
     position: sticky;
     top: 0;
     background: var(--maya-surface-3);
@@ -482,16 +487,28 @@
     border-bottom: 1px solid var(--maya-border);
   }
 
-  td {
+  td,
+  tbody th {
     padding: var(--maya-space-3) var(--maya-space-4);
     border-bottom: 1px solid var(--maya-border);
     vertical-align: middle;
   }
 
+  /* La cabecera de fila identifica el registro: se lee como texto normal, con
+     el peso justo para distinguirla del resto de la fila. */
+  tbody th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--maya-text);
+  }
+
   tbody tr {
     transition: background var(--maya-duration-fast) var(--maya-ease);
     &:hover { background: var(--maya-surface-2); }
-    &:last-child td { border-bottom: none; }
+
+    &:last-child :is(td, th) {
+      border-bottom: none;
+    }
   }
 }
 
