@@ -1,0 +1,55 @@
+@use '../../../styles/tokens' as *;
+
+.situacion {
+  border-left: 4px solid var(--maya-border);
+}
+
+.situacion--ok {
+  border-left-color: var(--maya-success);
+}
+
+.situacion--pendiente {
+  border-left-color: var(--maya-warning);
+}
+
+.situacion__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-4);
+  flex-wrap: wrap;
+}
+
+.situacion__veredicto {
+  margin: 0;
+  font-size: var(--maya-text-xl);
+  font-weight: 800;
+}
+
+.situacion__nota {
+  margin: 0;
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-3xl);
+  font-weight: 800;
+  color: var(--maya-primary-deep);
+}
+
+.requisitos {
+  list-style: none;
+  margin: var(--maya-space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-2);
+}
+
+.requisitos__item {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  flex-wrap: wrap;
+  color: var(--maya-text-soft);
+}
+
+.requisitos__item--ok {
+  color: var(--maya-success);
+}

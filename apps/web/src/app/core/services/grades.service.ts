@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  CourseGradeSummaryDto,
   GradeCategoryDto,
   GradeItemDto,
   GradeLetterDto,
@@ -24,6 +25,17 @@ export class GradesService {
 
   userReport(courseId: string, userId: string): Observable<UserGradeReport> {
     return this.api.get<UserGradeReport>(`/courses/${courseId}/grades/users/${userId}`);
+  }
+
+  /** Situación académica propia: nota final, requisitos y si se aprueba. */
+  mySummary(courseId: string): Observable<CourseGradeSummaryDto> {
+    return this.api.get<CourseGradeSummaryDto>(`/courses/${courseId}/grades/summary/me`);
+  }
+
+  studentSummary(courseId: string, userId: string): Observable<CourseGradeSummaryDto> {
+    return this.api.get<CourseGradeSummaryDto>(
+      `/courses/${courseId}/grades/summary/users/${userId}`,
+    );
   }
 
   /* ---------------------------- Ítems ---------------------------------- */

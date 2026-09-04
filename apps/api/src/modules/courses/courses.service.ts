@@ -225,7 +225,7 @@ export class CoursesService {
       await this.categories.adjustCourseCount(category._id, 1);
     }
 
-    const { startDate, endDate, numSections, catalog, ...rest } = dto;
+    const { startDate, endDate, numSections, catalog, gradeSettings, ...rest } = dto;
     Object.assign(course, rest);
 
     // El catálogo se fusiona campo a campo en lugar de asignarse entero: el
@@ -233,6 +233,24 @@ export class CoursesService {
     // completo borraría el precio al cambiar únicamente la casilla de publicar.
     if (catalog) {
       course.catalog = { ...course.catalog, ...catalog } as typeof course.catalog;
+    }
+
+    // Por el mismo motivo que el catálogo: el editor manda solo lo que ha
+    // tocado, y asignar el objeto entero borraría la nota mínima al cambiar
+    // únicamente el modo de acceso al certificado.
+    if (gradeSettings) {
+      const { certificateTemplateId, ...resto } = gradeSettings;
+      course.gradeSettings = {
+        ...course.gradeSettings,
+        ...resto,
+        ...(certificateTemplateId !== undefined
+          ? {
+              certificateTemplate: certificateTemplateId
+                ? toObjectId(certificateTemplateId)
+                : null,
+            }
+          : {}),
+      } as typeof course.gradeSettings;
     }
     if (startDate !== undefined) course.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) course.endDate = endDate ? new Date(endDate) : null;

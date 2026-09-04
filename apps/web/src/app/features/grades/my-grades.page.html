@@ -16,6 +16,56 @@
     </div>
   </header>
 
+  @if (summary(); as situacion) {
+    @if (situacion.passingGrade !== null || situacion.requirements.length) {
+      <!-- «¿Apruebo?» es la primera pregunta al entrar aquí: se responde antes
+           que el desglose, y con lo que falta para conseguirlo. -->
+      <section
+        class="maya-card situacion"
+        [class.situacion--ok]="situacion.passed === true"
+        [class.situacion--pendiente]="situacion.passed === false"
+        style="margin-bottom: var(--maya-space-5)"
+      >
+        <div class="maya-card__body">
+          <div class="situacion__cabecera">
+            <div>
+              <p class="maya-small maya-muted">Situación en el curso</p>
+              <p class="situacion__veredicto">
+                @if (situacion.passed === true) {
+                  Curso aprobado
+                } @else if (situacion.passed === false) {
+                  Todavía no aprobado
+                } @else {
+                  En curso
+                }
+              </p>
+            </div>
+            @if (situacion.finalGrade !== null) {
+              <p class="situacion__nota">
+                {{ situacion.finalGrade }}
+                <span class="maya-small maya-muted">/ {{ situacion.gradeMax }}</span>
+              </p>
+            }
+          </div>
+
+          @if (situacion.requirements.length) {
+            <ul class="requisitos">
+              @for (requisito of situacion.requirements; track requisito.key) {
+                <li class="requisitos__item" [class.requisitos__item--ok]="requisito.met">
+                  <maya-icon [name]="requisito.met ? 'check' : 'circle'" [size]="15" />
+                  <span class="maya-small">{{ requisito.label }}</span>
+                  <span class="maya-tiny maya-subtle">
+                    {{ requisito.actual }} · se exige {{ requisito.required }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+    }
+  }
+
   <section class="maya-card" style="margin-bottom: var(--maya-space-5)">
     <div class="maya-card__body" style="text-align: center">
       <p class="maya-small maya-muted">Total del curso</p>

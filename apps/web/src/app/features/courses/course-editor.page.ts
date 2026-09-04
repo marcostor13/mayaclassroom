@@ -7,6 +7,7 @@ import {
   AvailabilityOperator,
   AvailabilityTree,
   CategoryNode,
+  CertificateAccessMode,
   CompletionTracking,
   CourseDetail,
   CourseFormat,
@@ -142,7 +143,75 @@ export class CourseEditorPage {
     }
   }
 
+  /* --------------------- Evaluación y acreditación ---------------------- */
+
+  readonly CertificateAccessMode = CertificateAccessMode;
+
+  readonly gradeMax = signal(20);
+  readonly passingGrade = signal<number | null>(null);
+  readonly requireRequiredExams = signal(true);
+  readonly requireCompletion = signal(false);
+  readonly requiredVideoPercent = signal(0);
+  readonly showFinalGrade = signal(true);
+  readonly autoIssueCertificate = signal(false);
+  readonly certificateAccess = signal<CertificateAccessMode>(CertificateAccessMode.Download);
+  readonly savingGrading = signal(false);
+
+  /** Una frase con lo configurado, para no tener que releer las casillas. */
+  readonly resumenAprobado = computed(() => {
+    const corte = this.passingGrade();
+    if (corte === null) return 'Curso sin nota mínima';
+    const extras: string[] = [];
+    if (this.requireRequiredExams()) extras.push('exámenes obligatorios');
+    if (this.requireCompletion()) extras.push('todas las actividades');
+    if (this.requiredVideoPercent()) extras.push(`${this.requiredVideoPercent()} % de vídeo`);
+    const base = `Aprueba con ${corte} de ${this.gradeMax()}`;
+    return extras.length ? `${base}, más ${extras.join(' y ')}` : base;
+  });
+
+  saveGradeSettings(): void {
+    const id = this.courseId();
+    if (!id || this.savingGrading()) return;
+    this.savingGrading.set(true);
+    this.courses
+      .update(id, {
+        gradeSettings: {
+          gradeMax: this.gradeMax(),
+          passingGrade: this.passingGrade(),
+          requireRequiredExams: this.requireRequiredExams(),
+          requireCompletion: this.requireCompletion(),
+          requiredVideoPercent: this.requiredVideoPercent(),
+          showFinalGrade: this.showFinalGrade(),
+          autoIssueCertificate: this.autoIssueCertificate(),
+          certificateAccess: this.certificateAccess(),
+          certificateTemplateId: null,
+        },
+      } as Partial<CourseDetail>)
+      .subscribe({
+        next: (course) => {
+          this.patchGradeSettings(course);
+          this.savingGrading.set(false);
+          this.toast.success('Evaluación guardada');
+        },
+        error: () => this.savingGrading.set(false),
+      });
+  }
+
+  private patchGradeSettings(course: CourseDetail): void {
+    const settings = course.gradeSettings;
+    if (!settings) return;
+    this.gradeMax.set(settings.gradeMax);
+    this.passingGrade.set(settings.passingGrade);
+    this.requireRequiredExams.set(settings.requireRequiredExams);
+    this.requireCompletion.set(settings.requireCompletion);
+    this.requiredVideoPercent.set(settings.requiredVideoPercent);
+    this.showFinalGrade.set(settings.showFinalGrade);
+    this.autoIssueCertificate.set(settings.autoIssueCertificate);
+    this.certificateAccess.set(settings.certificateAccess);
+  }
+
   private patch(course: CourseDetail): void {
+    this.patchGradeSettings(course);
     this.form.patchValue({
       shortName: course.shortName,
       fullName: course.fullName,

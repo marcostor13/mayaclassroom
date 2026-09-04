@@ -1,6 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { CourseFormat, CourseVisibility, DEFAULT_CURRENCY, GroupMode, MAX_UPLOAD_BYTES } from '@maya/shared';
+import {
+  CertificateAccessMode,
+  CourseFormat,
+  CourseVisibility,
+  DEFAULT_CURRENCY,
+  GroupMode,
+  MAX_UPLOAD_BYTES,
+} from '@maya/shared';
 import { TenantScopedDocument } from '../../../common/schemas/base.schema';
 import { SiteSectionSchema } from '../../site/schemas/tenant-site.schema';
 
@@ -35,6 +42,36 @@ export class CourseCatalogSchema {
    * el editor, y quien quiera afinarlo lo hace sección a sección.
    */
   @Prop({ type: [SiteSectionSchema], default: [] }) landing!: SiteSectionSchema[];
+}
+
+/**
+ * Reglas de aprobación y acreditación del curso.
+ *
+ * `passingGrade` va en la escala del curso y no en porcentaje porque es como se
+ * habla de ello: «se aprueba con 14», no «con el 70 %». Los tres requisitos
+ * adicionales son opcionales y se suman a la nota: un curso puede exigir solo
+ * nota, o nota más todos los exámenes obligatorios aprobados, o además haber
+ * visto los vídeos.
+ */
+@Schema({ _id: false })
+export class CourseGradeSettingsSchema {
+  @Prop({ default: 20 }) gradeMax!: number;
+  @Prop({ type: Number, default: null }) passingGrade!: number | null;
+  @Prop({ default: true }) requireRequiredExams!: boolean;
+  @Prop({ default: false }) requireCompletion!: boolean;
+  @Prop({ default: 0, min: 0, max: 100 }) requiredVideoPercent!: number;
+  @Prop({ default: true }) showFinalGrade!: boolean;
+  @Prop({ default: false }) autoIssueCertificate!: boolean;
+
+  @Prop({
+    type: String,
+    enum: Object.values(CertificateAccessMode),
+    default: CertificateAccessMode.Download,
+  })
+  certificateAccess!: CertificateAccessMode;
+
+  @Prop({ type: Types.ObjectId, ref: 'CertificateTemplate', default: null })
+  certificateTemplate!: Types.ObjectId | null;
 }
 
 @Schema({ collection: 'courses', timestamps: true })
@@ -107,6 +144,10 @@ export class Course extends TenantScopedDocument {
    */
   @Prop({ type: CourseCatalogSchema, default: () => ({}) })
   catalog!: CourseCatalogSchema;
+
+  /** Reglas de aprobación y acreditación. Ver `CourseGradeSettingsSchema`. */
+  @Prop({ type: CourseGradeSettingsSchema, default: () => ({}) })
+  gradeSettings!: CourseGradeSettingsSchema;
 }
 
 export type CourseDocument = HydratedDocument<Course>;

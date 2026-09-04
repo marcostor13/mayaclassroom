@@ -107,6 +107,147 @@
 </form>
 
 @if (!isNew()) {
+  <!-- Evaluación y acreditación. Va aparte de los datos del curso porque son
+       decisiones de otro momento: el curso se crea primero y se decide cómo se
+       aprueba cuando ya tiene contenido. -->
+  <section class="maya-card" style="margin-bottom: var(--maya-space-6)">
+    <div class="maya-card__header">
+      <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+        Evaluación y acreditación
+      </h2>
+      <span class="maya-tiny maya-subtle">{{ resumenAprobado() }}</span>
+    </div>
+    <div class="maya-card__body maya-stack">
+      <div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+        <div class="maya-field">
+          <label class="maya-label" for="e-gmax">Nota máxima del curso</label>
+          <input
+            id="e-gmax"
+            type="number"
+            min="1"
+            class="maya-input"
+            [ngModel]="gradeMax()"
+            (ngModelChange)="gradeMax.set(+$event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <span class="maya-tiny maya-subtle">En Perú lo habitual es 20.</span>
+        </div>
+        <div class="maya-field">
+          <label class="maya-label" for="e-gpass">Nota mínima para aprobar</label>
+          <input
+            id="e-gpass"
+            type="number"
+            min="0"
+            step="0.5"
+            class="maya-input"
+            [ngModel]="passingGrade()"
+            (ngModelChange)="passingGrade.set($event === null || $event === '' ? null : +$event)"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Sin nota mínima"
+          />
+          <span class="maya-tiny maya-subtle">
+            Vacío deja el curso sin aprobado ni suspenso.
+          </span>
+        </div>
+      </div>
+
+      <fieldset class="maya-stack" style="border: 0; padding: 0; margin: 0">
+        <legend class="maya-label">Además de la nota, para aprobar se exige</legend>
+        <label class="maya-switch">
+          <input
+            type="checkbox"
+            [ngModel]="requireRequiredExams()"
+            (ngModelChange)="requireRequiredExams.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <span class="maya-small">
+            Aprobar todos los exámenes marcados como obligatorios
+          </span>
+        </label>
+        <label class="maya-switch">
+          <input
+            type="checkbox"
+            [ngModel]="requireCompletion()"
+            (ngModelChange)="requireCompletion.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <span class="maya-small">Completar todas las actividades del curso</span>
+        </label>
+        <label class="maya-field">
+          <span class="maya-label">Porcentaje mínimo de vídeo visto</span>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            class="maya-input"
+            [ngModel]="requiredVideoPercent()"
+            (ngModelChange)="requiredVideoPercent.set(+$event)"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          <span class="maya-tiny maya-subtle">0 no lo exige.</span>
+        </label>
+      </fieldset>
+
+      <label class="maya-switch">
+        <input
+          type="checkbox"
+          [ngModel]="showFinalGrade()"
+          (ngModelChange)="showFinalGrade.set($event)"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        <span class="maya-small">Mostrar al alumno su nota final y si aprueba</span>
+      </label>
+
+      <hr class="maya-divider" />
+
+      <h3 class="maya-label">Certificado</h3>
+      <label class="maya-switch">
+        <input
+          type="checkbox"
+          [ngModel]="autoIssueCertificate()"
+          (ngModelChange)="autoIssueCertificate.set($event)"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        <span class="maya-small">
+          Emitirlo automáticamente en cuanto se cumplan todas las condiciones
+        </span>
+      </label>
+
+      <div class="maya-field">
+        <label class="maya-label" for="e-cert-acceso">Cómo puede acceder el alumno</label>
+        <select
+          id="e-cert-acceso"
+          class="maya-input"
+          [ngModel]="certificateAccess()"
+          (ngModelChange)="certificateAccess.set($event)"
+          [ngModelOptions]="{ standalone: true }"
+        >
+          <option [value]="CertificateAccessMode.Download">
+            Enlace verificable y descarga imprimible
+          </option>
+          <option [value]="CertificateAccessMode.Link">
+            Solo enlace verificable y código QR
+          </option>
+        </select>
+        <span class="maya-tiny maya-subtle">
+          Con «solo enlace», el certificado únicamente existe como página en línea que
+          se comprueba contra el servidor: no hay copia que pueda circular alterada.
+        </span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end">
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary"
+          [disabled]="savingGrading()"
+          (click)="saveGradeSettings()"
+        >
+          {{ savingGrading() ? 'Guardando…' : 'Guardar evaluación' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
   <div class="maya-spread" style="margin-bottom: var(--maya-space-4)">
     <h2 style="font-size: var(--maya-text-lg)">Contenido del curso</h2>
     <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="addSection()">

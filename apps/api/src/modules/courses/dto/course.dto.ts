@@ -19,7 +19,14 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { CourseFormat, CourseVisibility, DEFAULT_CURRENCY, GroupMode, ModuleType } from '@maya/shared';
+import {
+  CertificateAccessMode,
+  CourseFormat,
+  CourseVisibility,
+  DEFAULT_CURRENCY,
+  GroupMode,
+  ModuleType,
+} from '@maya/shared';
 import { PaginationQueryDto } from '../../../common/dto';
 import { SiteSectionDto } from '../../site/dto/site.dto';
 
@@ -183,12 +190,53 @@ export class CourseCatalogDto {
   landing?: SiteSectionDto[];
 }
 
+/** Reglas de aprobación y acreditación del curso. */
+export class CourseGradeSettingsDto {
+  @ApiPropertyOptional({ description: 'Escala del curso; la nota final se expresa sobre esto' })
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  gradeMax?: number;
+
+  @ApiPropertyOptional({ description: 'Nota mínima para aprobar; null deja el curso sin aprobado' })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  passingGrade?: number | null;
+
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() requireRequiredExams?: boolean;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() requireCompletion?: boolean;
+
+  @ApiPropertyOptional({ description: 'Porcentaje mínimo de vídeo visto; 0 no lo exige' })
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  requiredVideoPercent?: number;
+
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() showFinalGrade?: boolean;
+  @ApiPropertyOptional() @IsBoolean() @IsOptional() autoIssueCertificate?: boolean;
+
+  @ApiPropertyOptional({ enum: CertificateAccessMode })
+  @IsEnum(CertificateAccessMode)
+  @IsOptional()
+  certificateAccess?: CertificateAccessMode;
+
+  @ApiPropertyOptional() @IsMongoId() @IsOptional() certificateTemplateId?: string | null;
+}
+
 export class UpdateCourseDto extends PartialType(CreateCourseDto) {
   @ApiPropertyOptional({ type: CourseCatalogDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => CourseCatalogDto)
   catalog?: CourseCatalogDto;
+
+  @ApiPropertyOptional({ type: CourseGradeSettingsDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CourseGradeSettingsDto)
+  gradeSettings?: CourseGradeSettingsDto;
 }
 
 export class CourseQueryDto extends PaginationQueryDto {

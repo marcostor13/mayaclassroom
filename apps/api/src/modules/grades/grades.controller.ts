@@ -5,6 +5,7 @@ import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { GradesService } from './grades.service';
+import { CourseGradingService } from './course-grading.service';
 import { EnrolmentsService } from '../enrolments/enrolments.service';
 import { UsersService } from '../users/users.service';
 import { CoursesService } from '../courses/courses.service';
@@ -25,6 +26,7 @@ import {
 export class GradesController {
   constructor(
     private readonly grades: GradesService,
+    private readonly courseGrading: CourseGradingService,
     private readonly enrolments: EnrolmentsService,
     private readonly users: UsersService,
     private readonly courses: CoursesService,
@@ -116,6 +118,26 @@ export class GradesController {
   async myReport(@CurrentUser() user: RequestUser, @Param('courseId') courseId: string) {
     const course = await this.courses.findById(courseId);
     return this.grades.userReport(courseId, user.id, course.fullName);
+  }
+
+  @Get('summary/me')
+  @ApiOperation({ summary: 'Situación académica propia: nota final y si aprueba' })
+  async mySummary(@CurrentUser() user: RequestUser, @Param('courseId') courseId: string) {
+    const summary = await this.courseGrading.summary(courseId, user.id);
+    const course = await this.courses.findById(courseId);
+    // Un curso puede preferir no adelantar la nota final: se entrega el resto
+    // igualmente, porque el avance y los requisitos sí le sirven al alumno.
+    if (!course.gradeSettings?.showFinalGrade) {
+      return { ...summary, finalGrade: null, percentage: null, letter: null };
+    }
+    return summary;
+  }
+
+  @Get('summary/users/:userId')
+  @RequireCapability(CAP.GRADE_VIEW_ALL, { contextLevel: ContextLevel.Course, param: 'courseId' })
+  @ApiOperation({ summary: 'Situación académica de un alumno' })
+  summaryOf(@Param('courseId') courseId: string, @Param('userId') userId: string) {
+    return this.courseGrading.summary(courseId, userId);
   }
 
   @Get('users/:userId')
