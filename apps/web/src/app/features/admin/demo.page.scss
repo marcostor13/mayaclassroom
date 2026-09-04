@@ -1,0 +1,27 @@
+@use '../../../styles/tokens' as *;
+
+/**
+ * Tres tarjetas en columna: qué hace, cómo va y el botón. El orden es el de la
+ * decisión —enterarse, mirar, actuar— y por eso no se reparten en rejilla:
+ * confirmar el borrado de una empresa entera no debe quedar a la vista antes
+ * de haber leído lo que hace.
+ */
+.demo-reinicio {
+  display: grid;
+  gap: var(--maya-space-4);
+  max-width: 720px;
+}
+
+.demo-reinicio__borrados {
+  summary {
+    cursor: pointer;
+    color: var(--maya-primary-ink);
+  }
+
+  ul {
+    margin: var(--maya-space-2) 0 0;
+    padding-left: var(--maya-space-5);
+    display: grid;
+    gap: var(--maya-space-1);
+  }
+}

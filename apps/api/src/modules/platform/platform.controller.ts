@@ -11,8 +11,14 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { CAP, ContextLevel, CustomFieldScope } from '@maya/shared';
-import { AllowInDemo, CurrentUser, PlatformAdminOnly, RequireCapability } from '../../common/decorators';
+import { CAP, ContextLevel, CustomFieldScope, LogAction } from '@maya/shared';
+import {
+  AllowInDemo,
+  Audit,
+  CurrentUser,
+  PlatformAdminOnly,
+  RequireCapability,
+} from '../../common/decorators';
 import type { RequestUser } from '../../common/types/request-context';
 import { CustomFieldsService } from './custom-fields.service';
 import { TagsService } from './tags.service';
@@ -21,6 +27,7 @@ import { GdprService } from './gdpr.service';
 import { BackupService } from './backup.service';
 import { AnalyticsService } from './analytics.service';
 import { ScheduledTasksService } from './scheduled-tasks.service';
+import { DemoResetService } from './demo-reset.service';
 import { ContextsService } from '../contexts/contexts.service';
 import {
   AddCommentDto,
@@ -30,6 +37,7 @@ import {
   CreateTokenDto,
   CreateWebhookDto,
   ImportCourseDto,
+  ResetDemoDto,
   ResolvePrivacyRequestDto,
   RestoreBackupDto,
   SetTagStandardDto,
@@ -322,5 +330,40 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Estado de las tareas programadas' })
   tasksStatus(@CurrentUser() user: RequestUser) {
     return this.tasks.list(user.tenantId);
+  }
+}
+
+/* ------------------------ Reinicio de la demostración ---------------------- */
+
+@ApiTags('Demostración')
+@ApiBearerAuth()
+@Controller('demo')
+export class DemoResetController {
+  constructor(private readonly demo: DemoResetService) {}
+
+  @Get('reset')
+  @PlatformAdminOnly()
+  @ApiOperation({
+    summary: 'Estado del reinicio de la empresa de demostración',
+    description:
+      'La pantalla pregunta por aquí mientras dure el trabajo: rehacer la ' +
+      'demostración pasa del minuto y no cabe en una petición.',
+  })
+  status() {
+    return this.demo.status();
+  }
+
+  @Post('reset')
+  @PlatformAdminOnly()
+  @Audit(LogAction.Deleted, 'demo-reset')
+  @ApiOperation({
+    summary: 'Borrar la empresa de demostración y volver a sembrarla',
+    description:
+      'Devuelve en cuanto arranca el trabajo, no cuando termina. `confirm` debe ' +
+      'ser el identificador de la empresa de demostración: esto borra una ' +
+      'empresa entera y conviene escribir su nombre a mano.',
+  })
+  reset(@Body() dto: ResetDemoDto) {
+    return this.demo.start(dto.confirm);
   }
 }

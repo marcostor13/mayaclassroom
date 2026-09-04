@@ -8,6 +8,7 @@ import {
   CohortDto,
   IssuedBadgeDto,
   Paginated,
+  DemoResetStatusDto,
   TenantAdminCredentials,
   TenantCreatedDto,
   TenantDomainDto,
@@ -111,6 +112,20 @@ export class AdminService {
 
   updateMyTenant(payload: Record<string, unknown>): Observable<TenantDto> {
     return this.api.patch<TenantDto>('/tenants/me', payload);
+  }
+
+  /* ------------------- Reinicio de la demostración ------------------------ */
+
+  demoReset(): Observable<DemoResetStatusDto> {
+    return this.api.get<DemoResetStatusDto>('/demo/reset');
+  }
+
+  /**
+   * Arranca el reinicio. Devuelve en cuanto el trabajo empieza, no cuando
+   * termina: rehacer la demostración pasa del minuto.
+   */
+  startDemoReset(confirm: string): Observable<DemoResetStatusDto> {
+    return this.api.post<DemoResetStatusDto>('/demo/reset', { confirm });
   }
 
   /* ----------------------------- Dominio propio --------------------------- */

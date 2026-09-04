@@ -25,10 +25,12 @@ import { GdprService } from './gdpr.service';
 import { BackupService } from './backup.service';
 import { AnalyticsService } from './analytics.service';
 import { ScheduledTasksService } from './scheduled-tasks.service';
+import { DemoResetService } from './demo-reset.service';
 import {
   AnalyticsController,
   BackupController,
   CustomFieldsController,
+  DemoResetController,
   GdprController,
   TagsController,
   WebServicesController,
@@ -55,6 +57,7 @@ import {
     GdprController,
     BackupController,
     AnalyticsController,
+    DemoResetController,
   ],
   providers: [
     CustomFieldsService,
@@ -64,6 +67,7 @@ import {
     BackupService,
     AnalyticsService,
     ScheduledTasksService,
+    DemoResetService,
   ],
   exports: [
     CustomFieldsService,

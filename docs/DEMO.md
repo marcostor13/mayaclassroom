@@ -92,7 +92,41 @@ guard, y está cubierta por `auth.demo-session.spec.ts`.
 Un visitante todavía puede desordenar el contenido de la demostración: borrar
 un curso, cambiar las notas, editar la página pública de Dulce Lima. Es
 deliberado —sin eso la demostración no enseña el producto en marcha— y se
-arregla con `bun run seed`.
+arregla desde la propia plataforma, sin entrar por SSH.
 
 Si en algún momento se prefiere una demostración intocable, el cambio es
 retirar los `@AllowInDemo()`; el guard ya deniega por omisión.
+
+## 7 · Rehacerla desde la plataforma
+
+**Administración → Demostración**, solo para administración de plataforma.
+Borra la empresa entera y la vuelve a sembrar con el mismo código que
+`bun run seed`, no con una copia: una demostración que se reinicia distinta de
+la que se siembra deja de servir para enseñar.
+
+Tres decisiones que conviene conocer antes de tocar el botón:
+
+- **Borra, no vuelve a sembrar encima.** La siembra es idempotente pero no sabe
+  deshacer: un curso que un visitante borró queda con `deletedAt` puesto y no
+  se recupera, y una cuenta borrada bloquea su correo, así que recrearla choca
+  contra el índice único. Reiniciar es borrar y sembrar.
+- **El borrado se apoya en el invariante multiempresa.** Se recorren las
+  colecciones que tengan campo `tenant` y se borra lo que apunte a la
+  demostración, en vez de nombrarlas a mano: una lista escrita a mano envejece
+  en cuanto alguien añade un módulo, y lo que deja atrás no es un error visible
+  sino restos de la demostración anterior mezclados con la nueva. Lo global
+  —los roles arquetípicos, el contexto de sistema— no tiene ese campo y ni se
+  mira.
+- **El borrado ocurre dentro de la siembra**, en el punto en el que ya están
+  resueltos todos sus servicios y todavía no ha escrito nada. Borrar antes de
+  llamarla dejaría la empresa vacía si fallara una inyección, que es el fallo
+  más probable de todos y el único que no tiene arreglo automático.
+
+Va en segundo plano: rehacer cuatro cursos con su contenido, su alumnado y su
+tienda pasa del minuto, y detrás de un proxy una petición así se corta a mitad.
+`POST /demo/reset` arranca el trabajo y devuelve; la pantalla pregunta por
+`GET /demo/reset` cada tres segundos.
+
+Para confirmar hay que escribir a mano el identificador de la empresa. No es
+ceremonia: esto borra una empresa entera, y si algún día `DEMO_TENANT_SLUG`
+apuntara por error a la de un cliente, eso es lo único que se interpone.

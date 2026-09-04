@@ -119,3 +119,40 @@ export interface HostResolutionDto {
   /** Empresa a la que pertenece el dominio, o `null` si es el de la plataforma. */
   tenantSlug: string | null;
 }
+
+/* --------------------- Reinicio de la demostración ------------------------ */
+
+/**
+ * Cómo va el reinicio de la empresa de demostración.
+ *
+ * Rehacerla lleva su tiempo —borrar lo que hay y volver a sembrar cuatro
+ * cursos con su contenido, su alumnado y su tienda—, más de lo que aguanta una
+ * petición HTTP detrás de un proxy. Por eso la orden solo arranca el trabajo y
+ * la pantalla pregunta por este estado hasta que termina.
+ */
+export interface DemoResetStatusDto {
+  /** Empresa que se reiniciaría, según la configuración del despliegue. */
+  tenantSlug: string;
+  /** Hay un reinicio en marcha ahora mismo. */
+  running: boolean;
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** En qué paso va, para que la espera no sea muda. */
+  step: string | null;
+  /** Resultado del último reinicio terminado. `null` si nunca se ha hecho. */
+  ok: boolean | null;
+  /** Por qué falló, en cristiano. */
+  error: string | null;
+  /** Qué quedó sembrado la última vez que salió bien. */
+  summary: DemoResetSummary | null;
+}
+
+/** Lo que dejó el último reinicio, para poder decirlo en pantalla. */
+export interface DemoResetSummary {
+  /** Documentos borrados por colección, para saber qué se llevó por delante. */
+  removed: Record<string, number>;
+  courses: number;
+  students: number;
+  /** Vídeos sin resolver por falta de `PEXELS_API_KEY`. */
+  missingVideos: number;
+}

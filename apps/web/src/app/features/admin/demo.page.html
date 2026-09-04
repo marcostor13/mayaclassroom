@@ -1,0 +1,135 @@
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Demostración</h1>
+    <p class="maya-page-header__subtitle">
+      Rehaga la empresa de demostración cuando una visita la deje desordenada
+    </p>
+  </div>
+</header>
+
+@if (cargando()) {
+  <div class="maya-skeleton" style="height: 220px"></div>
+} @else if (!estado()) {
+  <section class="maya-card">
+    <div class="maya-card__body">
+      <p class="maya-small maya-subtle">
+        No se pudo consultar el estado de la demostración. Compruebe que la API está en pie.
+      </p>
+    </div>
+  </section>
+} @else {
+  <div class="demo-reinicio">
+    <!-- Qué va a pasar. Se cuenta antes de ofrecer el botón: esto borra una
+         empresa entera y no tiene vuelta atrás. -->
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Qué hace</h2>
+        <maya-icon name="refresh" [size]="18" />
+      </div>
+      <div class="maya-card__body maya-stack">
+        <p class="maya-small">
+          Borra todo lo que pertenece a la empresa
+          <code>{{ estado()!.tenantSlug }}</code> —cursos, cuentas, notas, pedidos y su
+          página pública— y vuelve a sembrarla desde cero, con el mismo código que
+          <code>bun run seed</code>.
+        </p>
+        <p class="maya-alert maya-alert--warning maya-small">
+          <maya-icon name="alert" [size]="16" />
+          No hay vuelta atrás y no toca ninguna otra empresa. Tarda más de un minuto.
+        </p>
+      </div>
+    </section>
+
+    <!-- El estado del último trabajo, o del que está corriendo ahora. -->
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Estado</h2>
+        @if (enMarcha()) {
+          <span class="maya-badge maya-badge--warning">En marcha</span>
+        } @else if (estado()!.ok === true) {
+          <span class="maya-badge maya-badge--success">Lista</span>
+        } @else if (estado()!.ok === false) {
+          <span class="maya-badge maya-badge--danger">Falló</span>
+        } @else {
+          <span class="maya-badge">Sin reiniciar</span>
+        }
+      </div>
+
+      <div class="maya-card__body maya-stack">
+        @if (enMarcha()) {
+          <p class="maya-small">
+            <maya-icon name="clock" [size]="16" />
+            {{ estado()!.step }}… Empezó a las
+            {{ estado()!.startedAt | mayaDate: 'time' }}. Puede cerrar esta pantalla:
+            el trabajo sigue en el servidor.
+          </p>
+          <div class="maya-progress maya-progress--thin"><span style="width: 100%"></span></div>
+        } @else if (estado()!.ok === false) {
+          <p class="maya-alert maya-alert--danger maya-small">
+            <maya-icon name="alert" [size]="16" />
+            {{ estado()!.error }}
+          </p>
+        } @else if (estado()!.ok === true) {
+          <p class="maya-small">
+            Terminó el {{ estado()!.finishedAt | mayaDate: 'datetime' }} con
+            <strong>{{ estado()!.summary?.courses }}</strong> cursos y
+            <strong>{{ estado()!.summary?.students }}</strong> alumnos.
+          </p>
+          @if (estado()!.summary?.missingVideos) {
+            <p class="maya-small maya-subtle">
+              {{ estado()!.summary?.missingVideos }} vídeo(s) sin resolver: ponga
+              <code>PEXELS_API_KEY</code> y vuelva a reiniciar para que salgan también los vídeos.
+            </p>
+          }
+          @if (borrados().length) {
+            <details class="demo-reinicio__borrados">
+              <summary class="maya-small">Qué se borró antes de sembrar</summary>
+              <ul class="maya-small maya-subtle">
+                @for (fila of borrados(); track fila[0]) {
+                  <li><code>{{ fila[0] }}</code> · {{ fila[1] }}</li>
+                }
+              </ul>
+            </details>
+          }
+        } @else {
+          <p class="maya-small maya-subtle">
+            La demostración no se ha reiniciado desde esta pantalla todavía.
+          </p>
+        }
+      </div>
+    </section>
+
+    <!-- La confirmación. El identificador se escribe a mano a propósito. -->
+    <section class="maya-card">
+      <div class="maya-card__header">
+        <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Reiniciar</h2>
+        <maya-icon name="shield" [size]="18" />
+      </div>
+      <div class="maya-card__body maya-stack">
+        <div class="maya-field">
+          <label class="maya-label" for="confirmar">
+            Escriba <code>{{ estado()!.tenantSlug }}</code> para confirmar
+          </label>
+          <input
+            id="confirmar"
+            class="maya-input"
+            [(ngModel)]="confirmacion"
+            [disabled]="enMarcha()"
+            placeholder="{{ estado()!.tenantSlug }}"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <button
+          type="button"
+          class="maya-btn maya-btn--danger"
+          (click)="reiniciar()"
+          [disabled]="!puedeReiniciar()"
+        >
+          <maya-icon name="refresh" [size]="16" />
+          {{ enMarcha() ? 'Reiniciando…' : 'Borrar y sembrar de nuevo' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

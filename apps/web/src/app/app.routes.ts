@@ -408,6 +408,14 @@ export const routes: Routes = [
           import('./features/admin/payments/payments.page').then((m) => m.AdminPaymentsPage),
       },
       {
+        path: 'admin/demo',
+        title: 'Demostración · Maya Classroom',
+        // Ámbito plataforma: rehacer la empresa de demostración borra una
+        // empresa entera, y eso no es cosa de quien administra una.
+        canActivate: [platformAdminGuard],
+        loadComponent: () => import('./features/admin/demo.page').then((m) => m.AdminDemoPage),
+      },
+      {
         path: 'admin/tenants',
         title: 'Empresas · Maya Classroom',
         // Ámbito plataforma, no empresa: se exige ser administrador de

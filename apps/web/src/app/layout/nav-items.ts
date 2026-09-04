@@ -133,4 +133,11 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'administración',
     platformAdmin: true,
   },
+  {
+    label: 'Demostración',
+    icon: 'refresh',
+    route: '/admin/demo',
+    group: 'administración',
+    platformAdmin: true,
+  },
 ];

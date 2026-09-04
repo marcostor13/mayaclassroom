@@ -110,3 +110,19 @@ export class ImportCourseDto {
   @ApiProperty() @IsMongoId() sourceCourseId!: string;
   @ApiProperty() @IsMongoId() targetCourseId!: string;
 }
+
+/**
+ * Confirmación del reinicio de la demostración.
+ *
+ * El identificador se escribe a mano a propósito: la orden borra una empresa
+ * entera, y si `DEMO_TENANT_SLUG` apuntara por error a la de un cliente, esto
+ * es lo único que se interpone.
+ */
+export class ResetDemoDto {
+  @ApiProperty({
+    example: 'demo',
+    description: 'El identificador de la empresa de demostración, escrito tal cual.',
+  })
+  @IsString()
+  confirm!: string;
+}
