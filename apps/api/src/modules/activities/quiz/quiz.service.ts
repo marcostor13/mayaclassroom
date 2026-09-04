@@ -8,11 +8,14 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
+  CompletionTracking,
   ModuleType,
   QuizAttemptDto,
   QuizAttemptState,
   QuizDto,
   QuizGradeMethod,
+  QuizGradingItem,
+  QuizGradingQueue,
   round,
 } from '@maya/shared';
 import { Quiz, QuizDocument } from './schemas/quiz.schema';
@@ -29,7 +32,12 @@ import { CompletionService } from '../../completion/completion.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { CoursesService } from '../../courses/courses.service';
 import { toObjectId } from '../../../common/utils';
-import { ManualGradeDto, QuizSettingsDto, SaveResponseDto } from './dto/quiz.dto';
+import {
+  BulkGradeDto,
+  ManualGradeDto,
+  QuizSettingsDto,
+  SaveResponseDto,
+} from './dto/quiz.dto';
 
 @Injectable()
 export class QuizService implements ActivityHandler, OnModuleInit {
@@ -77,9 +85,12 @@ export class QuizService implements ActivityHandler, OnModuleInit {
       showCorrectAnswers: settings.showCorrectAnswers ?? true,
       requirePassword: settings.requirePassword ?? false,
       password: settings.password ?? null,
+      requiredToPass: settings.requiredToPass ?? false,
+      blocksProgress: settings.blocksProgress ?? false,
       slots: [],
       createdBy: input.userId,
     });
+    await this.applyRequiredPolicy(quiz);
     return { id: quiz._id, gradeMax: quiz.maxGrade };
   }
 
@@ -111,6 +122,8 @@ export class QuizService implements ActivityHandler, OnModuleInit {
       'showCorrectAnswers',
       'requirePassword',
       'password',
+      'requiredToPass',
+      'blocksProgress',
     ];
     for (const key of plain) {
       if (settings[key] !== undefined) {
@@ -118,6 +131,7 @@ export class QuizService implements ActivityHandler, OnModuleInit {
       }
     }
     await quiz.save();
+    await this.applyRequiredPolicy(quiz);
     return { id: quiz._id, gradeMax: quiz.maxGrade };
   }
 
@@ -182,6 +196,14 @@ export class QuizService implements ActivityHandler, OnModuleInit {
       reviewAfterClose: quiz.reviewAfterClose,
       showCorrectAnswers: quiz.showCorrectAnswers,
       passingGrade: quiz.passingGrade,
+      requiredToPass: quiz.requiredToPass,
+      blocksProgress: quiz.blocksProgress,
+      attemptsAllowedLabel:
+        quiz.attemptsAllowed === 0
+          ? 'Intentos ilimitados'
+          : quiz.attemptsAllowed === 1
+            ? 'Un solo intento'
+            : `${quiz.attemptsAllowed} intentos`,
       questions: quiz.slots
         .sort((a, b) => a.slot - b.slot)
         .map((slot) => ({
@@ -198,6 +220,60 @@ export class QuizService implements ActivityHandler, OnModuleInit {
         })),
       totalMarks: quiz.slots.reduce((sum, s) => sum + s.maxMark, 0),
     };
+  }
+
+  /* ------------------------ Examen obligatorio --------------------------- */
+
+  /**
+   * Traslada «este examen es obligatorio» al resto del sistema.
+   *
+   * Un ajuste marcado en la pantalla del examen no sirve de nada si el libro de
+   * notas y el seguimiento de finalización no se enteran: sin nota de aprobado
+   * en el ítem, la nota final no sabría distinguir aprobado de suspenso, y sin
+   * la regla de finalización la actividad se daría por hecha con solo entregarla.
+   * Por eso los tres se ajustan juntos aquí y no a mano en cada pantalla.
+   */
+  private async applyRequiredPolicy(quiz: QuizDocument): Promise<void> {
+    // Un examen obligatorio sin nota de corte no se puede aprobar ni suspender:
+    // se le pone la mitad, que es el corte por omisión más habitual, y quien
+    // configura el examen puede cambiarlo.
+    if (quiz.requiredToPass && quiz.passingGrade === null) {
+      quiz.passingGrade = round(quiz.maxGrade / 2, 2);
+      await quiz.save();
+    }
+
+    const module = await this.courses.findModuleByInstance(ModuleType.Quiz, quiz._id);
+    if (!module) return;
+
+    await this.grades.syncModuleItem({
+      courseId: quiz.course,
+      moduleType: ModuleType.Quiz,
+      instanceId: quiz._id,
+      courseModuleId: module._id,
+      name: quiz.name,
+      grademax: quiz.maxGrade,
+      gradepass: quiz.passingGrade,
+    });
+
+    const rules = { ...((module.completionRules ?? {}) as Record<string, unknown>) };
+    if (quiz.requiredToPass) {
+      // Aprobar, no solo intentar: es lo que significa «obligatorio».
+      rules.passGrade = true;
+      rules.attempt = true;
+      module.completionTracking = CompletionTracking.Automatic;
+    } else {
+      delete rules.passGrade;
+    }
+    module.completionRules = rules;
+    module.gradeMax = quiz.maxGrade;
+    await module.save();
+  }
+
+  /** Exámenes obligatorios de un curso, con su ítem de calificación. */
+  async requiredQuizzes(courseId: string | Types.ObjectId): Promise<QuizDocument[]> {
+    return this.model
+      .find({ course: toObjectId(courseId), requiredToPass: true })
+      .exec();
   }
 
   /* ---------------------------- Composición ------------------------------ */
@@ -482,21 +558,189 @@ export class QuizService implements ActivityHandler, OnModuleInit {
       throw new BadRequestException(`La puntuación debe estar entre 0 y ${response.maxMark}.`);
     }
 
-    response.mark = dto.mark;
+    response.mark = round(dto.mark, 2);
     response.feedback = dto.feedback ?? null;
     response.needsManualGrading = false;
     response.correct = dto.mark >= response.maxMark;
 
     const quiz = await this.findById(attempt.quiz);
+    await this.recalculateAttempt(attempt, quiz);
+    await this.afterGrading(attempt, quiz);
+    return this.attemptToDto(attempt);
+  }
+
+  /**
+   * Cola de corrección de un examen.
+   *
+   * Devuelve una fila por *respuesta* y no por intento: quien corrige treinta
+   * ensayos de la misma pregunta lo hace de un tirón, comparando unos con
+   * otros, y así puede ordenarlos por pregunta en la pantalla. `blockedAttempts`
+   * cuenta los intentos que todavía no tienen nota final porque les falta
+   * evaluar algo.
+   */
+  async gradingQueue(
+    quizId: string | Types.ObjectId,
+    users: Map<string, { firstName: string; lastName: string; email: string; avatarUrl: string | null }>,
+  ): Promise<QuizGradingQueue> {
+    const quiz = await this.findById(quizId);
+    const module = await this.courses.findModuleByInstance(ModuleType.Quiz, quiz._id);
+    const attempts = await this.attemptModel
+      .find({ quiz: quiz._id, state: QuizAttemptState.Finished })
+      .sort({ finishedAt: 1 })
+      .exec();
+
+    const questionIds = new Set<string>();
+    for (const attempt of attempts) {
+      for (const response of attempt.responses) questionIds.add(String(response.question));
+    }
+    const questions = await this.questions.findManyByIds([...questionIds]);
+    const byId = new Map(questions.map((q) => [q.id, q]));
+
+    const pending: QuizGradingItem[] = [];
+    const graded: QuizGradingItem[] = [];
+    let blocked = 0;
+
+    for (const attempt of attempts) {
+      const user = users.get(String(attempt.user));
+      const student = {
+        id: String(attempt.user),
+        fullName: user ? `${user.firstName} ${user.lastName}`.trim() : 'Alumno',
+        email: user?.email ?? '',
+        avatarUrl: user?.avatarUrl ?? null,
+      };
+      if (attempt.responses.some((r) => r.needsManualGrading)) blocked += 1;
+
+      for (const response of attempt.responses) {
+        const question = byId.get(String(response.question));
+        // Solo las que pide una persona: el resto ya tiene nota automática y
+        // llenar la cola con ellas escondería lo que de verdad falta.
+        if (!question || !this.questions.needsManualGrading(question)) continue;
+
+        const item: QuizGradingItem = {
+          attemptId: attempt.id,
+          moduleId: module ? module.id : '',
+          quizId: quiz.id,
+          quizName: quiz.name,
+          courseId: String(quiz.course),
+          attempt: attempt.attempt,
+          finishedAt: attempt.finishedAt?.toISOString() ?? null,
+          student,
+          questionId: question.id,
+          questionName: question.name,
+          questionText: question.questionText,
+          questionType: question.type,
+          answer: response.answer,
+          maxMark: response.maxMark,
+          mark: response.mark,
+          feedback: response.feedback,
+          rubric: question.rubric,
+        };
+        if (response.needsManualGrading) pending.push(item);
+        else graded.push(item);
+      }
+    }
+
+    return { pending, graded, blockedAttempts: blocked };
+  }
+
+  /**
+   * Guarda una tanda de correcciones.
+   *
+   * Se agrupan por intento para recalcular la nota una sola vez por alumno:
+   * hacerlo respuesta a respuesta escribiría en el libro de notas tantas veces
+   * como preguntas tenga el examen.
+   */
+  async bulkGrade(dto: BulkGradeDto): Promise<{ graded: number }> {
+    const byAttempt = new Map<string, BulkGradeDto['grades']>();
+    for (const grade of dto.grades) {
+      if (!byAttempt.has(grade.attemptId)) byAttempt.set(grade.attemptId, []);
+      byAttempt.get(grade.attemptId)!.push(grade);
+    }
+
+    let count = 0;
+    for (const [attemptId, grades] of byAttempt) {
+      const attempt = await this.attemptModel.findById(toObjectId(attemptId)).exec();
+      if (!attempt) continue;
+      const quiz = await this.findById(attempt.quiz);
+
+      for (const grade of grades) {
+        const response = attempt.responses.find((r) => String(r.question) === grade.questionId);
+        if (!response) continue;
+        if (grade.mark < 0 || grade.mark > response.maxMark) {
+          throw new BadRequestException(
+            `La puntuación debe estar entre 0 y ${response.maxMark}.`,
+          );
+        }
+        response.mark = round(grade.mark, 2);
+        response.feedback = grade.feedback ?? null;
+        response.needsManualGrading = false;
+        response.correct = grade.mark >= response.maxMark;
+        count += 1;
+      }
+
+      await this.recalculateAttempt(attempt, quiz);
+      await this.afterGrading(attempt, quiz);
+    }
+    return { graded: count };
+  }
+
+  /** Recalcula la nota del intento a partir de las puntuaciones actuales. */
+  private async recalculateAttempt(
+    attempt: QuizAttemptDocument,
+    quiz: QuizDocument,
+  ): Promise<void> {
     const sum = attempt.responses.reduce((total, r) => total + (r.mark ?? 0), 0);
     const totalMarks = attempt.responses.reduce((total, r) => total + r.maxMark, 0);
     attempt.sumGrades = round(sum, 2);
     attempt.grade = totalMarks > 0 ? round((sum / totalMarks) * quiz.maxGrade, 2) : 0;
     attempt.markModified('responses');
     await attempt.save();
+  }
+
+  /**
+   * Cierra el círculo tras corregir: nota al libro, finalización y aviso.
+   *
+   * Solo cuando ya no queda nada por evaluar; con una pregunta pendiente, la
+   * nota que se publicaría sería falsa y el alumno la vería antes de tiempo.
+   */
+  private async afterGrading(
+    attempt: QuizAttemptDocument,
+    quiz: QuizDocument,
+  ): Promise<void> {
+    if (attempt.responses.some((r) => r.needsManualGrading)) return;
 
     await this.syncGrade(quiz, attempt.user);
-    return this.attemptToDto(attempt);
+
+    const module = await this.courses.findModuleByInstance(ModuleType.Quiz, quiz._id);
+    if (module) {
+      await this.completion.evaluate(module._id, attempt.user, {
+        attempted: true,
+        graded: true,
+        passed:
+          quiz.passingGrade !== null ? (attempt.grade ?? 0) >= quiz.passingGrade : undefined,
+      });
+    }
+
+    await this.notifications.notify({
+      tenantId: quiz.tenant,
+      userIds: [attempt.user],
+      component: 'mod/quiz',
+      eventName: 'quiz_graded',
+      subject: `Resultado de «${quiz.name}»`,
+      body: `Su examen ya está corregido: ${attempt.grade} sobre ${quiz.maxGrade}.`,
+      contextUrl: module ? `/mod/quiz/${module.id}` : undefined,
+    });
+  }
+
+  /** Cuántos intentos esperan corrección, para avisar en la pantalla del examen. */
+  async pendingManualGrading(quizId: string | Types.ObjectId): Promise<number> {
+    return this.attemptModel
+      .countDocuments({
+        quiz: toObjectId(quizId),
+        state: QuizAttemptState.Finished,
+        'responses.needsManualGrading': true,
+      })
+      .exec();
   }
 
   async attemptsOfUser(

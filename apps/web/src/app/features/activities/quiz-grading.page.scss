@@ -1,0 +1,131 @@
+@use '../../../styles/tokens' as *;
+
+.conmutador {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+}
+
+.selector {
+  display: flex;
+  gap: var(--maya-space-2);
+  margin-bottom: var(--maya-space-4);
+  overflow-x: auto;
+  /* La lista de preguntas puede ser larga: se desplaza dentro de su caja y no
+     empuja la página a lo ancho. */
+  padding-bottom: var(--maya-space-1);
+}
+
+.selector__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--maya-space-4);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface);
+  color: var(--maya-text);
+  font-size: var(--maya-text-sm);
+  cursor: pointer;
+
+  &.is-active {
+    border-color: var(--maya-primary);
+    background: var(--maya-primary-soft);
+    color: var(--maya-primary-deep);
+    font-weight: 600;
+  }
+}
+
+.selector__contador {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-primary);
+  color: #fff;
+  font-size: var(--maya-text-xs);
+  font-weight: 700;
+}
+
+.pauta {
+  margin-bottom: var(--maya-space-4);
+  border-left: 3px solid var(--maya-info);
+}
+
+.respuestas {
+  list-style: none;
+  margin: 0 0 var(--maya-space-6);
+  padding: 0;
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+.respuesta__cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-3);
+}
+
+.respuesta__hecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--maya-success);
+}
+
+.respuesta__pregunta {
+  margin: 0 0 var(--maya-space-2);
+}
+
+.respuesta__texto {
+  margin: 0 0 var(--maya-space-4);
+  padding: var(--maya-space-4);
+  background: var(--maya-surface-alt);
+  border-radius: var(--maya-radius-md);
+  font-size: var(--maya-text-sm);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.respuesta__evaluacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-3);
+}
+
+.respuesta__campo {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+
+  input {
+    width: 96px;
+  }
+}
+
+.respuesta__atajos {
+  display: flex;
+  gap: var(--maya-space-2);
+}
+
+.barra {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--maya-space-3);
+  padding: var(--maya-space-3) var(--maya-space-4);
+  padding-bottom: calc(var(--maya-space-3) + var(--maya-safe-bottom, 0px));
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  box-shadow: var(--maya-shadow-md);
+}

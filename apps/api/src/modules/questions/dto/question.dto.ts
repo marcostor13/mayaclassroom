@@ -33,6 +33,12 @@ export class CreateQuestionDto {
   @ApiProperty() @IsMongoId() categoryId!: string;
 
   @ApiPropertyOptional() @IsString() @IsOptional() generalFeedback?: string;
+
+  @ApiPropertyOptional({ description: 'Pauta de corrección; solo la ve quien corrige' })
+  @IsString()
+  @IsOptional()
+  rubric?: string;
+
   @ApiPropertyOptional() @IsNumber() @IsOptional() defaultMark?: number;
   @ApiPropertyOptional() @IsNumber() @IsOptional() penalty?: number;
   @ApiPropertyOptional() @IsBoolean() @IsOptional() shuffleAnswers?: boolean;

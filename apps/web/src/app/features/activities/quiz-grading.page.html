@@ -1,0 +1,174 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a [routerLink]="['/mod/quiz', moduleId]">Examen</a></li>
+    <li>Corrección</li>
+  </ol>
+</nav>
+
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Corrección del examen</h1>
+    <p class="maya-page-header__subtitle">
+      @if (pendingCount()) {
+        {{ pendingCount() }} respuestas esperan evaluación
+        @if (queue()?.blockedAttempts) {
+          · {{ queue()!.blockedAttempts }} exámenes sin nota final hasta terminarlas
+        }
+      } @else {
+        No queda nada por evaluar
+      }
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    <label class="conmutador maya-small">
+      <input
+        type="checkbox"
+        [ngModel]="showGraded()"
+        (ngModelChange)="showGraded.set($event)"
+      />
+      Ver también las ya corregidas
+    </label>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 360px"></div>
+} @else if (!items().length) {
+  <maya-empty-state
+    icon="check"
+    title="Nada pendiente de corregir"
+    description="Las preguntas de desarrollo de este examen ya están todas evaluadas."
+  />
+} @else {
+  @if (questions().length > 1) {
+    <!-- Elegir pregunta y no alumno: corregir la misma pregunta seguida es lo
+         que mantiene el criterio estable. -->
+    <div class="selector" role="tablist" aria-label="Preguntas por corregir">
+      <button
+        type="button"
+        role="tab"
+        class="selector__chip"
+        [class.is-active]="focusedQuestion() === null"
+        [attr.aria-selected]="focusedQuestion() === null"
+        (click)="focusedQuestion.set(null)"
+      >
+        Todas
+      </button>
+      @for (question of questions(); track question.id) {
+        <button
+          type="button"
+          role="tab"
+          class="selector__chip"
+          [class.is-active]="focusedQuestion() === question.id"
+          [attr.aria-selected]="focusedQuestion() === question.id"
+          (click)="focusedQuestion.set(question.id)"
+        >
+          {{ question.name }}
+          @if (question.pending) {
+            <span class="selector__contador">{{ question.pending }}</span>
+          }
+        </button>
+      }
+    </div>
+  }
+
+  @if (rubric(); as pauta) {
+    <aside class="pauta maya-card">
+      <div class="maya-card__body">
+        <p class="maya-tiny maya-bold">
+          <maya-icon name="info" [size]="14" /> Pauta de corrección
+        </p>
+        <p class="maya-small">{{ pauta }}</p>
+      </div>
+    </aside>
+  }
+
+  <ul class="respuestas">
+    @for (item of visible(); track key(item)) {
+      <li class="respuesta maya-card">
+        <div class="maya-card__body">
+          <header class="respuesta__cabecera">
+            <maya-avatar
+              [name]="item.student.fullName"
+              [src]="item.student.avatarUrl"
+              size="sm"
+            />
+            <div style="flex: 1; min-width: 0">
+              <p class="maya-small maya-bold">{{ item.student.fullName }}</p>
+              <p class="maya-tiny maya-subtle">
+                Intento {{ item.attempt }}
+                @if (item.finishedAt) {
+                  · entregado el {{ item.finishedAt | mayaDate: 'datetime' }}
+                }
+              </p>
+            </div>
+            @if (item.mark !== null) {
+              <span class="respuesta__hecha maya-tiny">
+                <maya-icon name="check" [size]="13" /> Corregida
+              </span>
+            }
+          </header>
+
+          @if (focusedQuestion() === null) {
+            <p class="maya-tiny maya-subtle respuesta__pregunta">{{ item.questionText }}</p>
+          }
+
+          <blockquote class="respuesta__texto">{{ answerText(item) || '(sin respuesta)' }}</blockquote>
+
+          <div class="respuesta__evaluacion">
+            <label class="respuesta__nota">
+              <span class="maya-label">Puntuación</span>
+              <span class="respuesta__campo">
+                <input
+                  type="number"
+                  class="maya-input"
+                  min="0"
+                  [max]="item.maxMark"
+                  step="0.5"
+                  [value]="draft(item).mark"
+                  (input)="setMark(item, $any($event.target).value)"
+                />
+                <span class="maya-small maya-subtle">/ {{ item.maxMark }}</span>
+              </span>
+            </label>
+            <div class="respuesta__atajos">
+              <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="full(item)">
+                Completa
+              </button>
+              <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="zero(item)">
+                Cero
+              </button>
+            </div>
+          </div>
+
+          <label class="maya-field">
+            <span class="maya-label">Comentario para el alumno</span>
+            <textarea
+              class="maya-input"
+              rows="2"
+              [value]="draft(item).feedback"
+              (input)="setFeedback(item, $any($event.target).value)"
+              placeholder="Qué estuvo bien y qué faltó"
+            ></textarea>
+          </label>
+        </div>
+      </li>
+    }
+  </ul>
+
+  <!-- La barra queda pegada abajo: en una tanda larga, guardar no debe
+       obligar a subir al principio. -->
+  <div class="barra">
+    <p class="maya-small">
+      {{ dirtyCount() }} respuestas listas para guardar
+    </p>
+    <button
+      type="button"
+      class="maya-btn maya-btn--primary"
+      [disabled]="!dirtyCount() || saving()"
+      (click)="save()"
+    >
+      {{ saving() ? 'Guardando…' : 'Guardar correcciones' }}
+    </button>
+  </div>
+}

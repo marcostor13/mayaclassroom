@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
+  CAP,
   CourseModuleDto,
   QuestionDto,
   QuestionType,
@@ -9,6 +10,7 @@ import {
   QuizDto,
 } from '@maya/shared';
 import { ActivitiesService } from '../../core/services/activities.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { FormatDatePipe, IconComponent, SafeHtmlPipe } from '../../shared';
 
@@ -22,7 +24,12 @@ import { FormatDatePipe, IconComponent, SafeHtmlPipe } from '../../shared';
 export class QuizPage {
   private readonly route = inject(ActivatedRoute);
   private readonly activities = inject(ActivitiesService);
+  private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+
+  /** Los accesos de docencia se ocultan a quien no puede usarlos. */
+  readonly canManage = computed(() => this.auth.can(CAP.QUIZ_MANAGE));
+  readonly canGrade = computed(() => this.auth.can(CAP.QUIZ_GRADE));
 
   readonly QuestionType = QuestionType;
   readonly moduleId = this.route.snapshot.paramMap.get('moduleId')!;
@@ -154,11 +161,32 @@ export class QuizPage {
         this.remaining.set(null);
         this.attempts.update((list) => [...list.filter((a) => a.id !== finished.id), finished]);
         this.toast.success(
-          auto ? 'Tiempo agotado' : 'Cuestionario enviado',
-          `Calificación: ${finished.grade} / ${this.quiz()?.maxGrade}`,
+          auto ? 'Tiempo agotado' : 'Examen enviado',
+          this.pendingReview(finished)
+            ? 'Tiene preguntas de desarrollo: recibirá la nota cuando el profesorado las evalúe.'
+            : `Calificación: ${finished.grade} / ${this.quiz()?.maxGrade}`,
         );
       },
     });
+  }
+
+  /**
+   * Veredicto del intento, o `null` si el examen no tiene nota de corte.
+   *
+   * Devuelve la etiqueta ya escrita en lugar de un booleano porque «sin nota
+   * mínima» y «suspenso» son cosas distintas y un booleano las confundiría.
+   */
+  aprobado(attempt: QuizAttemptDto, quiz: QuizDto): string | null {
+    const corte = quiz.passingGrade;
+    if (corte === null || corte === undefined || attempt.grade === null || attempt.grade === undefined) {
+      return null;
+    }
+    return attempt.grade >= corte ? 'Aprobado' : 'Suspenso';
+  }
+
+  /** ¿Este intento espera todavía que una persona evalúe alguna respuesta? */
+  pendingReview(attempt: QuizAttemptDto): boolean {
+    return attempt.responses.some((response) => response.needsManualGrading);
   }
 
   stateLabel(state: QuizAttemptState): string {

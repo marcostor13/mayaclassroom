@@ -13,8 +13,31 @@ import {
   QuestionDto,
   QuizAttemptDto,
   QuizDto,
+  QuizGradeMethod,
+  QuizGradingQueue,
 } from '../models';
 import { ApiService } from './api.service';
+
+/** Ajustes editables de un examen. Refleja `QuizSettingsDto` de la API. */
+export interface QuizSettingsPayload {
+  name?: string;
+  intro?: string;
+  timeOpen?: string;
+  timeClose?: string;
+  timeLimitSeconds?: number;
+  attemptsAllowed?: number;
+  gradeMethod?: QuizGradeMethod;
+  maxGrade?: number;
+  passingGrade?: number;
+  shuffleQuestions?: boolean;
+  shuffleAnswers?: boolean;
+  questionsPerPage?: number;
+  navMethod?: 'free' | 'sequential';
+  reviewAfterClose?: boolean;
+  showCorrectAnswers?: boolean;
+  requiredToPass?: boolean;
+  blocksProgress?: boolean;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ActivitiesService {
@@ -75,6 +98,38 @@ export class ActivitiesService {
 
   quizForEdit(moduleId: string): Observable<QuizDto> {
     return this.api.get<QuizDto>(`/mod/quiz/${moduleId}/edit`);
+  }
+
+  /** Guarda los ajustes del examen y devuelve cómo queda, con sus preguntas. */
+  saveQuizSettings(moduleId: string, payload: QuizSettingsPayload): Observable<QuizDto> {
+    return this.api.patch<QuizDto>(`/mod/quiz/${moduleId}/settings`, payload);
+  }
+
+  removeQuizQuestion(moduleId: string, questionId: string): Observable<QuizDto> {
+    return this.api.delete<QuizDto>(`/mod/quiz/${moduleId}/questions/${questionId}`);
+  }
+
+  reorderQuizQuestions(moduleId: string, questionIds: string[]): Observable<QuizDto> {
+    return this.api.patch<QuizDto>(`/mod/quiz/${moduleId}/questions/order`, { questionIds });
+  }
+
+  setQuizQuestionMark(moduleId: string, questionId: string, maxMark: number): Observable<QuizDto> {
+    return this.api.patch<QuizDto>(`/mod/quiz/${moduleId}/questions/${questionId}/mark`, {
+      maxMark,
+    });
+  }
+
+  /* ------------------------ Corrección de exámenes ----------------------- */
+
+  quizGradingQueue(moduleId: string): Observable<QuizGradingQueue> {
+    return this.api.get<QuizGradingQueue>(`/mod/quiz/${moduleId}/grading`);
+  }
+
+  saveQuizGrades(
+    moduleId: string,
+    grades: { attemptId: string; questionId: string; mark: number; feedback?: string }[],
+  ): Observable<{ graded: number }> {
+    return this.api.post<{ graded: number }>(`/mod/quiz/${moduleId}/grading`, { grades });
   }
 
   startAttempt(moduleId: string, password?: string): Observable<QuizAttemptDto> {

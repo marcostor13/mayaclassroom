@@ -3,9 +3,18 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CAP, ContextLevel } from '@maya/shared';
 import { CurrentUser, RequireCapability } from '../../../common/decorators';
 import type { RequestUser } from '../../../common/types/request-context';
+import { toObjectId } from '../../../common/utils';
 import { QuizService } from './quiz.service';
 import { CoursesService } from '../../courses/courses.service';
-import { AddQuizQuestionsDto, ManualGradeDto, SaveResponseDto } from './dto/quiz.dto';
+import { EnrolmentsService } from '../../enrolments/enrolments.service';
+import { UsersService } from '../../users/users.service';
+import {
+  AddQuizQuestionsDto,
+  BulkGradeDto,
+  ManualGradeDto,
+  QuizSettingsDto,
+  SaveResponseDto,
+} from './dto/quiz.dto';
 
 @ApiTags('Actividades')
 @ApiBearerAuth()
@@ -14,6 +23,8 @@ export class QuizController {
   constructor(
     private readonly quiz: QuizService,
     private readonly courses: CoursesService,
+    private readonly enrolments: EnrolmentsService,
+    private readonly users: UsersService,
   ) {}
 
   @Get(':moduleId')
@@ -34,6 +45,35 @@ export class QuizController {
   @ApiOperation({ summary: 'Cuestionario con sus preguntas para edición' })
   async edit(@Param('moduleId') moduleId: string) {
     const module = await this.courses.findModule(moduleId);
+    const quiz = await this.quiz.findById(module.instance);
+    const [dto, pending] = await Promise.all([
+      this.quiz.toDto(quiz, true),
+      this.quiz.pendingManualGrading(quiz._id),
+    ]);
+    return { ...dto, pendingManualGrading: pending };
+  }
+
+  @Patch(':moduleId/settings')
+  @RequireCapability(CAP.QUIZ_MANAGE, { contextLevel: ContextLevel.Module, param: 'moduleId' })
+  @ApiOperation({ summary: 'Guardar los ajustes del examen' })
+  async updateSettings(
+    @CurrentUser() user: RequestUser,
+    @Param('moduleId') moduleId: string,
+    @Body() dto: QuizSettingsDto,
+    @Body('name') name?: string,
+  ) {
+    const module = await this.courses.findModule(moduleId);
+    await this.quiz.update(module.instance, {
+      name,
+      settings: { ...dto },
+      userId: toObjectId(user.id),
+    });
+    // El nombre vive en dos sitios: el examen y la actividad que lo enlaza. Sin
+    // esto, la página del curso seguiría enseñando el nombre viejo.
+    if (name && name !== module.name) {
+      module.name = name;
+      await module.save();
+    }
     const quiz = await this.quiz.findById(module.instance);
     return this.quiz.toDto(quiz, true);
   }
@@ -126,6 +166,36 @@ export class QuizController {
   async statistics(@Param('moduleId') moduleId: string) {
     const module = await this.courses.findModule(moduleId);
     return this.quiz.statistics(module.instance);
+  }
+
+  @Get(':moduleId/grading')
+  @RequireCapability(CAP.QUIZ_GRADE, { contextLevel: ContextLevel.Module, param: 'moduleId' })
+  @ApiOperation({ summary: 'Cola de respuestas pendientes de evaluar' })
+  async gradingQueue(@Param('moduleId') moduleId: string) {
+    const module = await this.courses.findModule(moduleId);
+    const userIds = await this.enrolments.activeUserIds(module.course);
+    const users = await this.users.findManyByIds(userIds);
+    return this.quiz.gradingQueue(
+      module.instance,
+      new Map(
+        users.map((u) => [
+          u.id,
+          {
+            firstName: u.firstName,
+            lastName: u.lastName,
+            email: u.email,
+            avatarUrl: u.avatarUrl ?? null,
+          },
+        ]),
+      ),
+    );
+  }
+
+  @Post(':moduleId/grading')
+  @RequireCapability(CAP.QUIZ_GRADE, { contextLevel: ContextLevel.Module, param: 'moduleId' })
+  @ApiOperation({ summary: 'Guardar una tanda de correcciones' })
+  bulkGrade(@Body() dto: BulkGradeDto) {
+    return this.quiz.bulkGrade(dto);
   }
 
   @Post(':moduleId/attempts/:attemptId/grade')

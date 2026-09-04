@@ -132,7 +132,7 @@
 
   <header class="activity-header">
     <span class="activity-header__icon"><maya-icon name="help-circle" [size]="24" /></span>
-    <div>
+    <div style="flex: 1">
       <h1 class="activity-header__title">{{ test.name }}</h1>
       <div class="activity-header__meta">
         <span><maya-icon name="layers" [size]="15" /> {{ test.questions.length }} preguntas</span>
@@ -142,8 +142,33 @@
             <maya-icon name="clock" [size]="15" /> {{ test.timeLimitSeconds / 60 }} minutos
           </span>
         }
+        @if (test.requiredToPass) {
+          <!-- El alumno debe saber antes de empezar que este no es de repaso. -->
+          <span class="obligatorio">
+            <maya-icon name="shield" [size]="15" /> Obligatorio · aprueba con
+            {{ test.passingGrade }} de {{ test.maxGrade }}
+          </span>
+        }
       </div>
     </div>
+    @if (canManage()) {
+      <div class="maya-row" style="gap: var(--maya-space-2); flex-wrap: wrap">
+        <a
+          [routerLink]="['/mod/quiz', moduleId, 'edit']"
+          class="maya-btn maya-btn--secondary maya-btn--sm"
+        >
+          <maya-icon name="settings" [size]="15" /> Editar examen
+        </a>
+        @if (canGrade()) {
+          <a
+            [routerLink]="['/mod/quiz', moduleId, 'grading']"
+            class="maya-btn maya-btn--secondary maya-btn--sm"
+          >
+            <maya-icon name="edit" [size]="15" /> Corregir
+          </a>
+        }
+      </div>
+    }
   </header>
 
   @if (test.intro) {
@@ -181,7 +206,20 @@
                   <td><span class="maya-badge">{{ stateLabel(item.state) }}</span></td>
                   <td class="maya-small">{{ item.startedAt | mayaDate: 'datetime' }}</td>
                   <td class="maya-bold">
-                    {{ item.grade !== null ? item.grade + ' / ' + test.maxGrade : '—' }}
+                    @if (pendingReview(item)) {
+                      <!-- La nota que hay ahora no cuenta las preguntas que aún
+                           tiene que leer el profesorado: enseñarla engañaría. -->
+                      <span class="maya-small maya-subtle">Pendiente de corrección</span>
+                    } @else if (item.grade !== null && item.grade !== undefined) {
+                      {{ item.grade }} / {{ test.maxGrade }}
+                      @if (aprobado(item, test); as veredicto) {
+                        <span class="maya-badge" [class.maya-badge--success]="veredicto === 'Aprobado'">
+                          {{ veredicto }}
+                        </span>
+                      }
+                    } @else {
+                      —
+                    }
                   </td>
                 </tr>
               }

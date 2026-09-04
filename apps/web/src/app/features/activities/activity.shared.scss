@@ -182,3 +182,9 @@
 
   &__author { font-weight: 600; font-size: var(--maya-text-sm); }
 }
+
+/* Distintivo de examen obligatorio en la portada de la actividad. */
+.obligatorio {
+  color: var(--maya-primary-ink);
+  font-weight: 600;
+}

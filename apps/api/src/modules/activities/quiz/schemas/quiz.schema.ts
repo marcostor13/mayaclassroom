@@ -51,6 +51,28 @@ export class Quiz extends BaseDocument {
   @Prop({ default: false }) requirePassword!: boolean;
   @Prop({ type: String, default: null }) password!: string | null;
 
+  /**
+   * Examen obligatorio del módulo.
+   *
+   * Es lo que separa un examen de un cuestionario de repaso: al marcarlo, la
+   * actividad no se da por completada hasta que se aprueba, y el curso puede
+   * exigir además que todos los obligatorios estén aprobados para dar el
+   * aprobado final. Sin `passingGrade` no tiene sentido, así que el servicio
+   * asigna la mitad de la nota máxima si no se indicó ninguna.
+   */
+  @Prop({ default: false, index: true })
+  requiredToPass!: boolean;
+
+  /**
+   * Suspenderlo cierra el paso a lo que viene después.
+   *
+   * Va aparte de `requiredToPass` porque son decisiones distintas: un examen
+   * puede ser obligatorio para el título y aun así dejar seguir estudiando
+   * mientras se recupera.
+   */
+  @Prop({ default: false })
+  blocksProgress!: boolean;
+
   @Prop({ type: [QuizSlot], default: [] })
   slots!: QuizSlot[];
 }

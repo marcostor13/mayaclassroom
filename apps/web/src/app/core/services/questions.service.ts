@@ -9,6 +9,8 @@ export interface QuestionPayload {
   questionText: string;
   categoryId: string;
   generalFeedback?: string;
+  /** Pauta de corrección de las preguntas que evalúa una persona. */
+  rubric?: string;
   defaultMark?: number;
   penalty?: number;
   shuffleAnswers?: boolean;
@@ -55,6 +57,11 @@ export class QuestionsService {
   /** Categoría raíz de la empresa; la API la crea si aún no existe. */
   defaultCategory(): Observable<QuestionCategoryDto> {
     return this.api.get<QuestionCategoryDto>('/questions/categories/default');
+  }
+
+  /** Categoría del curso; es donde caen las preguntas escritas desde un examen. */
+  defaultCourseCategory(courseId: string): Observable<QuestionCategoryDto> {
+    return this.api.get<QuestionCategoryDto>(`/questions/categories/course/${courseId}/default`);
   }
 
   createCategory(payload: {

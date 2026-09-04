@@ -228,6 +228,22 @@ export const routes: Routes = [
         loadComponent: () => import('./features/activities/quiz.page').then((m) => m.QuizPage),
       },
       {
+        path: 'mod/quiz/:moduleId/edit',
+        title: 'Editar examen · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.QUIZ_MANAGE] },
+        loadComponent: () =>
+          import('./features/activities/quiz-editor.page').then((m) => m.QuizEditorPage),
+      },
+      {
+        path: 'mod/quiz/:moduleId/grading',
+        title: 'Corregir examen · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.QUIZ_GRADE] },
+        loadComponent: () =>
+          import('./features/activities/quiz-grading.page').then((m) => m.QuizGradingPage),
+      },
+      {
         path: 'mod/forum/:moduleId',
         loadComponent: () => import('./features/activities/forum.page').then((m) => m.ForumPage),
       },

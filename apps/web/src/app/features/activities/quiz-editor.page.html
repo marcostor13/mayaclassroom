@@ -1,0 +1,665 @@
+<nav aria-label="Miga de pan">
+  <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+    <li><a routerLink="/courses">Mis cursos</a></li>
+    @if (quiz(); as data) {
+      <li><a [routerLink]="['/courses', data.courseId]">Curso</a></li>
+    }
+    <li><a [routerLink]="['/mod/quiz', moduleId]">{{ name() || 'Examen' }}</a></li>
+    <li>Editar</li>
+  </ol>
+</nav>
+
+<header class="maya-page-header">
+  <div>
+    <h1 class="maya-page-header__title">Editor de examen</h1>
+    <p class="maya-page-header__subtitle">
+      {{ slots().length }} preguntas · {{ totalMarks() }} puntos ·
+      {{ passingLabel() }}
+      @if (manualCount()) {
+        · {{ manualCount() }} de desarrollo
+      }
+    </p>
+  </div>
+  <div class="maya-page-header__actions">
+    @if (pendingGrading()) {
+      <a
+        [routerLink]="['/mod/quiz', moduleId, 'grading']"
+        class="maya-btn maya-btn--primary maya-btn--sm"
+      >
+        <maya-icon name="edit" [size]="15" /> Corregir ({{ pendingGrading() }})
+      </a>
+    }
+    <a [routerLink]="['/mod/quiz', moduleId]" class="maya-btn maya-btn--secondary maya-btn--sm">
+      <maya-icon name="eye" [size]="15" /> Ver como alumno
+    </a>
+  </div>
+</header>
+
+@if (!ready() && !loading()) {
+  <!-- Se avisa antes de que alguien lo publique creyendo que ya está: un
+       examen sin preguntas no deja empezar ningún intento. -->
+  <aside class="aviso maya-card" style="margin-bottom: var(--maya-space-4)">
+    <maya-icon name="alert" [size]="18" />
+    <p class="maya-small">
+      Este examen todavía no tiene preguntas, así que nadie puede realizarlo.
+    </p>
+  </aside>
+}
+
+<div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-5)">
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'questions'"
+    [attr.aria-selected]="tab() === 'questions'"
+    (click)="tab.set('questions')"
+  >
+    Preguntas
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
+    [class.is-active]="tab() === 'settings'"
+    [attr.aria-selected]="tab() === 'settings'"
+    (click)="tab.set('settings')"
+  >
+    Ajustes y calificación
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 400px"></div>
+} @else if (tab() === 'questions') {
+  <!-- Añadir va arriba: montar un examen es, sobre todo, escribir preguntas. -->
+  <section class="tipos" aria-label="Añadir una pregunta">
+    @for (tipo of tipos; track tipo.type) {
+      <button type="button" class="tipos__boton" (click)="openComposer(tipo.type)">
+        <maya-icon [name]="tipo.icon" [size]="18" />
+        <span class="tipos__nombre">{{ tipo.label }}</span>
+        <span class="tipos__pista maya-tiny maya-subtle">{{ tipo.hint }}</span>
+      </button>
+    }
+    <button type="button" class="tipos__boton tipos__boton--banco" (click)="openBank()">
+      <maya-icon name="database" [size]="18" />
+      <span class="tipos__nombre">Del banco</span>
+      <span class="tipos__pista maya-tiny maya-subtle">Reutilizar preguntas ya escritas</span>
+    </button>
+  </section>
+
+  @if (!slots().length) {
+    <maya-empty-state
+      icon="help-circle"
+      title="Sin preguntas todavía"
+      description="Elija arriba un tipo de pregunta para empezar a componer el examen."
+    />
+  } @else {
+    <ol class="preguntas">
+      @for (slot of slots(); track slot.questionId; let i = $index) {
+        <li class="pregunta maya-card">
+          <div class="maya-card__body">
+            <div class="pregunta__cabecera">
+              <span class="pregunta__numero">{{ i + 1 }}</span>
+              <div style="flex: 1; min-width: 0">
+                <p class="pregunta__enunciado maya-small">
+                  {{ slot.question?.questionText || slot.question?.name || 'Pregunta' }}
+                </p>
+                <p class="maya-tiny maya-subtle">
+                  {{ typeLabel(slot.question?.type) }}
+                  @if (slot.question?.type === QuestionType.Essay) {
+                    · la evalúa el profesorado
+                  }
+                </p>
+              </div>
+              <div class="pregunta__acciones">
+                <label class="pregunta__nota">
+                  <span class="maya-sr-only">Puntuación de la pregunta</span>
+                  <input
+                    type="number"
+                    class="maya-input maya-input--sm"
+                    min="0.5"
+                    step="0.5"
+                    [value]="slot.maxMark"
+                    (change)="setMark(slot.questionId, +$any($event.target).value)"
+                  />
+                  <span class="maya-tiny maya-subtle">pts</span>
+                </label>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  aria-label="Subir"
+                  [disabled]="i === 0"
+                  (click)="move(i, -1)"
+                >
+                  <maya-icon name="chevron-up" [size]="16" />
+                </button>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  aria-label="Bajar"
+                  [disabled]="i === slots().length - 1"
+                  (click)="move(i, 1)"
+                >
+                  <maya-icon name="chevron-down" [size]="16" />
+                </button>
+                @if (slot.question) {
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon"
+                    aria-label="Editar"
+                    (click)="editQuestion(slot.question!, slot.maxMark)"
+                  >
+                    <maya-icon name="edit" [size]="16" />
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  aria-label="Quitar del examen"
+                  (click)="remove(slot.questionId, slot.question?.name ?? 'la pregunta')"
+                >
+                  <maya-icon name="trash" [size]="16" />
+                </button>
+              </div>
+            </div>
+
+            @if (slot.question?.answers?.length) {
+              <ul class="opciones">
+                @for (answer of slot.question!.answers; track answer.id) {
+                  <li class="opciones__item maya-tiny" [class.opciones__item--ok]="answer.fraction > 0">
+                    <maya-icon [name]="answer.fraction > 0 ? 'check' : 'circle'" [size]="13" />
+                    {{ answer.text }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+  }
+} @else {
+  <!-- Ajustes -->
+  <div class="ajustes">
+    <section class="maya-card">
+      <div class="maya-card__body maya-stack">
+        <h2 class="maya-card__title">Identidad</h2>
+        <label class="maya-field">
+          <span class="maya-label">Nombre del examen</span>
+          <input class="maya-input" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+        </label>
+        <label class="maya-field">
+          <span class="maya-label">Instrucciones</span>
+          <textarea
+            class="maya-input"
+            rows="3"
+            [ngModel]="intro()"
+            (ngModelChange)="intro.set($event)"
+            placeholder="Lo que el alumno debe saber antes de empezar"
+          ></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="maya-card">
+      <div class="maya-card__body maya-stack">
+        <h2 class="maya-card__title">Calificación</h2>
+        <div class="pareja">
+          <label class="maya-field">
+            <span class="maya-label">Nota máxima</span>
+            <input
+              type="number"
+              class="maya-input"
+              min="1"
+              [ngModel]="maxGrade()"
+              (ngModelChange)="maxGrade.set(+$event)"
+            />
+          </label>
+          <label class="maya-field">
+            <span class="maya-label">Nota mínima para aprobar</span>
+            <input
+              type="number"
+              class="maya-input"
+              min="0"
+              step="0.5"
+              [ngModel]="passingGrade()"
+              (ngModelChange)="passingGrade.set($event === null || $event === '' ? null : +$event)"
+              placeholder="Sin nota mínima"
+            />
+          </label>
+        </div>
+
+        <label class="maya-field">
+          <span class="maya-label">Con varios intentos, la nota que cuenta es</span>
+          <select
+            class="maya-input"
+            [ngModel]="gradeMethod()"
+            (ngModelChange)="gradeMethod.set($event)"
+          >
+            @for (method of gradeMethods; track method.value) {
+              <option [value]="method.value">{{ method.label }}</option>
+            }
+          </select>
+        </label>
+
+        <!-- Los dos ajustes que convierten un cuestionario en un examen. -->
+        <label class="conmutador">
+          <input
+            type="checkbox"
+            [ngModel]="requiredToPass()"
+            (ngModelChange)="requiredToPass.set($event)"
+          />
+          <span>
+            <span class="maya-bold">Obligatorio para superar el módulo</span>
+            <span class="maya-tiny maya-subtle">
+              La actividad no se da por completada hasta aprobarlo, y el curso puede
+              exigir todos los obligatorios para dar el aprobado final.
+            </span>
+          </span>
+        </label>
+        <label class="conmutador">
+          <input
+            type="checkbox"
+            [ngModel]="blocksProgress()"
+            (ngModelChange)="blocksProgress.set($event)"
+          />
+          <span>
+            <span class="maya-bold">Suspenderlo cierra el paso al resto del curso</span>
+            <span class="maya-tiny maya-subtle">
+              Úselo solo cuando lo que viene después no tenga sentido sin haberlo superado.
+            </span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <section class="maya-card">
+      <div class="maya-card__body maya-stack">
+        <h2 class="maya-card__title">Realización</h2>
+        <div class="pareja">
+          <label class="maya-field">
+            <span class="maya-label">Intentos permitidos</span>
+            <input
+              type="number"
+              class="maya-input"
+              min="0"
+              [ngModel]="attemptsAllowed()"
+              (ngModelChange)="attemptsAllowed.set(+$event)"
+            />
+            <span class="maya-tiny maya-subtle">0 = sin límite</span>
+          </label>
+          <label class="maya-field">
+            <span class="maya-label">Tiempo límite (minutos)</span>
+            <input
+              type="number"
+              class="maya-input"
+              min="0"
+              [ngModel]="timeLimitMinutes()"
+              (ngModelChange)="timeLimitMinutes.set(+$event)"
+            />
+            <span class="maya-tiny maya-subtle">0 = sin límite</span>
+          </label>
+        </div>
+        <div class="pareja">
+          <label class="maya-field">
+            <span class="maya-label">Se abre</span>
+            <input
+              type="datetime-local"
+              class="maya-input"
+              [ngModel]="timeOpen()"
+              (ngModelChange)="timeOpen.set($event)"
+            />
+          </label>
+          <label class="maya-field">
+            <span class="maya-label">Se cierra</span>
+            <input
+              type="datetime-local"
+              class="maya-input"
+              [ngModel]="timeClose()"
+              (ngModelChange)="timeClose.set($event)"
+            />
+          </label>
+        </div>
+
+        <label class="conmutador">
+          <input
+            type="checkbox"
+            [ngModel]="shuffleQuestions()"
+            (ngModelChange)="shuffleQuestions.set($event)"
+          />
+          <span class="maya-small">Barajar el orden de las preguntas</span>
+        </label>
+        <label class="conmutador">
+          <input
+            type="checkbox"
+            [ngModel]="shuffleAnswers()"
+            (ngModelChange)="shuffleAnswers.set($event)"
+          />
+          <span class="maya-small">Barajar las alternativas de cada pregunta</span>
+        </label>
+        <label class="conmutador">
+          <input
+            type="checkbox"
+            [ngModel]="showCorrectAnswers()"
+            (ngModelChange)="showCorrectAnswers.set($event)"
+          />
+          <span class="maya-small">Mostrar las respuestas correctas al terminar</span>
+        </label>
+      </div>
+    </section>
+
+    <div class="ajustes__pie">
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        [disabled]="saving()"
+        (click)="saveSettings()"
+      >
+        {{ saving() ? 'Guardando…' : 'Guardar ajustes' }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Compositor de preguntas -->
+@if (composerOpen()) {
+  <maya-modal
+    [title]="(editingId() ? 'Editar ' : 'Nueva ') + typeLabel(draftType()).toLowerCase()"
+    (dismissed)="closeComposer()"
+  >
+    <div class="maya-stack">
+      <label class="maya-field">
+        <span class="maya-label">Enunciado</span>
+        <textarea
+          class="maya-input"
+          rows="3"
+          [ngModel]="draftText()"
+          (ngModelChange)="draftText.set($event)"
+          placeholder="¿Qué se pregunta?"
+        ></textarea>
+      </label>
+
+      @switch (draftType()) {
+        @case (QuestionType.MultiChoice) {
+          <label class="conmutador">
+            <input
+              type="checkbox"
+              [ngModel]="draftMultiple()"
+              (ngModelChange)="draftMultiple.set($event)"
+            />
+            <span class="maya-small">Admite varias respuestas correctas</span>
+          </label>
+          <fieldset class="alternativas">
+            <legend class="maya-label">Alternativas</legend>
+            @for (option of draftOptions(); track $index) {
+              <div class="alternativa">
+                <button
+                  type="button"
+                  class="alternativa__marca"
+                  [class.alternativa__marca--ok]="option.correct"
+                  [attr.aria-pressed]="option.correct"
+                  (click)="toggleCorrect($index)"
+                >
+                  <maya-icon name="check" [size]="14" />
+                  <span class="maya-sr-only">Marcar como correcta</span>
+                </button>
+                <input
+                  class="maya-input"
+                  [value]="option.text"
+                  (input)="setOptionText($index, $any($event.target).value)"
+                  [placeholder]="'Alternativa ' + ($index + 1)"
+                />
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  aria-label="Quitar alternativa"
+                  [disabled]="draftOptions().length <= 2"
+                  (click)="removeOption($index)"
+                >
+                  <maya-icon name="x" [size]="15" />
+                </button>
+              </div>
+            }
+            <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="addOption()">
+              <maya-icon name="plus" [size]="15" /> Añadir alternativa
+            </button>
+          </fieldset>
+        }
+
+        @case (QuestionType.TrueFalse) {
+          <fieldset class="alternativas">
+            <legend class="maya-label">Respuesta correcta</legend>
+            @for (option of draftOptions(); track $index) {
+              <label class="conmutador">
+                <input
+                  type="radio"
+                  name="vf"
+                  [checked]="option.correct"
+                  (change)="toggleCorrect($index)"
+                />
+                <span class="maya-small">{{ option.text }}</span>
+              </label>
+            }
+          </fieldset>
+        }
+
+        @case (QuestionType.ShortAnswer) {
+          <fieldset class="alternativas">
+            <legend class="maya-label">Respuestas aceptadas</legend>
+            <p class="maya-tiny maya-subtle">
+              Se compara sin distinguir mayúsculas. Añada las variantes que dé por buenas.
+            </p>
+            @for (option of draftOptions(); track $index) {
+              <div class="alternativa">
+                <input
+                  class="maya-input"
+                  [value]="option.text"
+                  (input)="setOptionText($index, $any($event.target).value)"
+                  placeholder="Respuesta aceptada"
+                />
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  aria-label="Quitar"
+                  [disabled]="draftOptions().length <= 1"
+                  (click)="removeOption($index)"
+                >
+                  <maya-icon name="x" [size]="15" />
+                </button>
+              </div>
+            }
+            <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="addOption()">
+              <maya-icon name="plus" [size]="15" /> Añadir variante
+            </button>
+          </fieldset>
+        }
+
+        @case (QuestionType.Numerical) {
+          <div class="pareja">
+            <label class="maya-field">
+              <span class="maya-label">Valor correcto</span>
+              <input
+                class="maya-input"
+                [value]="draftOptions()[0].text"
+                (input)="setOptionText(0, $any($event.target).value)"
+                placeholder="Por ejemplo, 3.14"
+              />
+            </label>
+            <label class="maya-field">
+              <span class="maya-label">Tolerancia (±)</span>
+              <input
+                type="number"
+                class="maya-input"
+                min="0"
+                step="0.01"
+                [ngModel]="draftTolerance()"
+                (ngModelChange)="draftTolerance.set(+$event)"
+              />
+            </label>
+          </div>
+        }
+
+        @case (QuestionType.Matching) {
+          <fieldset class="alternativas">
+            <legend class="maya-label">Pares</legend>
+            @for (pair of draftPairs(); track $index) {
+              <div class="alternativa">
+                <input
+                  class="maya-input"
+                  [value]="pair.text"
+                  (input)="setPair($index, 'text', $any($event.target).value)"
+                  placeholder="Enunciado"
+                />
+                <input
+                  class="maya-input"
+                  [value]="pair.answer"
+                  (input)="setPair($index, 'answer', $any($event.target).value)"
+                  placeholder="Se relaciona con"
+                />
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--ghost maya-btn--icon"
+                  aria-label="Quitar par"
+                  [disabled]="draftPairs().length <= 1"
+                  (click)="removePair($index)"
+                >
+                  <maya-icon name="x" [size]="15" />
+                </button>
+              </div>
+            }
+            <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="addPair()">
+              <maya-icon name="plus" [size]="15" /> Añadir par
+            </button>
+          </fieldset>
+        }
+
+        @case (QuestionType.Essay) {
+          <label class="maya-field">
+            <span class="maya-label">Pauta de corrección</span>
+            <textarea
+              class="maya-input"
+              rows="4"
+              [ngModel]="draftRubric()"
+              (ngModelChange)="draftRubric.set($event)"
+              placeholder="Qué debe aparecer en una respuesta completa. Solo lo ve quien corrige."
+            ></textarea>
+            <span class="maya-tiny maya-subtle">
+              La pauta no se le enseña al alumno; sirve para que dos personas corrijan igual.
+            </span>
+          </label>
+        }
+      }
+
+      <div class="pareja">
+        <label class="maya-field">
+          <span class="maya-label">Puntuación</span>
+          <input
+            type="number"
+            class="maya-input"
+            min="0.5"
+            step="0.5"
+            [ngModel]="draftMark()"
+            (ngModelChange)="draftMark.set(+$event)"
+          />
+        </label>
+        <label class="maya-field">
+          <span class="maya-label">Nombre en el banco (opcional)</span>
+          <input
+            class="maya-input"
+            [ngModel]="draftName()"
+            (ngModelChange)="draftName.set($event)"
+            placeholder="Se toma del enunciado"
+          />
+        </label>
+      </div>
+
+      <label class="maya-field">
+        <span class="maya-label">Retroalimentación al terminar (opcional)</span>
+        <textarea
+          class="maya-input"
+          rows="2"
+          [ngModel]="draftFeedback()"
+          (ngModelChange)="draftFeedback.set($event)"
+        ></textarea>
+      </label>
+    </div>
+
+    <div footer>
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="closeComposer()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        [disabled]="!composerValid() || saving()"
+        (click)="submitComposer()"
+      >
+        {{ saving() ? 'Guardando…' : editingId() ? 'Guardar cambios' : 'Añadir al examen' }}
+      </button>
+    </div>
+  </maya-modal>
+}
+
+<!-- Banco de preguntas -->
+@if (bankOpen()) {
+  <maya-modal title="Añadir del banco de preguntas" (dismissed)="bankOpen.set(false)">
+    <div class="maya-stack">
+      <div class="alternativa">
+        <input
+          type="search"
+          class="maya-input"
+          placeholder="Buscar por nombre o enunciado"
+          [ngModel]="bankSearch()"
+          (ngModelChange)="bankSearch.set($event)"
+          (keyup.enter)="searchBank()"
+        />
+        <button type="button" class="maya-btn maya-btn--secondary" (click)="searchBank()">
+          Buscar
+        </button>
+      </div>
+
+      @if (!bankItems().length) {
+        <p class="maya-small maya-subtle">No hay preguntas que coincidan.</p>
+      } @else {
+        <ul class="banco">
+          @for (question of bankItems(); track question.id) {
+            <li class="banco__item">
+              <label class="conmutador">
+                <input
+                  type="checkbox"
+                  [disabled]="inQuiz(question.id)"
+                  [checked]="bankSelected().has(question.id)"
+                  (change)="toggleBank(question.id)"
+                />
+                <span>
+                  <span class="maya-small">{{ question.name }}</span>
+                  <span class="maya-tiny maya-subtle">
+                    {{ typeLabel(question.type) }} · {{ question.defaultMark }} pts
+                    @if (inQuiz(question.id)) {
+                      · ya está en este examen
+                    }
+                  </span>
+                </span>
+              </label>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div footer>
+      <button type="button" class="maya-btn maya-btn--secondary" (click)="bankOpen.set(false)">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        [disabled]="!bankSelected().size || saving()"
+        (click)="addFromBank()"
+      >
+        Añadir {{ bankSelected().size || '' }}
+      </button>
+    </div>
+  </maya-modal>
+}

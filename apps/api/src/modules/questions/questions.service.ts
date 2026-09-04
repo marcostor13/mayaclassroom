@@ -136,6 +136,7 @@ export class QuestionsService {
       name: dto.name,
       questionText: dto.questionText,
       generalFeedback: dto.generalFeedback ?? null,
+      rubric: dto.rubric ?? null,
       defaultMark: dto.defaultMark ?? 1,
       penalty: dto.penalty ?? 0,
       shuffleAnswers: dto.shuffleAnswers ?? true,
@@ -213,6 +214,18 @@ export class QuestionsService {
    * Corrige una respuesta y devuelve la fracción obtenida (0–1) y si requiere
    * corrección manual (ensayos).
    */
+  /**
+   * ¿Esta pregunta la tiene que evaluar una persona?
+   *
+   * Se pregunta sin respuesta delante —la cola de corrección necesita saberlo
+   * antes de mirar ninguna—, así que depende solo del tipo. Los tipos que
+   * `gradeAnswer` no sabe corregir caen aquí también: es preferible que alguien
+   * las mire a darlas por incorrectas en silencio.
+   */
+  needsManualGrading(question: QuestionDocument): boolean {
+    return this.gradeAnswer(question, null).needsManual;
+  }
+
   gradeAnswer(
     question: QuestionDocument,
     answer: unknown,
@@ -415,6 +428,7 @@ export class QuestionsService {
       name: question.name,
       questionText: question.questionText,
       generalFeedback: question.generalFeedback,
+      rubric: question.rubric,
       defaultMark: question.defaultMark,
       penalty: question.penalty,
       shuffleAnswers: question.shuffleAnswers,
@@ -445,6 +459,9 @@ export class QuestionsService {
       ...dto,
       answers,
       generalFeedback: null,
+      // La pauta de corrección es para quien corrige: entregarla con el
+      // enunciado sería dar la solución de una pregunta de ensayo.
+      rubric: null,
       subquestions: dto.subquestions?.map((s) => ({ text: s.text, answer: '' })),
     };
   }

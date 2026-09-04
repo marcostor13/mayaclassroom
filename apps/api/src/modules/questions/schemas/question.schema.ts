@@ -33,6 +33,16 @@ export class Question extends TenantScopedDocument {
   @Prop({ required: true }) questionText!: string;
   @Prop({ type: String, default: null }) generalFeedback!: string | null;
 
+  /**
+   * Pauta de corrección de las preguntas que evalúa una persona.
+   *
+   * Solo la ve quien corrige. Va en la pregunta y no en el examen porque es
+   * propiedad de la pregunta: al reutilizarla en otro examen, la pauta viaja
+   * con ella y dos personas distintas corrigen con el mismo criterio.
+   */
+  @Prop({ type: String, default: null })
+  rubric!: string | null;
+
   @Prop({ default: 1 }) defaultMark!: number;
   @Prop({ default: 0 }) penalty!: number;
 
