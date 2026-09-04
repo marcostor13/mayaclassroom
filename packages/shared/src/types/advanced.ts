@@ -2,6 +2,7 @@ import {
   BadgeCriteriaType,
   BadgeStatus,
   BadgeType,
+  CertificateAccessMode,
   CompetencyProficiency,
   CustomFieldScope,
   CustomFieldType,
@@ -165,12 +166,44 @@ export interface IssuedCertificateDto {
   id: string;
   templateId: string;
   courseId: string;
+  courseName?: string | null;
   userId: string;
+  userName?: string | null;
   code: string;
   issuedAt: string;
   grade?: number | null;
   verifyUrl: string;
-  downloadUrl: string;
+  /** Ausente cuando el curso solo permite ver el certificado en línea. */
+  downloadUrl: string | null;
+  /**
+   * Huella SHA-256 del contenido del certificado firmada con el secreto de la
+   * plataforma. Dos emisiones del mismo curso a la misma persona darían el
+   * mismo documento, pero nadie de fuera puede fabricar una huella válida: es
+   * lo que impide falsificar o duplicar un certificado.
+   */
+  hash: string;
+  /** Número correlativo dentro de la empresa, para citarlo en un registro. */
+  serial: number;
+  accessMode: CertificateAccessMode;
+  revoked: boolean;
+  revokedReason?: string | null;
+}
+
+/** Resultado de comprobar un certificado desde la página pública. */
+export interface CertificateVerificationDto {
+  valid: boolean;
+  reason?: string;
+  code?: string;
+  serial?: number;
+  hash?: string;
+  recipient?: string;
+  course?: string;
+  grade?: number | null;
+  issuedAt?: string;
+  tenantName?: string;
+  tenantLogoUrl?: string | null;
+  /** Solo si el curso permite descargar. */
+  downloadUrl?: string | null;
 }
 
 export interface WebServiceTokenDto {

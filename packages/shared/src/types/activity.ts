@@ -83,6 +83,11 @@ export interface QuestionDto {
   subquestions?: { text: string; answer: string }[];
   tolerance?: number;
   tags: string[];
+  /**
+   * Pauta de corrección de las preguntas que evalúa una persona. La ve quien
+   * corrige, nunca quien responde.
+   */
+  rubric?: string | null;
 }
 
 export interface QuestionCategoryDto {
@@ -114,8 +119,52 @@ export interface QuizDto {
   reviewAfterClose: boolean;
   showCorrectAnswers: boolean;
   passingGrade?: number | null;
+  /**
+   * Examen obligatorio: hay que aprobarlo para dar por superado el módulo y,
+   * si el curso lo exige, para aprobar el curso. Es lo que separa un examen de
+   * un cuestionario de repaso.
+   */
+  requiredToPass: boolean;
+  /** Al suspenderlo, bloquea las secciones posteriores del curso. */
+  blocksProgress: boolean;
+  attemptsAllowedLabel?: string;
   questions: QuizQuestionRef[];
   totalMarks: number;
+  /** Solo para quien corrige: intentos con preguntas pendientes de evaluar. */
+  pendingManualGrading?: number;
+}
+
+/* --------------------- Corrección manual de exámenes ---------------------- */
+
+/** Una respuesta que espera evaluación humana. */
+export interface QuizGradingItem {
+  attemptId: string;
+  moduleId: string;
+  quizId: string;
+  quizName: string;
+  courseId: string;
+  attempt: number;
+  finishedAt: string | null;
+  student: { id: string; fullName: string; email: string; avatarUrl: string | null };
+  questionId: string;
+  questionName: string;
+  questionText: string;
+  questionType: QuestionType;
+  /** Respuesta del alumno. En una pregunta de ensayo, su texto. */
+  answer: unknown;
+  maxMark: number;
+  mark: number | null;
+  feedback: string | null;
+  /** Pauta de corrección que escribió quien creó la pregunta. */
+  rubric: string | null;
+}
+
+/** Cola de corrección de un examen o de todo un curso. */
+export interface QuizGradingQueue {
+  pending: QuizGradingItem[];
+  graded: QuizGradingItem[];
+  /** Intentos que no pueden calificarse hasta terminar de evaluar sus preguntas. */
+  blockedAttempts: number;
 }
 
 export interface QuizQuestionRef {

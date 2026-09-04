@@ -411,3 +411,92 @@ export enum WhiteboardTool {
   Text = 'text',
   Eraser = 'eraser',
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Seguimiento de vídeo                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Origen del vídeo cuyo consumo se registra.
+ *
+ * Solo `file` y `media` permiten medir de verdad: son etiquetas `<video>` de
+ * la propia plataforma y el reproductor informa de la posición. En `embed`
+ * (YouTube, Vimeo) el reproductor es ajeno y no cuenta el tiempo, así que
+ * únicamente se anota que se abrió.
+ */
+export enum MediaSourceKind {
+  /** Fichero subido a la plataforma y servido por ella. */
+  File = 'file',
+  /** Bloque de medios de una lección. */
+  Media = 'media',
+  /** Vídeo incrustado de un tercero. */
+  Embed = 'embed',
+  /** Grabación de un aula en vivo. */
+  Recording = 'recording',
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Firma electrónica                                                          */
+/* -------------------------------------------------------------------------- */
+
+/** Para qué se estampó una firma. */
+export enum SignatureUse {
+  /** Firma de referencia del perfil, la que sale en el certificado. */
+  Profile = 'profile',
+  /** Asistencia a una sesión en vivo o a un taller presencial. */
+  Attendance = 'attendance',
+  /** Confirmación de haber visualizado el contenido de un taller. */
+  Viewing = 'viewing',
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Certificados                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Cómo puede acceder el alumno a su certificado.
+ *
+ * `link` es el modo estricto: el documento solo existe como página verificable
+ * en línea, y quien la abra comprueba contra el servidor que es auténtica. En
+ * `download` se puede además guardar una copia imprimible, que ya no se puede
+ * verificar sola: por eso lleva siempre el código y el QR impresos.
+ */
+export enum CertificateAccessMode {
+  /** Solo enlace verificable y QR. */
+  Link = 'link',
+  /** Enlace verificable y descarga imprimible. */
+  Download = 'download',
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Encuestas de fin de curso                                                  */
+/* -------------------------------------------------------------------------- */
+
+export enum SurveyStatus {
+  Draft = 'draft',
+  Published = 'published',
+  Closed = 'closed',
+}
+
+/** Cuándo se le ofrece la encuesta al alumno. */
+export enum SurveyTrigger {
+  /** Al terminar el curso. */
+  OnCompletion = 'completion',
+  /** Disponible desde que se publica. */
+  Always = 'always',
+}
+
+export enum SurveyQuestionType {
+  /** Respuesta corta de una línea. */
+  Text = 'text',
+  /** Respuesta larga. */
+  Paragraph = 'paragraph',
+  /** Una opción entre varias. */
+  Single = 'single',
+  /** Varias opciones. */
+  Multiple = 'multiple',
+  /** Escala numérica de 1 a `scaleMax`. */
+  Scale = 'scale',
+  /** Sí o no. */
+  Boolean = 'boolean',
+}

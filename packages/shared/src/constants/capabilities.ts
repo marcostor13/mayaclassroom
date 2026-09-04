@@ -278,6 +278,36 @@ export const CAP = {
   RATING_RATE: 'moodle/rating:rate',
   RATING_VIEW_ALL: 'moodle/rating:viewall',
 
+  // --- Seguimiento de contenidos ------------------------------------------
+  /** Registrar el propio avance de reproducción. */
+  MEDIA_TRACK_OWN: 'maya/media:trackown',
+  /** Ver el avance de reproducción de todo el alumnado. */
+  MEDIA_VIEW_REPORTS: 'maya/media:viewreports',
+
+  // --- Firma electrónica ---------------------------------------------------
+  /** Registrar y sustituir la firma propia. */
+  SIGNATURE_MANAGE_OWN: 'maya/signature:manageown',
+  /** Ver las firmas y los registros firmados de otras personas. */
+  SIGNATURE_VIEW_ALL: 'maya/signature:viewall',
+
+  // --- Certificados --------------------------------------------------------
+  /** Configurar plantillas y política de acceso a los certificados. */
+  CERTIFICATE_MANAGE: 'maya/certificate:manage',
+  /** Emitir y revocar certificados de un curso. */
+  CERTIFICATE_ISSUE: 'maya/certificate:issue',
+
+  // --- Encuestas -----------------------------------------------------------
+  /** Crear y publicar encuestas de curso. */
+  SURVEY_MANAGE: 'maya/survey:manage',
+  /** Responder a las encuestas publicadas. */
+  SURVEY_RESPOND: 'maya/survey:respond',
+  /** Ver y descargar los resultados agregados. */
+  SURVEY_VIEW_RESULTS: 'maya/survey:viewresults',
+
+  // --- Expediente del alumno ----------------------------------------------
+  /** Ver el informe completo de un alumno y descargarlo. */
+  REPORT_VIEW_STUDENT: 'maya/report:viewstudent',
+
   // --- Campos personalizados / RGPD ---------------------------------------
   CUSTOMFIELD_MANAGE: 'maya/customfield:manage',
   GDPR_MANAGE_REQUESTS: 'tool/dataprivacy:managedatarequests',
@@ -512,6 +542,49 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
   cap(CAP.COMMENT_VIEW, 'Ver comentarios', L.Module),
   cap(CAP.RATING_RATE, 'Valorar contenidos', L.Module),
   cap(CAP.RATING_VIEW_ALL, 'Ver todas las valoraciones', L.Module),
+
+  // Seguimiento de contenidos
+  cap(CAP.MEDIA_TRACK_OWN, 'Registrar el avance de reproducción propio', L.Module, 'maya/media'),
+  cap(
+    CAP.MEDIA_VIEW_REPORTS,
+    'Ver el avance de reproducción del alumnado',
+    L.Course,
+    'maya/media',
+    R.PersonalData,
+  ),
+
+  // Firma electrónica
+  cap(CAP.SIGNATURE_MANAGE_OWN, 'Registrar la firma propia', L.System, 'maya/signature'),
+  cap(
+    CAP.SIGNATURE_VIEW_ALL,
+    'Ver las firmas del alumnado',
+    L.Tenant,
+    'maya/signature',
+    R.PersonalData,
+  ),
+
+  // Certificados
+  cap(CAP.CERTIFICATE_MANAGE, 'Configurar los certificados', L.Tenant, 'maya/certificate'),
+  cap(CAP.CERTIFICATE_ISSUE, 'Emitir y revocar certificados', L.Course, 'maya/certificate'),
+
+  // Encuestas
+  cap(CAP.SURVEY_MANAGE, 'Crear y publicar encuestas', L.Course, 'maya/survey'),
+  cap(CAP.SURVEY_RESPOND, 'Responder encuestas', L.Course, 'maya/survey'),
+  cap(
+    CAP.SURVEY_VIEW_RESULTS,
+    'Ver y descargar los resultados de las encuestas',
+    L.Course,
+    'maya/survey',
+  ),
+
+  // Expediente del alumno
+  cap(
+    CAP.REPORT_VIEW_STUDENT,
+    'Ver el expediente completo de un alumno',
+    L.Tenant,
+    'maya/report',
+    R.PersonalData,
+  ),
 
   // Campos personalizados / RGPD
   cap(CAP.CUSTOMFIELD_MANAGE, 'Gestionar campos personalizados', L.Tenant),
