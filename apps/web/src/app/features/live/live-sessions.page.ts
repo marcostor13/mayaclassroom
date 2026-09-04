@@ -6,10 +6,12 @@ import {
   LiveRecordingDto,
   LiveSessionDto,
   LiveSessionStatus,
+  SignatureUse,
 } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { LiveService } from '../../core/services/live.service';
+import { SignaturesService } from '../../core/services/signatures.service';
 import { ToastService } from '../../core/services/toast.service';
 import {
   EmptyStateComponent,
@@ -49,6 +51,55 @@ export class LiveSessionsPage {
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly signatures = inject(SignaturesService);
+
+  /** Sesiones cuya asistencia ya ha firmado esta persona. */
+  readonly firmadas = signal<Set<string>>(new Set());
+
+  /**
+   * Firma la asistencia a una clase.
+   *
+   * Requiere tener firma registrada en el perfil; si no la hay, la API lo dice
+   * y aquí se traduce en un aviso que lleva a registrarla, porque el error tal
+   * cual no explica qué hacer.
+   */
+  firmarAsistencia(session: LiveSessionDto): void {
+    this.signatures
+      .sign({
+        use: SignatureUse.Attendance,
+        courseId: session.courseId ?? undefined,
+        referenceId: session.id,
+        referenceLabel: session.title,
+      })
+      .subscribe({
+        next: () => {
+          this.firmadas.update((set) => new Set(set).add(session.id));
+          this.toast.success(
+            'Asistencia firmada',
+            'Su firma queda registrada en el acta de la clase.',
+          );
+        },
+        error: () =>
+          this.toast.error(
+            'Antes hay que registrar la firma',
+            'Vaya a su perfil, pestaña «Mi firma», y dibújela una sola vez.',
+          ),
+      });
+  }
+
+  private cargarFirmas(): void {
+    this.signatures.myRecords().subscribe({
+      next: (records) =>
+        this.firmadas.set(
+          new Set(
+            records
+              .filter((record) => record.use === SignatureUse.Attendance && record.referenceId)
+              .map((record) => record.referenceId as string),
+          ),
+        ),
+      error: () => undefined,
+    });
+  }
 
   readonly tab = signal<Tab>('upcoming');
   readonly loading = signal(true);
@@ -69,6 +120,7 @@ export class LiveSessionsPage {
 
   constructor() {
     this.load();
+    this.cargarFirmas();
   }
 
   load(): void {

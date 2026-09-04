@@ -155,6 +155,14 @@ export interface SecurityConfig {
   loginMaxAttempts: number;
   loginLockMinutes: number;
   refreshTokenRotation: boolean;
+  /**
+   * Secreto con el que se sellan certificados y firmas electrónicas.
+   *
+   * Cae al secreto de los tokens de acceso para que un despliegue existente
+   * siga funcionando sin tocar el entorno; conviene darle uno propio, porque
+   * rotar el de los tokens invalidaría todos los sellos ya emitidos.
+   */
+  signingSecret: string;
 }
 
 const toBool = (value: string | undefined, fallback = false): boolean =>
@@ -297,6 +305,10 @@ export const securityConfig = registerAs(
     loginMaxAttempts: toInt(process.env.LOGIN_MAX_ATTEMPTS, 8),
     loginLockMinutes: toInt(process.env.LOGIN_LOCK_MINUTES, 15),
     refreshTokenRotation: toBool(process.env.REFRESH_TOKEN_ROTATION, true),
+    signingSecret:
+      process.env.SIGNING_SECRET ??
+      process.env.JWT_ACCESS_SECRET ??
+      'maya-classroom-dev-signing-secret',
   }),
 );
 

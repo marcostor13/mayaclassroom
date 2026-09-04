@@ -22,3 +22,4 @@ export * from './utils/embed';
 export * from './components/guide-tour/guide-tour.component';
 export * from './components/guide-host/guide-host.component';
 export * from './components/video-tracker.directive';
+export * from './components/signature-pad.component';

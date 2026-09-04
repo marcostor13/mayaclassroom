@@ -128,3 +128,12 @@
   border-radius: var(--maya-radius-md);
   background: #000;
 }
+
+/* Asistencia ya firmada: informa, no invita a pulsar. */
+.firmada {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--maya-success);
+  white-space: nowrap;
+}

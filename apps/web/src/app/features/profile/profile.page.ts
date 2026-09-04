@@ -1,18 +1,32 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { UserDto } from '@maya/shared';
+import { SignatureRecordDto, SignatureUse, UserDto, UserSignatureDto } from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { SignaturesService } from '../../core/services/signatures.service';
 import { ToastService } from '../../core/services/toast.service';
-import { AvatarComponent, FormatDatePipe, IconComponent } from '../../shared';
+import {
+  AvatarComponent,
+  FormatDatePipe,
+  IconComponent,
+  SignaturePadComponent,
+} from '../../shared';
 
 @Component({
   selector: 'maya-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, FormsModule, IconComponent, AvatarComponent, FormatDatePipe],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    IconComponent,
+    AvatarComponent,
+    FormatDatePipe,
+    SignaturePadComponent,
+  ],
   templateUrl: './profile.page.html',
+  styleUrl: './profile.page.scss',
 })
 export class ProfilePage {
   private readonly fb = inject(FormBuilder);
@@ -21,7 +35,7 @@ export class ProfilePage {
   readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
 
-  readonly tab = signal<'profile' | 'security' | 'sessions'>('profile');
+  readonly tab = signal<'profile' | 'security' | 'signature' | 'sessions'>('profile');
   readonly profile = signal<UserDto | null>(null);
   readonly sessions = signal<Record<string, unknown>[]>([]);
   readonly saving = signal(false);
@@ -41,6 +55,73 @@ export class ProfilePage {
     currentPassword: [''],
     newPassword: [''],
   });
+
+  /* --------------------------- Firma electrónica ------------------------- */
+
+  private readonly signatures = inject(SignaturesService);
+
+  readonly signature = signal<UserSignatureDto | null>(null);
+  readonly signatureRecords = signal<SignatureRecordDto[]>([]);
+  readonly draftSignature = signal<string | null>(null);
+  readonly savingSignature = signal(false);
+  /** Se está volviendo a firmar encima de una firma que ya existía. */
+  readonly redrawing = signal(false);
+
+  private loadSignature(): void {
+    this.signatures.mine().subscribe({
+      next: (firma) => this.signature.set(firma),
+      error: () => undefined,
+    });
+    this.signatures.myRecords().subscribe({
+      next: (records) => this.signatureRecords.set(records),
+      error: () => undefined,
+    });
+  }
+
+  saveSignature(): void {
+    const trazo = this.draftSignature();
+    if (!trazo || this.savingSignature()) return;
+    this.savingSignature.set(true);
+    this.signatures.save({ imageDataUrl: trazo }).subscribe({
+      next: (firma) => {
+        this.signature.set(firma);
+        this.draftSignature.set(null);
+        this.redrawing.set(false);
+        this.savingSignature.set(false);
+        this.toast.success(
+          'Firma registrada',
+          'Aparecerá en sus certificados y en las actas de asistencia.',
+        );
+      },
+      error: () => this.savingSignature.set(false),
+    });
+  }
+
+  redoSignature(): void {
+    this.draftSignature.set(null);
+    this.redrawing.set(true);
+  }
+
+  deleteSignature(): void {
+    this.signatures.remove().subscribe({
+      next: () => {
+        this.signature.set(null);
+        this.redrawing.set(false);
+        this.toast.success('Firma eliminada');
+      },
+    });
+  }
+
+  useLabel(use: SignatureUse): string {
+    switch (use) {
+      case SignatureUse.Attendance:
+        return 'Asistencia';
+      case SignatureUse.Viewing:
+        return 'Visualización';
+      default:
+        return 'Firma de perfil';
+    }
+  }
 
   /* ------------------------- Verificación en dos pasos ------------------- */
 
@@ -135,6 +216,7 @@ export class ProfilePage {
         });
       },
     });
+    this.loadSignature();
   }
 
   loadSessions(): void {

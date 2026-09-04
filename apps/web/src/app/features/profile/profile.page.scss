@@ -1,0 +1,19 @@
+@use '../../../styles/tokens' as *;
+
+.firma-guardada {
+  margin: 0;
+  display: grid;
+  gap: var(--maya-space-2);
+  justify-items: start;
+}
+
+.firma-guardada__imagen {
+  /* Fondo blanco fijo: el trazo es oscuro y sobre el fondo del tema oscuro
+     desaparecería. Es la misma superficie sobre la que se imprime. */
+  background: #fff;
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  padding: var(--maya-space-2);
+  max-width: 320px;
+  width: 100%;
+}

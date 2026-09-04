@@ -48,6 +48,7 @@ import { CohortsModule } from './modules/cohorts/cohorts.module';
 import { CompetenciesModule } from './modules/competencies/competencies.module';
 import { BadgesModule } from './modules/badges/badges.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
+import { SignaturesModule } from './modules/signatures/signatures.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { SiteModule } from './modules/site/site.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
@@ -113,6 +114,7 @@ import { GuidesModule } from './modules/guides/guides.module';
     CohortsModule,
     CompetenciesModule,
     BadgesModule,
+    SignaturesModule,
     CertificatesModule,
     PlatformModule,
 

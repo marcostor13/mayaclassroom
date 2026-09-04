@@ -1,4 +1,11 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 
 /**
  * Cifrado de secretos guardados en la base de datos.
@@ -102,4 +109,47 @@ export function orderReference(): string {
   let code = '';
   for (let i = 0; i < 6; i += 1) code += pick(alphabet);
   return `MC-${code}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Sellos de autenticidad                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Sella un contenido con el secreto de la plataforma.
+ *
+ * Se usa para los certificados y las firmas electrónicas: cualquiera puede
+ * calcular el SHA-256 de un documento, pero solo quien tiene el secreto puede
+ * producir un sello válido para él. Es lo que impide fabricar un certificado
+ * con un código inventado o alterar el nombre de uno auténtico.
+ *
+ * Las partes se unen con un separador que no puede aparecer dentro de ellas,
+ * para que dos contenidos distintos no puedan producir la misma cadena («ab» +
+ * «c» y «a» + «bc» darían el mismo sello si se concatenaran sin más).
+ */
+export function sealPayload(parts: (string | number | null | undefined)[], secret: string): string {
+  const canonical = parts.map((part) => String(part ?? '')).join('\u0000');
+  return createHmac('sha256', secret).update(canonical).digest('hex');
+}
+
+/**
+ * Comprueba un sello en tiempo constante.
+ *
+ * La comparación con `===` tarda más cuanto más coincide el principio, y eso
+ * basta para ir adivinando un sello byte a byte con suficientes intentos.
+ */
+export function verifySeal(
+  parts: (string | number | null | undefined)[],
+  secret: string,
+  seal: string,
+): boolean {
+  const expected = Buffer.from(sealPayload(parts, secret), 'utf8');
+  const provided = Buffer.from(seal ?? '', 'utf8');
+  if (expected.length !== provided.length) return false;
+  return timingSafeEqual(expected, provided);
+}
+
+/** Huella SHA-256 en hexadecimal, sin secreto: identifica un contenido. */
+export function fingerprint(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
 }

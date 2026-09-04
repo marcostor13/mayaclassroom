@@ -39,6 +39,16 @@
     type="button"
     role="tab"
     class="maya-tabs__tab"
+    [class.is-active]="tab() === 'signature'"
+    [attr.aria-selected]="tab() === 'signature'"
+    (click)="tab.set('signature')"
+  >
+    Mi firma
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="maya-tabs__tab"
     [class.is-active]="tab() === 'sessions'"
     [attr.aria-selected]="tab() === 'sessions'"
     (click)="loadSessions()"
@@ -253,6 +263,109 @@
           </button>
         </div>
       </section>
+    </div>
+  }
+
+  @case ('signature') {
+    <div class="maya-stack" style="gap: var(--maya-space-4)">
+      <section class="maya-card">
+        <div class="maya-card__header">
+          <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+            Firma electrónica
+          </h2>
+        </div>
+        <div class="maya-card__body maya-stack">
+          <p class="maya-small maya-muted">
+            Su firma aparecerá en los certificados que obtenga y en las actas de
+            asistencia de los talleres a los que asista. Se guarda junto con la fecha y
+            el dispositivo desde el que firmó, y se sella para poder demostrar después
+            que nadie la ha alterado.
+          </p>
+
+          @if (signature(); as firma) {
+            <figure class="firma-guardada">
+              <img
+                [src]="firma.imageDataUrl"
+                alt="Su firma registrada"
+                class="firma-guardada__imagen"
+              />
+              <figcaption class="maya-tiny maya-subtle">
+                Registrada el {{ firma.signedAt | mayaDate: 'datetime' }}
+              </figcaption>
+            </figure>
+            <div class="maya-row" style="gap: var(--maya-space-2); flex-wrap: wrap">
+              <button
+                type="button"
+                class="maya-btn maya-btn--secondary"
+                (click)="redoSignature()"
+              >
+                <maya-icon name="edit" [size]="16" /> Volver a firmar
+              </button>
+              <button type="button" class="maya-btn maya-btn--ghost" (click)="deleteSignature()">
+                <maya-icon name="trash" [size]="16" /> Eliminar
+              </button>
+            </div>
+          }
+
+          @if (!signature() || redrawing()) {
+            <maya-signature-pad
+              label="Dibuje su firma"
+              (changed)="draftSignature.set($event)"
+            />
+            <div class="maya-row" style="gap: var(--maya-space-2); justify-content: flex-end">
+              @if (redrawing()) {
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--secondary"
+                  (click)="redrawing.set(false)"
+                >
+                  Cancelar
+                </button>
+              }
+              <button
+                type="button"
+                class="maya-btn maya-btn--primary"
+                [disabled]="!draftSignature() || savingSignature()"
+                (click)="saveSignature()"
+              >
+                {{ savingSignature() ? 'Guardando…' : 'Guardar mi firma' }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+
+      @if (signatureRecords().length) {
+        <section class="maya-card">
+          <div class="maya-card__header">
+            <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">
+              Dónde ha firmado
+            </h2>
+          </div>
+          <div class="maya-table-wrap" style="border: none">
+            <table class="maya-table">
+              <thead>
+                <tr>
+                  <th scope="col">Concepto</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Sello</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (record of signatureRecords(); track record.id) {
+                  <tr>
+                    <td class="maya-small">{{ record.referenceLabel ?? useLabel(record.use) }}</td>
+                    <td class="maya-small">{{ record.signedAt | mayaDate: 'datetime' }}</td>
+                    <td class="maya-tiny maya-subtle" style="font-family: var(--maya-font-mono)">
+                      {{ record.hash.slice(0, 16) }}…
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
     </div>
   }
 

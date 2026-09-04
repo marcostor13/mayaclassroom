@@ -151,6 +151,24 @@
                     Entrar
                   </a>
                 }
+                <!-- Firmar la asistencia es lo que convierte «estuve conectado»
+                     en un acta que sirve ante un tercero. Solo tiene sentido
+                     cuando la clase ya ha ocurrido. -->
+                @if (session.status !== 'scheduled' && !session.canManage) {
+                  @if (firmadas().has(session.id)) {
+                    <span class="firmada maya-tiny">
+                      <maya-icon name="check" [size]="14" /> Asistencia firmada
+                    </span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="maya-btn maya-btn--secondary maya-btn--sm"
+                      (click)="firmarAsistencia(session)"
+                    >
+                      <maya-icon name="edit" [size]="15" /> Firmar asistencia
+                    </button>
+                  }
+                }
                 <button
                   type="button"
                   class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
