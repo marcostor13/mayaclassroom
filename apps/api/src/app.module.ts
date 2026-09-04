@@ -53,6 +53,7 @@ import { PlatformModule } from './modules/platform/platform.module';
 import { SiteModule } from './modules/site/site.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { GuidesModule } from './modules/guides/guides.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -122,6 +123,7 @@ import { GuidesModule } from './modules/guides/guides.module';
     SiteModule,
     CommerceModule,
     GuidesModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

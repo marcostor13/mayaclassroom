@@ -1,0 +1,79 @@
+@use '../../../styles/tokens' as *;
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maya-space-4);
+  margin-bottom: var(--maya-space-5);
+}
+
+.cabecera__datos {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.cabecera__nombre {
+  margin: 0 0 2px;
+  font-size: var(--maya-text-2xl);
+  line-height: 1.15;
+}
+
+.cabecera__acciones {
+  display: flex;
+  gap: var(--maya-space-2);
+  flex-wrap: wrap;
+}
+
+.kpis {
+  display: grid;
+  gap: var(--maya-space-3);
+  margin-bottom: var(--maya-space-5);
+  /* Se reparten solos: siete indicadores caben en dos filas en escritorio y en
+     una columna cómoda en móvil sin puntos de ruptura a mano. */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.kpi {
+  padding: var(--maya-space-4);
+  background: var(--maya-surface);
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+}
+
+.kpi__valor {
+  margin: 0;
+  font-family: var(--maya-font-heading);
+  font-size: var(--maya-text-2xl);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--maya-primary-deep);
+}
+
+.kpi__etiqueta {
+  margin: var(--maya-space-2) 0 0;
+}
+
+.kpi__pista {
+  margin: 2px 0 0;
+}
+
+.firma {
+  margin-bottom: var(--maya-space-5);
+}
+
+.firma__cuerpo {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-4);
+  flex-wrap: wrap;
+}
+
+.firma__imagen {
+  /* Fondo blanco fijo: el trazo es oscuro y en tema oscuro desaparecería. */
+  background: #fff;
+  border: 1px solid var(--maya-border);
+  border-radius: var(--maya-radius-md);
+  padding: var(--maya-space-2);
+  height: 72px;
+}

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { Location } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ContextLevel, UserStatus } from '@maya/shared';
+import { CAP, ContextLevel, UserStatus } from '@maya/shared';
 import type { UserProfileDto } from '@maya/shared';
 import { AdminService } from '../../../core/services/admin.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -40,6 +40,9 @@ export class AdminUserDetailPage implements OnInit {
   readonly auth = inject(AuthService);
 
   readonly id = input.required<string>();
+
+  /** El expediente enseña notas y asistencias: no lo ve cualquiera. */
+  readonly puedeVerExpediente = computed(() => this.auth.can(CAP.REPORT_VIEW_STUDENT));
 
   readonly data = signal<UserProfileDto | null>(null);
   readonly loading = signal(true);

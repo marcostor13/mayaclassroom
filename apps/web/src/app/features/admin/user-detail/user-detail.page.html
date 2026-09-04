@@ -44,6 +44,14 @@
     </div>
 
     <div class="cabecera__acciones">
+      @if (puedeVerExpediente()) {
+        <a
+          [routerLink]="['/admin/users', user.id, 'report']"
+          class="maya-btn maya-btn--primary"
+        >
+          <maya-icon name="chart" [size]="16" /> Ver expediente
+        </a>
+      }
       @if (user.status === UserStatus.Active) {
         <button
           type="button"

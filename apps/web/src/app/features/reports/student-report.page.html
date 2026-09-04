@@ -1,0 +1,336 @@
+@if (loading()) {
+  <div class="maya-skeleton" style="height: 420px"></div>
+} @else if (report(); as data) {
+  <nav aria-label="Miga de pan">
+    <ol class="maya-breadcrumb" style="margin-bottom: var(--maya-space-4)">
+      <li><a routerLink="/admin/users">Usuarios</a></li>
+      <li><a [routerLink]="['/admin/users', userId]">{{ data.student.fullName }}</a></li>
+      <li>Expediente</li>
+    </ol>
+  </nav>
+
+  <header class="cabecera">
+    <maya-avatar [name]="data.student.fullName" [src]="data.student.avatarUrl" size="lg" />
+    <div class="cabecera__datos">
+      <h1 class="cabecera__nombre">{{ data.student.fullName }}</h1>
+      <p class="maya-small maya-subtle">
+        {{ data.student.email }}
+        @if (data.student.idNumber) { · {{ data.student.idNumber }} }
+        @if (data.student.institution) { · {{ data.student.institution }} }
+      </p>
+      <p class="maya-tiny maya-subtle">
+        Alta el {{ data.student.createdAt | mayaDate: 'short' }} · último acceso
+        {{ data.student.lastAccessAt | mayaDate: 'datetime' }}
+      </p>
+    </div>
+    <div class="cabecera__acciones">
+      <button
+        type="button"
+        class="maya-btn maya-btn--secondary maya-btn--sm"
+        [disabled]="downloading() !== null"
+        (click)="descargarExcel()"
+      >
+        <maya-icon name="download" [size]="15" />
+        {{ downloading() === 'excel' ? 'Preparando…' : 'Excel' }}
+      </button>
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary maya-btn--sm"
+        [disabled]="downloading() !== null"
+        (click)="descargarPdf()"
+      >
+        <maya-icon name="file-text" [size]="15" />
+        {{ downloading() === 'pdf' ? 'Preparando…' : 'PDF' }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Los indicadores van antes que las tablas: dicen cómo va la persona sin
+       tener que leer ninguna fila. -->
+  <section class="kpis" aria-label="Indicadores">
+    @for (kpi of data.kpis; track kpi.key) {
+      <article class="kpi">
+        <p class="kpi__valor">{{ kpiValue(kpi) }}</p>
+        <p class="kpi__etiqueta maya-small">{{ kpi.label }}</p>
+        @if (kpi.hint) {
+          <p class="kpi__pista maya-tiny maya-subtle">{{ kpi.hint }}</p>
+        }
+      </article>
+    }
+  </section>
+
+  @if (data.signature; as firma) {
+    <section class="maya-card firma">
+      <div class="maya-card__body firma__cuerpo">
+        <img [src]="firma.imageDataUrl" alt="Firma registrada" class="firma__imagen" />
+        <div>
+          <p class="maya-small maya-bold">Firma electrónica registrada</p>
+          <p class="maya-tiny maya-subtle">
+            El {{ firma.signedAt | mayaDate: 'datetime' }} · sello
+            <span style="font-family: var(--maya-font-mono)">{{ firma.hash.slice(0, 16) }}…</span>
+          </p>
+        </div>
+      </div>
+    </section>
+  }
+
+  <div class="maya-tabs" role="tablist" style="margin-bottom: var(--maya-space-4)">
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'courses'"
+      [attr.aria-selected]="tab() === 'courses'"
+      (click)="tab.set('courses')"
+    >
+      Cursos ({{ data.courses.length }})
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'exams'"
+      [attr.aria-selected]="tab() === 'exams'"
+      (click)="tab.set('exams')"
+    >
+      Exámenes ({{ data.exams.length }})
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'activities'"
+      [attr.aria-selected]="tab() === 'activities'"
+      (click)="tab.set('activities')"
+    >
+      Actividades ({{ data.activities.length }})
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="maya-tabs__tab"
+      [class.is-active]="tab() === 'attendance'"
+      [attr.aria-selected]="tab() === 'attendance'"
+      (click)="tab.set('attendance')"
+    >
+      Asistencia ({{ data.attendance.length }})
+    </button>
+  </div>
+
+  @switch (tab()) {
+    @case ('courses') {
+      @if (!data.courses.length) {
+        <maya-empty-state
+          icon="book"
+          title="Sin cursos"
+          description="Esta persona todavía no está matriculada en ningún curso."
+        />
+      } @else {
+        <div class="maya-table-wrap">
+          <table class="maya-table">
+            <thead>
+              <tr>
+                <th scope="col">Curso</th>
+                <th scope="col">Avance</th>
+                <th scope="col">Nota final</th>
+                <th scope="col">Resultado</th>
+                <th scope="col">Vídeo</th>
+                <th scope="col">Asistencia</th>
+                <th scope="col">Certificado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.courses; track row.courseId) {
+                <tr>
+                  <th scope="row">
+                    <a [routerLink]="['/courses', row.courseId]" class="maya-small maya-bold">
+                      {{ row.fullName }}
+                    </a>
+                    <p class="maya-tiny maya-subtle">
+                      Matriculado el {{ row.enrolledAt | mayaDate: 'short' }}
+                    </p>
+                  </th>
+                  <td style="min-width: 150px">
+                    <maya-progress [value]="row.progress" size="thin" label="Avance del curso" />
+                    <span class="maya-tiny maya-subtle">
+                      {{ row.progress }} % · {{ row.completedModules }} / {{ row.totalModules }}
+                    </span>
+                  </td>
+                  <td class="maya-bold">
+                    {{ row.finalGrade === null ? '—' : row.finalGrade }}
+                    @if (row.passingGrade !== null) {
+                      <span class="maya-tiny maya-subtle">/ {{ row.passingGrade }} mín.</span>
+                    }
+                  </td>
+                  <td>
+                    <span
+                      class="maya-badge"
+                      [class.maya-badge--success]="row.passed === true"
+                      [class.maya-badge--danger]="row.passed === false"
+                    >
+                      {{ resultado(row.passed) }}
+                    </span>
+                  </td>
+                  <td class="maya-small">
+                    {{ row.videoPercent === null ? '—' : row.videoPercent + ' %' }}
+                    @if (row.videoHours) {
+                      <span class="maya-tiny maya-subtle">({{ row.videoHours }} h)</span>
+                    }
+                  </td>
+                  <td class="maya-small">
+                    {{ row.attendanceSessions }} clases
+                    @if (row.attendanceHours) {
+                      <span class="maya-tiny maya-subtle">({{ row.attendanceHours }} h)</span>
+                    }
+                  </td>
+                  <td class="maya-tiny" style="font-family: var(--maya-font-mono)">
+                    {{ row.certificateCode ?? '—' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    @case ('exams') {
+      @if (!data.exams.length) {
+        <maya-empty-state
+          icon="help-circle"
+          title="Sin exámenes"
+          description="Esta persona todavía no ha realizado ningún examen."
+        />
+      } @else {
+        <div class="maya-table-wrap">
+          <table class="maya-table">
+            <thead>
+              <tr>
+                <th scope="col">Examen</th>
+                <th scope="col">Curso</th>
+                <th scope="col">Intento</th>
+                <th scope="col">Entregado</th>
+                <th scope="col">Nota</th>
+                <th scope="col">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.exams; track row.courseId + row.quizName + row.attempt) {
+                <tr>
+                  <th scope="row" class="maya-small">{{ row.quizName }}</th>
+                  <td class="maya-small maya-subtle">{{ row.courseName }}</td>
+                  <td>#{{ row.attempt }}</td>
+                  <td class="maya-small">{{ row.finishedAt | mayaDate: 'datetime' }}</td>
+                  <td class="maya-bold">
+                    {{ row.grade === null ? '—' : row.grade + ' / ' + row.maxGrade }}
+                  </td>
+                  <td>
+                    @if (row.pendingManualGrading) {
+                      <span class="maya-badge">Pendiente de corrección</span>
+                    } @else {
+                      <span
+                        class="maya-badge"
+                        [class.maya-badge--success]="row.passed === true"
+                        [class.maya-badge--danger]="row.passed === false"
+                      >
+                        {{ row.passed === null ? '—' : row.passed ? 'Aprobado' : 'Suspenso' }}
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    @case ('activities') {
+      <div class="maya-table-wrap">
+        <table class="maya-table">
+          <thead>
+            <tr>
+              <th scope="col">Actividad</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Completada</th>
+              <th scope="col">Nota</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of data.activities; track row.moduleId) {
+              <tr>
+                <th scope="row" class="maya-small">{{ row.moduleName }}</th>
+                <td class="maya-small maya-subtle">{{ row.courseName }}</td>
+                <td>
+                  <span
+                    class="maya-badge"
+                    [class.maya-badge--success]="
+                      row.completionState === CompletionState.Complete ||
+                      row.completionState === CompletionState.CompletePass
+                    "
+                  >
+                    {{ estado(row.completionState) }}
+                  </span>
+                </td>
+                <td class="maya-small">{{ row.completedAt | mayaDate: 'short' }}</td>
+                <td class="maya-small">
+                  {{ row.grade === null ? '—' : row.grade + (row.gradeMax ? ' / ' + row.gradeMax : '') }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @case ('attendance') {
+      @if (!data.attendance.length) {
+        <maya-empty-state
+          icon="calendar"
+          title="Sin asistencias registradas"
+          description="No ha entrado a ninguna clase en vivo."
+        />
+      } @else {
+        <div class="maya-table-wrap">
+          <table class="maya-table">
+            <thead>
+              <tr>
+                <th scope="col">Sesión</th>
+                <th scope="col">Curso</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Duración</th>
+                <th scope="col">Firma</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of data.attendance; track row.sessionTitle + row.startedAt) {
+                <tr>
+                  <th scope="row" class="maya-small">{{ row.sessionTitle }}</th>
+                  <td class="maya-small maya-subtle">{{ row.courseName ?? '—' }}</td>
+                  <td class="maya-small">{{ row.startedAt | mayaDate: 'datetime' }}</td>
+                  <td>{{ row.minutes }} min</td>
+                  <td>
+                    @if (row.signed) {
+                      <span class="maya-badge maya-badge--success">
+                        Firmada el {{ row.signedAt | mayaDate: 'short' }}
+                      </span>
+                    } @else {
+                      <span class="maya-tiny maya-subtle">Sin firmar</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  }
+} @else {
+  <maya-empty-state
+    icon="alert"
+    title="No se ha podido cargar el expediente"
+    description="Compruebe que el alumno pertenece a su empresa y vuelva a intentarlo."
+  />
+}

@@ -372,6 +372,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'admin/users/:userId/report',
+        title: 'Expediente del alumno · Maya Classroom',
+        canActivate: [capabilityGuard],
+        data: { capabilities: [CAP.REPORT_VIEW_STUDENT] },
+        loadComponent: () =>
+          import('./features/reports/student-report.page').then((m) => m.StudentReportPage),
+      },
+      {
         path: 'admin/roles',
         title: 'Roles y permisos · Maya Classroom',
         canActivate: [capabilityGuard],
