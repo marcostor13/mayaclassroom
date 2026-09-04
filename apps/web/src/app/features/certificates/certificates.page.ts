@@ -23,7 +23,7 @@ export class CertificatesPage {
   readonly loading = signal(true);
   readonly claiming = signal<string | null>(null);
 
-  /** Cursos completados de los que aún no se tiene certificado. */
+  /** Cursos superados de los que aún no se tiene certificado. */
   readonly claimable = computed(() => {
     const yaEmitidos = new Set(this.certificates().map((item) => item.courseId));
     return this.myCourses().filter(
@@ -53,9 +53,33 @@ export class CertificatesPage {
     return this.myCourses().find((course) => course.id === courseId)?.fullName ?? 'Curso';
   }
 
+  readonly copied = signal<string | null>(null);
+
   /** El certificado imprimible y la verificación son públicos: van a la API. */
   renderUrl(certificate: IssuedCertificateDto): string {
     return `${this.api.baseUrl}/certificates/${certificate.code}/render`;
+  }
+
+  /** Vista en línea, la única disponible cuando el curso no deja descargar. */
+  viewUrl(certificate: IssuedCertificateDto): string {
+    return `${this.api.baseUrl}/certificates/${certificate.code}/view`;
+  }
+
+  /**
+   * Copia el enlace de verificación.
+   *
+   * Es lo que se manda a quien pide acreditar el título: lleva a una página que
+   * comprueba el sello contra el servidor, y no a una imagen que cualquiera
+   * podría haber retocado.
+   */
+  async copyVerifyLink(certificate: IssuedCertificateDto): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.verifyUrl(certificate));
+      this.copied.set(certificate.id);
+      setTimeout(() => this.copied.set(null), 2000);
+    } catch {
+      this.toast.error('No se ha podido copiar el enlace');
+    }
   }
 
   verifyUrl(certificate: IssuedCertificateDto): string {

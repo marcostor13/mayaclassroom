@@ -65,20 +65,50 @@
             <p class="maya-small maya-muted">Calificación final: {{ certificate.grade }}</p>
           }
 
+          @if (certificate.revoked) {
+            <p class="maya-badge maya-badge--danger">
+              Anulado{{ certificate.revokedReason ? ': ' + certificate.revokedReason : '' }}
+            </p>
+          }
+
           <p class="maya-tiny maya-subtle" style="font-family: var(--maya-font-mono)">
-            Código: {{ certificate.code }}
+            N.º {{ certificate.serial }} · {{ certificate.code }}
           </p>
+          <!-- El sello es lo que hace irrepetible el documento: se enseña para
+               que pueda citarse al comprobarlo. -->
+          <p class="maya-tiny maya-subtle" style="font-family: var(--maya-font-mono)">
+            Sello {{ certificate.hash.slice(0, 24) }}…
+          </p>
+
+          @if (!certificate.downloadUrl && !certificate.revoked) {
+            <p class="maya-tiny maya-subtle">
+              Este certificado se acredita en línea con su enlace o su código QR; el curso
+              no permite descargarlo.
+            </p>
+          }
         </div>
-        <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2)">
-          <a
-            [href]="renderUrl(certificate)"
-            target="_blank"
-            rel="noopener"
-            class="maya-btn maya-btn--primary maya-btn--sm"
-            style="flex: 1"
-          >
-            <maya-icon name="download" [size]="15" /> Descargar
-          </a>
+        <div class="maya-card__footer" style="display: flex; gap: var(--maya-space-2); flex-wrap: wrap">
+          @if (certificate.downloadUrl) {
+            <a
+              [href]="renderUrl(certificate)"
+              target="_blank"
+              rel="noopener"
+              class="maya-btn maya-btn--primary maya-btn--sm"
+              style="flex: 1"
+            >
+              <maya-icon name="download" [size]="15" /> Descargar
+            </a>
+          } @else if (!certificate.revoked) {
+            <a
+              [href]="viewUrl(certificate)"
+              target="_blank"
+              rel="noopener"
+              class="maya-btn maya-btn--primary maya-btn--sm"
+              style="flex: 1"
+            >
+              <maya-icon name="eye" [size]="15" /> Ver certificado
+            </a>
+          }
           <a
             [href]="verifyUrl(certificate)"
             target="_blank"
@@ -87,6 +117,14 @@
           >
             <maya-icon name="shield-check" [size]="15" /> Verificar
           </a>
+          <button
+            type="button"
+            class="maya-btn maya-btn--ghost maya-btn--sm"
+            (click)="copyVerifyLink(certificate)"
+          >
+            <maya-icon [name]="copied() === certificate.id ? 'check' : 'link'" [size]="15" />
+            Copiar enlace
+          </button>
         </div>
       </article>
     }

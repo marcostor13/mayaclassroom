@@ -84,6 +84,15 @@ export const routes: Routes = [
       import('./features/site/order-public.page').then((m) => m.OrderPublicPage),
   },
 
+  {
+    // Comprobación pública de un certificado: es a donde lleva su código QR, y
+    // quien lo escanea no tiene por qué tener cuenta en la plataforma.
+    path: 'certificates/verify/:code',
+    title: 'Verificar certificado · Maya Classroom',
+    loadComponent: () =>
+      import('./features/certificates/verify.page').then((m) => m.CertificateVerifyPage),
+  },
+
   /* ─────────────────────────── Autenticación ─────────────────────────── */
   {
     path: 'auth',

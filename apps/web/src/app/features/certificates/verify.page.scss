@@ -1,0 +1,93 @@
+@use '../../../styles/tokens' as *;
+
+.verificacion {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--maya-space-6) var(--maya-space-4);
+  display: grid;
+  gap: var(--maya-space-5);
+}
+
+.verificacion__marca {
+  display: flex;
+  justify-content: center;
+}
+
+.verificacion__pie {
+  text-align: center;
+  line-height: 1.6;
+}
+
+.veredicto {
+  border-top: 4px solid var(--maya-border);
+}
+
+.veredicto--ok {
+  border-top-color: var(--maya-success);
+}
+
+.veredicto--no {
+  border-top-color: var(--maya-primary);
+}
+
+.veredicto__cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-4);
+  margin-bottom: var(--maya-space-5);
+}
+
+.veredicto__sello {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface-alt);
+}
+
+.veredicto--ok .veredicto__sello {
+  background: var(--maya-success-soft);
+  color: var(--maya-success);
+}
+
+.veredicto--no .veredicto__sello {
+  background: var(--maya-primary-soft);
+  color: var(--maya-primary-deep);
+}
+
+.veredicto__titulo {
+  margin: 0 0 2px;
+  font-size: var(--maya-text-xl);
+  line-height: 1.2;
+}
+
+.datos {
+  margin: 0;
+  display: grid;
+  gap: var(--maya-space-3);
+}
+
+.datos__fila {
+  display: grid;
+  gap: 2px;
+}
+
+.datos__fila dd {
+  margin: 0;
+}
+
+.codigo {
+  font-family: var(--maya-font-mono);
+  font-size: var(--maya-text-xs);
+  /* El sello es largo: se parte en lugar de desbordar la tarjeta. */
+  overflow-wrap: anywhere;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maya-space-2);
+  margin-top: var(--maya-space-5);
+}

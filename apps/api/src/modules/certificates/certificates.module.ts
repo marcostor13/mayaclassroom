@@ -18,6 +18,6 @@ import { CertificatesController } from './certificates.controller';
   ],
   controllers: [CertificatesController],
   providers: [CertificatesService],
-  exports: [CertificatesService],
+  exports: [CertificatesService, MongooseModule],
 })
 export class CertificatesModule {}

@@ -28,11 +28,21 @@ export class CertificatesController {
   }
 
   @Public()
+  @Get(':code/view')
+  @ApiOperation({ summary: 'Certificado para consultarlo en línea' })
+  async view(@Param('code') code: string, @Res() res: Response) {
+    const app = this.config.getOrThrow<AppConfig>('app');
+    const html = await this.certificates.render(code, app.webUrl, false);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  }
+
+  @Public()
   @Get(':code/render')
   @ApiOperation({ summary: 'Certificado imprimible en HTML' })
   async render(@Param('code') code: string, @Res() res: Response) {
     const app = this.config.getOrThrow<AppConfig>('app');
-    const html = await this.certificates.render(code, app.webUrl);
+    const html = await this.certificates.render(code, app.webUrl, true);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(html);
   }
@@ -45,7 +55,7 @@ export class CertificatesController {
 
   @ApiBearerAuth()
   @Post('templates')
-  @RequireCapability(CAP.TENANT_UPDATE, { contextLevel: ContextLevel.Tenant })
+  @RequireCapability(CAP.CERTIFICATE_MANAGE, { contextLevel: ContextLevel.Tenant })
   createTemplate(
     @CurrentUser() user: RequestUser,
     @Body() dto: CreateCertificateTemplateDto,
@@ -61,7 +71,10 @@ export class CertificatesController {
 
   @ApiBearerAuth()
   @Post('courses/:courseId/issue/:userId')
-  @RequireCapability(CAP.GRADE_EDIT, { contextLevel: ContextLevel.Course, param: 'courseId' })
+  @RequireCapability(CAP.CERTIFICATE_ISSUE, {
+    contextLevel: ContextLevel.Course,
+    param: 'courseId',
+  })
   @ApiOperation({ summary: 'Emitir un certificado a un alumno' })
   issue(
     @CurrentUser() user: RequestUser,
@@ -79,12 +92,34 @@ export class CertificatesController {
 
   @ApiBearerAuth()
   @Post('courses/:courseId/claim')
-  @ApiOperation({ summary: 'Solicitar el propio certificado del curso completado' })
+  @ApiOperation({ summary: 'Solicitar el propio certificado del curso superado' })
   claim(@CurrentUser() user: RequestUser, @Param('courseId') courseId: string) {
-    return this.certificates.issue({
-      tenantId: user.tenantId,
-      courseId,
-      userId: user.id,
-    });
+    return this.certificates.claim(user.tenantId, courseId, user.id);
+  }
+
+  @ApiBearerAuth()
+  @Get('courses/:courseId/me')
+  @ApiOperation({ summary: 'Certificado propio de un curso, si ya está expedido' })
+  mineForCourse(@CurrentUser() user: RequestUser, @Param('courseId') courseId: string) {
+    return this.certificates.forCourseAndUser(courseId, user.id);
+  }
+
+  @ApiBearerAuth()
+  @Get('courses/:courseId')
+  @RequireCapability(CAP.CERTIFICATE_ISSUE, {
+    contextLevel: ContextLevel.Course,
+    param: 'courseId',
+  })
+  @ApiOperation({ summary: 'Certificados expedidos de un curso' })
+  courseCertificates(@Param('courseId') courseId: string) {
+    return this.certificates.courseCertificates(courseId);
+  }
+
+  @ApiBearerAuth()
+  @Post(':code/revoke')
+  @RequireCapability(CAP.CERTIFICATE_MANAGE, { contextLevel: ContextLevel.Tenant })
+  @ApiOperation({ summary: 'Anular un certificado sin borrarlo' })
+  revoke(@Param('code') code: string, @Body('reason') reason: string) {
+    return this.certificates.revoke(code, reason ?? 'Anulado por la administración');
   }
 }

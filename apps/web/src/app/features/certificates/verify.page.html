@@ -1,0 +1,101 @@
+<main class="verificacion">
+  <header class="verificacion__marca">
+    <maya-logo [size]="34" [showText]="true" textLayout="inline" />
+  </header>
+
+  @if (loading()) {
+    <div class="maya-skeleton" style="height: 280px; border-radius: var(--maya-radius-xl)"></div>
+  } @else if (result(); as data) {
+    <article
+      class="maya-card veredicto"
+      [class.veredicto--ok]="data.valid"
+      [class.veredicto--no]="!data.valid"
+    >
+      <div class="maya-card__body">
+        <div class="veredicto__cabecera">
+          <span class="veredicto__sello">
+            <maya-icon [name]="data.valid ? 'shield-check' : 'alert'" [size]="28" />
+          </span>
+          <div>
+            <h1 class="veredicto__titulo">
+              {{ data.valid ? 'Certificado auténtico' : 'Certificado no válido' }}
+            </h1>
+            <p class="maya-small maya-subtle">
+              {{
+                data.valid
+                  ? 'Los datos coinciden con el sello registrado en la plataforma.'
+                  : data.reason
+              }}
+            </p>
+          </div>
+        </div>
+
+        @if (data.valid) {
+          <dl class="datos">
+            <div class="datos__fila">
+              <dt class="maya-tiny maya-subtle">Acredita a</dt>
+              <dd class="maya-bold">{{ data.recipient }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt class="maya-tiny maya-subtle">Curso</dt>
+              <dd>{{ data.course }}</dd>
+            </div>
+            @if (data.grade !== null && data.grade !== undefined) {
+              <div class="datos__fila">
+                <dt class="maya-tiny maya-subtle">Calificación final</dt>
+                <dd>{{ data.grade }}</dd>
+              </div>
+            }
+            <div class="datos__fila">
+              <dt class="maya-tiny maya-subtle">Expedido el</dt>
+              <dd>{{ data.issuedAt | mayaDate: 'long' }}</dd>
+            </div>
+            @if (data.tenantName) {
+              <div class="datos__fila">
+                <dt class="maya-tiny maya-subtle">Entidad emisora</dt>
+                <dd>{{ data.tenantName }}</dd>
+              </div>
+            }
+            <div class="datos__fila">
+              <dt class="maya-tiny maya-subtle">Número y código</dt>
+              <dd class="codigo">{{ data.serial }} · {{ data.code }}</dd>
+            </div>
+            @if (data.hash) {
+              <div class="datos__fila">
+                <dt class="maya-tiny maya-subtle">Sello de autenticidad</dt>
+                <dd class="codigo">{{ data.hash }}</dd>
+              </div>
+            }
+          </dl>
+
+          <div class="acciones">
+            <a
+              [href]="viewUrl()"
+              target="_blank"
+              rel="noopener"
+              class="maya-btn maya-btn--secondary"
+            >
+              <maya-icon name="eye" [size]="16" /> Ver el certificado
+            </a>
+            @if (data.downloadUrl) {
+              <a
+                [href]="data.downloadUrl"
+                target="_blank"
+                rel="noopener"
+                class="maya-btn maya-btn--primary"
+              >
+                <maya-icon name="download" [size]="16" /> Descargar
+              </a>
+            }
+          </div>
+        }
+      </div>
+    </article>
+
+    <p class="maya-tiny maya-subtle verificacion__pie">
+      Esta comprobación se hace contra el servidor que expidió el documento. Un
+      certificado impreso o en imagen no acredita nada por sí solo: siempre puede
+      cotejarse aquí con su código.
+    </p>
+  }
+</main>
