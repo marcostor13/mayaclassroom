@@ -22,6 +22,9 @@
   --maya-pastel: #ff8f7d;
   --maya-accent: #ffb020;
   --maya-accent-soft: #fff4dd;
+  /* Ámbar oscuro para el *texto* sobre `accent-soft`: el ámbar de relleno se
+     queda en 2.7:1 y no llega al mínimo AA. */
+  --maya-accent-ink: #9a7118;
 
   /* Degradado de marca reutilizable (héroes, marca, avatares). */
   --maya-gradient: linear-gradient(135deg, #ff6a4d 0%, var(--maya-primary) 46%, var(--maya-primary-active) 100%);
@@ -153,6 +156,7 @@
   --maya-primary-softer: #2c1613;
   --maya-pastel: #ff8f7d;
   --maya-accent-soft: #3a2c12;
+  --maya-accent-ink: #f0c469;
 
   --maya-success-soft: #102c1c;
   --maya-warning-soft: #2f2510;

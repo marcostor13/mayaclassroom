@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
+  ActivityCatalogItem,
+  ActivityGroup,
   AvailabilityCondition,
   AvailabilityConditionType,
   AvailabilityOperator,
@@ -14,10 +17,11 @@ import {
   GroupDto,
   SectionDto,
 } from '@maya/shared';
-import { ActivityType, CoursesService } from '../../core/services/courses.service';
+import { CoursesService } from '../../core/services/courses.service';
 import { moduleIcon, moduleLink } from '../../core/module-links';
 import { ToastService } from '../../core/services/toast.service';
 import {
+  EmptyStateComponent,
   IconComponent,
   ImageUploadComponent,
   ModalComponent,
@@ -25,7 +29,105 @@ import {
 } from '../../shared';
 import { ConfirmService } from '../../core/services/confirm.service';
 
-/** Creación y edición de cursos, con gestión de secciones y actividades. */
+/** Pasos del asistente, en el orden en que se recorren. */
+type StepId = 'datos' | 'presentacion' | 'estructura' | 'contenido';
+
+interface Step {
+  id: StepId;
+  /**
+   * Rótulo del stepper. De una palabra: la banda reparte el ancho entre los
+   * cuatro pasos y una palabra larga impone su ancho mínimo a todos, así que
+   * el contexto completo lo da `title`, no esto.
+   */
+  label: string;
+  icon: string;
+  title: string;
+  hint: string;
+}
+
+const STEPS: readonly Step[] = [
+  {
+    id: 'datos',
+    label: 'Datos',
+    icon: 'sparkles',
+    title: '¿Qué curso vamos a montar?',
+    hint: 'El nombre y dónde se guarda. Lo demás se puede cambiar en cualquier momento.',
+  },
+  {
+    id: 'presentacion',
+    label: 'Portada',
+    icon: 'image',
+    title: 'Portada y resumen del curso',
+    hint: 'Es lo primero que ve quien se plantea matricularse, antes que el temario.',
+  },
+  {
+    id: 'estructura',
+    label: 'Estructura',
+    icon: 'layers',
+    title: 'Cómo se organiza el temario',
+    hint: 'El formato decide si el contenido se agrupa por temas, por semanas o en una sola pieza.',
+  },
+  {
+    id: 'contenido',
+    label: 'Contenido',
+    icon: 'list-checks',
+    title: 'El temario del curso',
+    hint: 'Cree las secciones y ponga dentro páginas, vídeos, tareas y cuestionarios.',
+  },
+];
+
+/** Formatos de curso, explicados: el desplegable no decía qué elegía nadie. */
+const FORMATS: readonly { value: CourseFormat; label: string; icon: string; text: string }[] = [
+  {
+    value: CourseFormat.Topics,
+    label: 'Por temas',
+    icon: 'layers',
+    text: 'Bloques numerados sin fechas. La opción habitual para un curso que se sigue a ritmo libre.',
+  },
+  {
+    value: CourseFormat.Weekly,
+    label: 'Semanal',
+    icon: 'calendar',
+    text: 'Una sección por semana, con sus fechas. Para grupos que avanzan a la vez.',
+  },
+  {
+    value: CourseFormat.SingleActivity,
+    label: 'Actividad única',
+    icon: 'target',
+    text: 'Todo el curso es una sola actividad: un examen, un paquete SCORM o un vídeo.',
+  },
+  {
+    value: CourseFormat.Social,
+    label: 'Social',
+    icon: 'message-square',
+    text: 'Un foro en el centro del curso. Para comunidades y espacios de debate.',
+  },
+];
+
+/** Quita tildes y pasa a minúsculas, para que la búsqueda no dependa de ellas. */
+function normalize(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+/**
+ * Propone un nombre corto a partir del completo: iniciales de las palabras
+ * largas, o las primeras letras si solo hay una. Es un punto de partida que
+ * casi nadie quiere teclear a mano, y se puede sobrescribir.
+ */
+function suggestShortName(fullName: string): string {
+  const words = normalize(fullName)
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2);
+  if (!words.length) return '';
+  const acronym = words.map((word) => word[0]).join('');
+  return (acronym.length >= 3 ? acronym : words[0].slice(0, 6)).toUpperCase().slice(0, 10);
+}
+
+/** Creación y edición de cursos como asistente de cuatro pasos. */
 @Component({
   selector: 'maya-course-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,52 +135,14 @@ import { ConfirmService } from '../../core/services/confirm.service';
     ReactiveFormsModule,
     FormsModule,
     RouterLink,
+    EmptyStateComponent,
     IconComponent,
     ImageUploadComponent,
     ModalComponent,
     RichEditorComponent,
   ],
   templateUrl: './course-editor.page.html',
-  styles: `
-    /* Título de sección editable en el sitio: parece texto hasta que se toca. */
-    .titulo-seccion {
-      flex: 1;
-      min-width: 0;
-      font: inherit;
-      font-size: var(--maya-text-md);
-      font-weight: 700;
-      color: inherit;
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: var(--maya-radius-sm);
-      padding: 4px 8px;
-      margin-left: -8px;
-    }
-
-    .titulo-seccion:hover {
-      border-color: var(--maya-border);
-    }
-
-    .titulo-seccion:focus {
-      outline: none;
-      border-color: var(--maya-primary);
-      background: var(--maya-surface);
-    }
-
-    .enlace-actividad {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      flex: 1;
-      min-width: 0;
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .enlace-actividad:hover .maya-bold {
-      color: var(--maya-primary-ink);
-    }
-  `,
+  styleUrl: './course-editor.page.scss',
 })
 export class CourseEditorPage {
   private readonly fb = inject(FormBuilder);
@@ -93,13 +157,8 @@ export class CourseEditorPage {
 
   readonly categories = signal<CategoryNode[]>([]);
   readonly sections = signal<SectionDto[]>([]);
-  readonly activityTypes = signal<ActivityType[]>([]);
+  readonly activityTypes = signal<ActivityCatalogItem[]>([]);
   readonly saving = signal(false);
-
-  /** Formulario de nueva actividad. */
-  readonly addingTo = signal<string | null>(null);
-  readonly activityType = signal('page');
-  readonly activityName = signal('');
   readonly groups = signal<GroupDto[]>([]);
 
   /** Portada del curso: la usan la lista de cursos y el catálogo público. */
@@ -121,6 +180,66 @@ export class CourseEditorPage {
     visibility: ['visible'],
   });
 
+  /**
+   * Valor del formulario como señal: el stepper decide con él qué pasos deja
+   * abrir, y un `FormGroup` por sí solo no dispara la detección de cambios sin
+   * zonas.
+   */
+  private readonly value = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue() as Partial<ReturnType<typeof this.form.getRawValue>>,
+  });
+
+  /* --------------------------- Pasos del asistente ------------------------ */
+
+  readonly steps = STEPS;
+  readonly formats = FORMATS;
+  readonly step = signal<StepId>('datos');
+  readonly stepIndex = computed(() => STEPS.findIndex((item) => item.id === this.step()));
+  readonly current = computed(() => STEPS[this.stepIndex()] ?? STEPS[0]);
+
+  /** Lo esencial está resuelto: sin esto no hay curso que guardar. */
+  readonly basicsDone = computed(() => {
+    const value = this.value();
+    return Boolean(value.fullName?.trim() && value.shortName?.trim() && value.categoryId);
+  });
+
+  /** El paso de contenido solo existe cuando el curso ya está creado. */
+  stepEnabled(id: StepId): boolean {
+    if (id === 'datos') return true;
+    if (id === 'contenido') return !this.isNew();
+    return this.basicsDone();
+  }
+
+  stepState(index: number): 'done' | 'active' | 'pending' {
+    if (index === this.stepIndex()) return 'active';
+    if (index >= this.stepIndex()) return 'pending';
+    // Sólo se da por resuelto lo que de verdad lo está: haber pasado por el
+    // primer paso sin rellenarlo no merece un visto.
+    return STEPS[index].id === 'datos' && !this.basicsDone() ? 'pending' : 'done';
+  }
+
+  goTo(id: StepId): void {
+    if (!this.stepEnabled(id)) return;
+    this.step.set(id);
+    scrollToTop();
+  }
+
+  next(): void {
+    const following = STEPS[this.stepIndex() + 1];
+    if (following) this.goTo(following.id);
+  }
+
+  back(): void {
+    const previous = STEPS[this.stepIndex() - 1];
+    if (previous) this.goTo(previous.id);
+  }
+
+  /** Hay un paso siguiente accesible al que llevar. */
+  readonly hasNext = computed(() => {
+    const following = STEPS[this.stepIndex() + 1];
+    return Boolean(following && this.stepEnabled(following.id));
+  });
+
   constructor() {
     this.courses.categoryTree().subscribe({
       next: (tree) => {
@@ -135,10 +254,15 @@ export class CourseEditorPage {
 
     const id = this.courseId();
     if (id) {
-      this.courses.detail(id).subscribe({
-        next: (course) => this.patch(course),
-      });
+      this.courses.detail(id).subscribe({ next: (course) => this.patch(course) });
       this.loadSections(id);
+    }
+
+    // Tras crear el curso se vuelve a entrar por otra ruta: el paso llega en
+    // la consulta para no aterrizar de nuevo en el primero.
+    const requested = this.route.snapshot.queryParamMap.get('paso') as StepId | null;
+    if (requested && STEPS.some((item) => item.id === requested) && this.stepEnabled(requested)) {
+      this.step.set(requested);
     }
   }
 
@@ -165,6 +289,87 @@ export class CourseEditorPage {
       { node, depth },
       ...this.flatten(node.children ?? [], depth + 1),
     ]);
+  }
+
+  /** Completa el nombre corto mientras nadie lo haya tocado a mano. */
+  suggestShortName(): void {
+    const control = this.form.controls.shortName;
+    if (control.dirty && control.value.trim()) return;
+    const suggestion = suggestShortName(this.form.controls.fullName.value);
+    if (suggestion) control.setValue(suggestion);
+  }
+
+  /* -------------------------- Catálogo de actividades --------------------- */
+
+  /** Ficha de cada tipo, para rotular las actividades ya añadidas. */
+  private readonly catalogByType = computed(
+    () => new Map(this.activityTypes().map((item) => [item.type as string, item])),
+  );
+
+  /** Sección a la que se está añadiendo una actividad; `null` con el diálogo cerrado. */
+  readonly pickerSection = signal<SectionDto | null>(null);
+  readonly pickerQuery = signal('');
+  readonly pickerGroup = signal<ActivityGroup | 'all'>('all');
+  /** Tipo elegido: mientras es `null` el diálogo muestra el catálogo. */
+  readonly pickerType = signal<ActivityCatalogItem | null>(null);
+  readonly activityName = signal('');
+  readonly addingActivity = signal(false);
+
+  readonly groupFilters: readonly { value: ActivityGroup | 'all'; label: string }[] = [
+    { value: 'all', label: 'Todo' },
+    { value: 'activity', label: 'Actividades' },
+    { value: 'resource', label: 'Recursos' },
+  ];
+
+  /** Catálogo filtrado por familia y por texto (nombre, descripción y etiquetas). */
+  readonly pickerResults = computed(() => {
+    const group = this.pickerGroup();
+    const query = normalize(this.pickerQuery().trim());
+    return this.activityTypes().filter((item) => {
+      if (group !== 'all' && item.group !== group) return false;
+      if (!query) return true;
+      const haystack = normalize(`${item.label} ${item.description} ${item.tags.join(' ')}`);
+      return haystack.includes(query);
+    });
+  });
+
+  openPicker(section: SectionDto): void {
+    this.pickerSection.set(section);
+    this.pickerType.set(null);
+    this.pickerQuery.set('');
+    this.pickerGroup.set('all');
+    this.activityName.set('');
+  }
+
+  closePicker(): void {
+    this.pickerSection.set(null);
+    this.pickerType.set(null);
+  }
+
+  chooseType(item: ActivityCatalogItem): void {
+    this.pickerType.set(item);
+    this.activityName.set('');
+  }
+
+  addActivity(): void {
+    const id = this.courseId();
+    const section = this.pickerSection();
+    const type = this.pickerType();
+    const name = this.activityName().trim();
+    if (!id || !section || !type || !name) return;
+
+    this.addingActivity.set(true);
+    this.courses
+      .addModule(id, { moduleType: type.type, sectionId: section.id, name, settings: {} })
+      .subscribe({
+        next: () => {
+          this.addingActivity.set(false);
+          this.closePicker();
+          this.loadSections(id);
+          this.toast.success(`${type.label} añadida`);
+        },
+        error: () => this.addingActivity.set(false),
+      });
   }
 
   /* ------------------- Ajustes de finalización y acceso ------------------ */
@@ -267,6 +472,7 @@ export class CourseEditorPage {
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.goTo('datos');
       return;
     }
     this.saving.set(true);
@@ -286,10 +492,13 @@ export class CourseEditorPage {
     request.subscribe({
       next: (course) => {
         this.saving.set(false);
-        this.toast.success(id ? 'Curso actualizado' : 'Curso creado');
+        this.toast.success(id ? 'Curso actualizado' : 'Curso creado: ya puede poner el temario');
         if (!id) {
           this.courseId.set(course.id);
-          void this.router.navigate(['/courses', course.id, 'edit']);
+          // Recién creado, lo único que queda por hacer es el contenido.
+          void this.router.navigate(['/courses', course.id, 'edit'], {
+            queryParams: { paso: 'contenido' },
+          });
         } else {
           this.loadSections(id);
         }
@@ -307,27 +516,6 @@ export class CourseEditorPage {
         this.toast.success('Sección añadida');
       },
     });
-  }
-
-  addActivity(sectionId: string): void {
-    const id = this.courseId();
-    if (!id || !this.activityName().trim()) return;
-
-    this.courses
-      .addModule(id, {
-        moduleType: this.activityType(),
-        sectionId,
-        name: this.activityName(),
-        settings: {},
-      })
-      .subscribe({
-        next: () => {
-          this.activityName.set('');
-          this.addingTo.set(null);
-          this.loadSections(id);
-          this.toast.success('Actividad añadida');
-        },
-      });
   }
 
   removeModule(moduleId: string, name: string): void {
@@ -402,6 +590,11 @@ export class CourseEditorPage {
     return moduleIcon(module);
   }
 
+  /** Nombre legible del tipo. Sin el catálogo se vería «h5pactivity». */
+  moduleTypeLabel(module: CourseModuleDto): string {
+    return this.catalogByType().get(module.moduleType)?.label ?? module.moduleType;
+  }
+
   /** Renombra la sección sin salir de la pantalla. */
   renameSection(section: SectionDto, name: string): void {
     const id = this.courseId();
@@ -418,6 +611,17 @@ export class CourseEditorPage {
   sectionTitle(section: SectionDto): string {
     return section.name ?? (section.sectionNumber === 0 ? 'General' : `Tema ${section.sectionNumber}`);
   }
+
+  /** Cuántas actividades tiene la sección, ya redactado. */
+  sectionCount(section: SectionDto): string {
+    const total = section.modules?.length ?? 0;
+    return total === 1 ? '1 actividad' : `${total} actividades`;
+  }
+}
+
+/** Al cambiar de paso hay que volver arriba: el siguiente empieza donde acabó el anterior. */
+function scrollToTop(): void {
+  if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /** Lee el árbol serializado y lo devuelve como lista plana de condiciones. */

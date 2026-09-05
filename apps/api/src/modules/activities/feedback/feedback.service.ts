@@ -38,6 +38,10 @@ export class FeedbackService implements ActivityHandler, OnModuleInit {
   readonly label = 'Encuesta';
   readonly icon = 'clipboard-list';
   readonly gradable = false;
+  readonly description =
+    'Cuestionario de opinión con preguntas propias. Sirve para recoger la ' +
+    'valoración del curso o sondear al grupo, sin nota.';
+  readonly tags = ['Anónima opcional', 'Preguntas propias'];
 
   constructor(
     @InjectModel(Feedback.name) private readonly model: Model<FeedbackDocument>,

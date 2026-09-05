@@ -46,6 +46,10 @@ export class ForumService implements ActivityHandler, OnModuleInit {
   readonly label = 'Foro';
   readonly icon = 'message-square';
   readonly gradable = true;
+  readonly description =
+    'Debate por hilos entre el alumnado y el profesorado, con avisos por correo ' +
+    'a quien esté suscrito.';
+  readonly tags = ['Debate', 'Con avisos'];
 
   constructor(
     @InjectModel(Forum.name) private readonly model: Model<ForumDocument>,

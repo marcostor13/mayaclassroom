@@ -2,11 +2,40 @@ import {
   ForumSubscriptionMode,
   ForumType,
   GradeType,
+  ModuleType,
   QuestionType,
   QuizAttemptState,
   QuizGradeMethod,
   SubmissionStatus,
 } from '../enums';
+
+/* --------------------- Catálogo de tipos de actividad -------------------- */
+
+/**
+ * Familia a la que pertenece un tipo de módulo. Separa lo que el alumnado
+ * *hace* de lo que simplemente *consulta*, que es la primera pregunta que se
+ * hace quien monta un tema.
+ */
+export type ActivityGroup = 'activity' | 'resource';
+
+/**
+ * Ficha de un tipo de actividad o recurso en el selector «Añadir actividad».
+ *
+ * Lleva más que la etiqueta a propósito: elegir entre veintidós tipos con solo
+ * el nombre obliga a saberse Moodle de memoria. La descripción dice para qué
+ * sirve y las etiquetas resumen sus rasgos de un vistazo.
+ */
+export interface ActivityCatalogItem {
+  type: ModuleType;
+  label: string;
+  icon: string;
+  gradable: boolean;
+  group: ActivityGroup;
+  /** Una frase: qué es y cuándo conviene usarlo. */
+  description: string;
+  /** Rasgos sueltos («Con nota», «En grupo»…) para mostrar como distintivos. */
+  tags: string[];
+}
 
 /* ------------------------------- Tarea ----------------------------------- */
 

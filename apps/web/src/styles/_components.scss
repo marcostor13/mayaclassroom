@@ -384,7 +384,7 @@
 .maya-badge--warning { background: var(--maya-warning-soft); color: var(--maya-warning); }
 .maya-badge--danger { background: var(--maya-danger-soft); color: var(--maya-danger); }
 .maya-badge--info { background: var(--maya-info-soft); color: var(--maya-info); }
-.maya-badge--accent { background: var(--maya-accent-soft); color: #9a7118; }
+.maya-badge--accent { background: var(--maya-accent-soft); color: var(--maya-accent-ink); }
 
 .maya-dot {
   width: 8px;
@@ -773,6 +773,10 @@
     padding: var(--maya-space-6);
   }
 
+  /* Diálogo ancho: lo piden los selectores en rejilla, donde 560 px dejan
+     las tarjetas en una sola columna hasta en un portátil. */
+  &--lg &__panel { max-width: 800px; }
+
   &__panel {
     pointer-events: auto;
     width: 100%;
@@ -965,4 +969,187 @@
   grid-template-columns: repeat(2, 1fr);
 
   @include from($maya-bp-lg) { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* --- Asistente por pasos ------------------------------------------------
+   Encabezado de los flujos largos (crear un curso, publicar la ficha de
+   venta). En móvil se desliza en horizontal, porque cuatro pasos con su
+   etiqueta no caben en 360 px sin partir palabras. */
+
+.maya-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: var(--maya-space-2) 0;
+
+  &::-webkit-scrollbar { display: none; }
+
+  &__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--maya-space-2);
+    /* Reparten el ancho a partes iguales y dejan que el rótulo parta en dos
+       líneas: con un ancho mínimo generoso el cuarto paso se salía de un
+       móvil de 390 px y había que descubrirlo deslizando. */
+    flex: 1 1 0;
+    min-width: 56px;
+    padding: var(--maya-space-2) var(--maya-space-1);
+    border-radius: var(--maya-radius-md);
+    color: var(--maya-text-subtle);
+    text-align: center;
+    transition: color var(--maya-duration) var(--maya-ease);
+
+    &:disabled { cursor: not-allowed; opacity: 0.55; }
+    &:not(:disabled):hover { color: var(--maya-text-muted); text-decoration: none; }
+    &:not(:disabled):active { transform: scale(0.97); }
+  }
+
+  /* La bolita: número mientras falta, visto cuando el paso está resuelto. */
+  &__bullet {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 2px solid var(--maya-border-strong);
+    background: var(--maya-surface);
+    color: var(--maya-text-subtle);
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-sm);
+    font-weight: 700;
+    transition: all var(--maya-duration) var(--maya-ease);
+  }
+
+  &__label {
+    font-size: var(--maya-text-xs);
+    font-weight: 600;
+    line-height: var(--maya-leading-snug);
+  }
+
+  &__step.is-done {
+    color: var(--maya-text-muted);
+
+    .maya-stepper__bullet {
+      border-color: var(--maya-success);
+      background: var(--maya-success-soft);
+      color: var(--maya-success);
+    }
+  }
+
+  &__step.is-active {
+    color: var(--maya-primary-ink);
+
+    .maya-stepper__bullet {
+      border-color: var(--maya-primary);
+      background: var(--maya-primary);
+      color: var(--maya-text-on-primary);
+      box-shadow: var(--maya-shadow-primary);
+    }
+  }
+
+  /* Tramo de unión entre bolitas. Se alinea con el centro de la bolita, de
+     ahí el margen superior de 28 px (algo más de la mitad de su altura). */
+  &__link {
+    /* Ancho fijo mientras el espacio escasea: repartiendo a partes iguales,
+       los tramos se llevaban lo que el último rótulo necesitaba y «Contenido»
+       quedaba cortado contra el borde. */
+    flex: 0 0 12px;
+    height: 2px;
+
+    @include from($maya-bp-md) { flex: 1 1 auto; min-width: 12px; }
+    margin-top: 28px;
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-border-strong);
+
+    &.is-done { background: var(--maya-success); }
+  }
+}
+
+/* --- Tarjeta de opción --------------------------------------------------
+   Alternativa a un `<select>` cuando la elección merece explicarse: formato
+   del curso, tipo de actividad. El icono y la frase hacen el trabajo que la
+   lista desplegable dejaba a la imaginación. */
+
+.maya-option-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--maya-space-3);
+  width: 100%;
+  padding: var(--maya-space-4);
+  border: 1.5px solid var(--maya-border);
+  border-radius: var(--maya-radius-lg);
+  background: var(--maya-surface);
+  color: var(--maya-text);
+  text-align: left;
+  transition:
+    border-color var(--maya-duration) var(--maya-ease),
+    box-shadow var(--maya-duration) var(--maya-ease),
+    transform var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover {
+    border-color: var(--maya-border-strong);
+    box-shadow: var(--maya-shadow-sm);
+    text-decoration: none;
+  }
+
+  &:active { transform: scale(0.985); }
+
+  &.is-selected {
+    border-color: var(--maya-primary);
+    box-shadow: 0 0 0 3px var(--maya-focus);
+
+    .maya-option-card__title { color: var(--maya-primary-ink); }
+  }
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__title {
+    display: block;
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-base);
+    font-weight: 700;
+    line-height: var(--maya-leading-snug);
+  }
+
+  &__text {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--maya-text-xs);
+    line-height: var(--maya-leading-snug);
+    color: var(--maya-text-muted);
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--maya-space-1);
+    margin-top: var(--maya-space-2);
+  }
+
+  /* Etiqueta menuda: no es un `.maya-badge`, que pesa demasiado repetido
+     tres veces en cada una de veintidós tarjetas. */
+  &__tag {
+    padding: 2px 8px;
+    border-radius: var(--maya-radius-pill);
+    background: var(--maya-surface-3);
+    color: var(--maya-text-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &--grade { background: var(--maya-accent-soft); color: var(--maya-accent-ink); }
+  }
+}
+
+/* Rejilla de tarjetas de opción: dos columnas en cuanto hay sitio. */
+.maya-options {
+  display: grid;
+  gap: var(--maya-space-3);
+  grid-template-columns: 1fr;
+
+  @include from($maya-bp-sm) { grid-template-columns: repeat(2, 1fr); }
 }

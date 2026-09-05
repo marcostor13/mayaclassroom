@@ -36,6 +36,10 @@ export class ChoiceService implements ActivityHandler, OnModuleInit {
   readonly label = 'Consulta';
   readonly icon = 'list-checks';
   readonly gradable = false;
+  readonly description =
+    'Una sola pregunta con opciones para que el grupo elija: turno de ' +
+    'exposición, tema del trabajo o un sondeo rápido.';
+  readonly tags = ['Una pregunta', 'Resultado en vivo'];
 
   constructor(
     @InjectModel(Choice.name) private readonly model: Model<ChoiceDocument>,

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { ModuleType } from '@maya/shared';
+import { ModuleType, RESOURCE_MODULES } from '@maya/shared';
+import type { ActivityCatalogItem } from '@maya/shared';
 
 export interface ActivityCreateInput {
   tenantId: Types.ObjectId;
@@ -28,6 +29,14 @@ export interface ActivityHandler {
   readonly label: string;
   readonly icon: string;
   readonly gradable: boolean;
+  /**
+   * Una frase que explica para qué sirve el tipo. La pinta el selector debajo
+   * del nombre: sin ella hay que conocer Moodle para distinguir una consulta
+   * de una encuesta.
+   */
+  readonly description: string;
+  /** Rasgos sueltos para mostrar como distintivos («En grupo», «Con nota»). */
+  readonly tags?: readonly string[];
   create(input: ActivityCreateInput): Promise<ActivityInstanceResult>;
   update(
     instanceId: Types.ObjectId,
@@ -63,10 +72,28 @@ export class ActivityRegistry {
     return this.handlers.has(type);
   }
 
-  /** Catálogo para el selector «Añadir una actividad o recurso». */
-  catalog(): { type: ModuleType; label: string; icon: string; gradable: boolean }[] {
+  /**
+   * Catálogo para el selector «Añadir una actividad o recurso».
+   *
+   * Las actividades van antes que los recursos porque son la decisión de
+   * fondo —qué hace el alumnado frente a qué consulta— y el selector las
+   * presenta en ese orden. Dentro de cada familia, por etiqueta.
+   */
+  catalog(): ActivityCatalogItem[] {
     return Array.from(this.handlers.values())
-      .map((h) => ({ type: h.type, label: h.label, icon: h.icon, gradable: h.gradable }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .map((h) => ({
+        type: h.type,
+        label: h.label,
+        icon: h.icon,
+        gradable: h.gradable,
+        group: RESOURCE_MODULES.includes(h.type) ? ('resource' as const) : ('activity' as const),
+        description: h.description,
+        tags: [...(h.tags ?? [])],
+      }))
+      .sort(
+        (a, b) =>
+          Number(a.group === 'resource') - Number(b.group === 'resource') ||
+          a.label.localeCompare(b.label),
+      );
   }
 }
