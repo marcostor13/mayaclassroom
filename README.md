@@ -204,7 +204,8 @@ update(@Param('id') id: string, @Body() dto: UpdateCourseDto) { … }
 El detalle está en [`PLAN.md`](./PLAN.md) y la arquitectura técnica en
 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Para poner el almacenamiento
 de ficheros en Cloudflare R2, [`docs/R2.md`](./docs/R2.md); para las aulas en
-vivo y el TURN, [`docs/LIVE.md`](./docs/LIVE.md).
+vivo y el TURN, [`docs/LIVE.md`](./docs/LIVE.md); para lo que cuesta operar
+la plataforma y dónde poner los topes, [`docs/COSTES.md`](./docs/COSTES.md).
 
 ---
 

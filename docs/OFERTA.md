@@ -201,6 +201,12 @@ academia. Es el punto que hay que vigilar antes que ningún otro: si el coste
 real de operar una instalación se acerca a esa cifra, el plan Inicia deja de
 tener margen y hay que subirlo o recortar lo que incluye.
 
+Ese coste está calculado en [`COSTES.md`](COSTES.md), y el resultado obliga a
+matizar cómo se enuncian los planes: el coste no lo hace el alumnado sino las
+horas grabadas, así que un tope de asientos no protege el margen. Un alumno
+cuesta S/ 0,10 al mes y un docente que graba seis horas, S/ 7,72. Los topes que
+sí sirven son gigas, horas grabadas y meses de retención.
+
 ### Qué revisar cada cierto tiempo
 
 1. El tipo de cambio, que mueve toda la columna de la competencia.
