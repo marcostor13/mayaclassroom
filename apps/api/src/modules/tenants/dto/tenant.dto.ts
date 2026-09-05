@@ -58,6 +58,35 @@ export class TenantBrandingDto {
   @IsString() @MaxLength(500) @IsOptional() welcomeMessage?: string;
 }
 
+/**
+ * Topes de una empresa.
+ *
+ * Normalmente no se envían: los pone el plan (`PLAN_LIMITS`). Están aquí para
+ * el plan Escala, cuyo alcance se pacta caso por caso, y para las excepciones
+ * comerciales puntuales. `usedStorageBytes` no entra a propósito: es un
+ * contador que lleva la plataforma, no un ajuste, y dejarlo escribible
+ * permitiría vaciarlo para saltarse el tope.
+ */
+export class TenantLimitsDto {
+  @ApiPropertyOptional({ example: 300 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  maxUsers?: number;
+
+  @ApiPropertyOptional({ example: 100 })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  maxCourses?: number;
+
+  @ApiPropertyOptional({ description: 'Almacenamiento en bytes.', example: 322122547200 })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxStorageBytes?: number;
+}
+
 export class CreateTenantDto {
   @ApiProperty({ example: 'acme' })
   @IsString()
@@ -95,6 +124,7 @@ export class CreateTenantDto {
 
   @ValidateNested() @Type(() => TenantBrandingDto) @IsOptional() branding?: TenantBrandingDto;
   @ValidateNested() @Type(() => TenantSettingsDto) @IsOptional() settings?: TenantSettingsDto;
+  @ValidateNested() @Type(() => TenantLimitsDto) @IsOptional() limits?: TenantLimitsDto;
 
   /* ------------------ Cuenta de administración de la empresa -------------- */
 

@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import {
   DEFAULT_TENANT_BRANDING,
+  PLAN_LIMITS,
   DEFAULT_TIMEZONE,
   TenantDomainStatus,
   TenantPlan,
@@ -58,11 +59,20 @@ export class TenantSettingsSchema {
   @Prop({ default: 2 }) gradeDecimals!: number;
 }
 
+/**
+ * Topes de la empresa.
+ *
+ * Los valores por defecto son los del plan de prueba y no unos propios: antes
+ * el esquema repartía 500 usuarios y 10 GiB a todo el mundo, con lo que el
+ * plan quedaba en un rótulo y el tope no correspondía a ningún plan real. Lo
+ * que se aplica de verdad al crear la empresa es `PLAN_LIMITS`; esto es solo
+ * la red para un documento que llegue sin ellos.
+ */
 @Schema({ _id: false })
 export class TenantLimitsSchema {
-  @Prop({ default: 500 }) maxUsers!: number;
-  @Prop({ default: 100 }) maxCourses!: number;
-  @Prop({ default: 10 * 1024 * 1024 * 1024 }) maxStorageBytes!: number;
+  @Prop({ default: PLAN_LIMITS[TenantPlan.Free].maxUsers }) maxUsers!: number;
+  @Prop({ default: PLAN_LIMITS[TenantPlan.Free].maxCourses }) maxCourses!: number;
+  @Prop({ default: PLAN_LIMITS[TenantPlan.Free].maxStorageBytes }) maxStorageBytes!: number;
   @Prop({ default: 0 }) usedStorageBytes!: number;
 }
 

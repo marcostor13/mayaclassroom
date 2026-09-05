@@ -1,6 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { TenantAdminCredentials, TenantDto, TenantPlan, TenantStatus } from '@maya/shared';
+import {
+  SIN_LIMITE,
+  TenantAdminCredentials,
+  TenantDto,
+  TenantPlan,
+  TenantStatus,
+  formatBytes,
+} from '@maya/shared';
 import { AdminService } from '../../core/services/admin.service';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -34,6 +41,27 @@ export class AdminTenantDetailPage implements OnInit {
   readonly id = input.required<string>();
 
   readonly TenantStatus = TenantStatus;
+
+  /** Un tope que no limita se escribe, no se enseña como un número enorme. */
+  limite(valor: number): string {
+    return valor >= SIN_LIMITE ? 'sin límite' : String(valor);
+  }
+
+  /**
+   * Consumo de disco de la empresa.
+   *
+   * Se enseña aquí porque es el aviso temprano de que un cliente se ha vuelto
+   * caro: el almacenamiento es la mayor parte del coste variable y, cuando
+   * aparece en la factura, ya lleva meses creciendo.
+   */
+  almacenamiento(t: TenantDto): { usado: string; tope: string; pct: number } {
+    const { usedStorageBytes: usado, maxStorageBytes: tope } = t.limits;
+    return {
+      usado: formatBytes(usado),
+      tope: tope >= SIN_LIMITE ? 'sin límite' : formatBytes(tope),
+      pct: tope > 0 && tope < SIN_LIMITE ? Math.min(100, Math.round((usado / tope) * 100)) : 0,
+    };
+  }
 
   readonly tenant = signal<TenantDto | null>(null);
   readonly loading = signal(true);

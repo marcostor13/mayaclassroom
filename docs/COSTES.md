@@ -186,13 +186,27 @@ mismos clientes**. Y el reparto de esos 495 GB nuevos deja claro dónde actuar:
 
 | Hueco | Dónde | Qué pasa |
 |---|---|---|
-| La cuota de disco por empresa **no se aplica** | `limits.maxStorageBytes` existe y `adjustStorage` la va sumando, pero nadie la compara nunca | Una academia del plan de S/ 47 puede subir un terabyte |
-| El tope de cursos **tampoco** | `limits.maxCourses` solo vive en el esquema | — |
+| ~~La cuota de disco por empresa no se aplica~~ | **Resuelto**: `PLAN_LIMITS` fija el tope por plan y `FilesService.upload` lo comprueba antes de escribir nada | — |
+| El tope de cursos **no se aplica** | `limits.maxCourses` solo vive en el esquema | A propósito: la página promete cursos ilimitados desde el primer plan, y un curso vacío no cuesta nada. Lo que cuesta son sus gigas, y esos ya se miden |
 | Los trozos huérfanos **no se podan** | `scheduled-tasks.service.ts` no tiene tarea para ello | Una pestaña que se cierra sin llamar a `abort` deja sus `.part` en el disco del VPS para siempre |
 | Los registros **no caducan** | Solo `RefreshToken` tiene índice TTL | La colección de auditoría crece sin fin dentro del clúster, que es el GB más caro de todos |
 
 El tope de usuarios sí se aplica (`users.service.ts:268`), que es justamente
 el que menos falta hacía.
+
+### Lo que ya está puesto
+
+Los topes de §7 están aplicados: `PLAN_LIMITS` en `@maya/shared` es la única
+tabla de lo que permite cada plan, la comprobación vive en `FilesService.upload`
+—por donde pasan **todas** las subidas, grabaciones incluidas— y la grabación de
+una clase comprueba el hueco **antes de empezar**, porque enterarse al guardar
+significaría perder la clase entera. Las empresas que ya existían suben a los
+topes de su plan al arrancar la API (`TenantsService.onApplicationBootstrap`),
+que solo sube topes y nunca los baja.
+
+**Falta la caducidad de las grabaciones**, que es la otra mitad. Sin ella el
+tope no es un límite de gasto sino una fecha: el día que la academia lo alcance
+dejará de poder grabar, y la única salida será borrar a mano o subir de plan.
 
 ---
 
@@ -321,10 +335,10 @@ meses:
 
 ### Qué limitar, en este orden
 
-1. **Gigas por empresa.** El campo ya existe (`limits.maxStorageBytes`); lo que
-   falta es compararlo antes de cada subida y devolver un 413 con un mensaje
-   que diga cuánto queda. Es el único tope que ataca el 82 % del coste. Valores
-   de partida: **300 GB en Inicia, 700 GB en Crece**, a cotizar en Escala.
+1. **Gigas por empresa.** ✅ Puesto: **300 GB en Inicia, 700 GB en Crece**,
+   2 TB de partida en Escala y 20 GB en la prueba. La subida que no cabe se
+   rechaza con un 413 que dice cuánto queda y de cuánto. Es el único tope que
+   ataca el 82 % del coste.
 2. **Horas grabadas al mes por empresa.** Un contador que se reinicia cada mes
    y bloquea el botón de grabar con un aviso, no un fallo a mitad de clase.
    **16 h en Inicia, 35 h en Crece** a caudal actual; el doble si se baja a

@@ -169,10 +169,17 @@ De *$100M Offers* y *$100M Leads*, lo que se ha usado y dónde.
 | Implementación | S/ 347 | **S/ 347** | A cotizar |
 | Mensualidad | S/ 47 | **S/ 99** | A cotizar |
 | Alumnado | 300 | 2 000 | Ilimitado |
+| Almacenamiento | 300 GB | **700 GB** | A medida |
 
 Los tres están en `apps/web/src/app/features/landing/landing.data.ts`. Cambiar
 un precio es cambiar un número ahí; la implementación vive además en la
 constante `IMPLEMENTACION_DESDE`, porque la página la enseña en dos sitios.
+
+El almacenamiento es la excepción y **no se escribe en la página**: sale de
+`PLAN_LIMITS` (`@maya/shared`), que es la misma tabla que aplica la API. Es el
+único número de la página que el servidor hace cumplir, y anunciar 700 GB
+mientras el servidor corta en 300 se descubre subiendo un vídeo un martes por
+la tarde. Cambiarlo es cambiar `PLAN_LIMITS`.
 
 ### Por qué esta horquilla
 
@@ -201,11 +208,17 @@ academia. Es el punto que hay que vigilar antes que ningún otro: si el coste
 real de operar una instalación se acerca a esa cifra, el plan Inicia deja de
 tener margen y hay que subirlo o recortar lo que incluye.
 
-Ese coste está calculado en [`COSTES.md`](COSTES.md), y el resultado obliga a
+Ese coste está calculado en [`COSTES.md`](COSTES.md), y el resultado obligó a
 matizar cómo se enuncian los planes: el coste no lo hace el alumnado sino las
 horas grabadas, así que un tope de asientos no protege el margen. Un alumno
 cuesta S/ 0,10 al mes y un docente que graba seis horas, S/ 7,72. Los topes que
 sí sirven son gigas, horas grabadas y meses de retención.
+
+De ahí salen los **300 GB de Inicia y los 700 GB de Crece**, que dejan el
+almacenamiento entre el 40 % y el 28 % de la mensualidad. Los aplica la API
+desde `PLAN_LIMITS`. Falta la caducidad de las grabaciones: mientras no esté,
+el tope es una fecha en la que la academia deja de poder grabar, y no un
+límite de gasto.
 
 ### Qué revisar cada cierto tiempo
 

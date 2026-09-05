@@ -164,7 +164,7 @@
             <dd class="maya-small maya-bold">
               {{ t.userCount ?? '—' }}
               @if (t.limits.maxUsers) {
-                <span class="maya-subtle">/ {{ t.limits.maxUsers }}</span>
+                <span class="maya-subtle">/ {{ limite(t.limits.maxUsers) }}</span>
               }
             </dd>
           </div>
@@ -173,7 +173,17 @@
             <dd class="maya-small maya-bold">
               {{ t.courseCount ?? '—' }}
               @if (t.limits.maxCourses) {
-                <span class="maya-subtle">/ {{ t.limits.maxCourses }}</span>
+                <span class="maya-subtle">/ {{ limite(t.limits.maxCourses) }}</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt class="maya-tiny maya-subtle">Almacenamiento</dt>
+            <dd class="maya-small maya-bold">
+              {{ almacenamiento(t).usado }}
+              <span class="maya-subtle">/ {{ almacenamiento(t).tope }}</span>
+              @if (almacenamiento(t).pct) {
+                <span class="maya-subtle">· {{ almacenamiento(t).pct }} %</span>
               }
             </dd>
           </div>

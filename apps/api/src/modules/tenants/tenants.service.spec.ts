@@ -1,7 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { TenantPlan, TenantStatus } from '@maya/shared';
+import { PLAN_LIMITS, TenantPlan, TenantStatus } from '@maya/shared';
+import type { PlanLimits } from '@maya/shared';
 import { TenantsService } from './tenants.service';
 import { Tenant } from './schemas/tenant.schema';
 import { User } from '../users/schemas/user.schema';
@@ -120,5 +121,101 @@ describe('TenantsService · listado de empresas', () => {
 
     expect(result.items).toHaveLength(0);
     expect(users.aggregate).not.toHaveBeenCalled();
+  });
+});
+
+/* -------------------------- Topes del plan ------------------------------- */
+
+type Limites = PlanLimits & { usedStorageBytes: number };
+
+/** Empresa con topes mutables, para ver qué le hace la reconciliación. */
+function tenantConLimites(plan: TenantPlan, limits: PlanLimits & { usedStorageBytes?: number }) {
+  return {
+    _id: ACME,
+    id: ACME.toString(),
+    plan,
+    limits: { usedStorageBytes: 0, ...limits } as Limites,
+    save: jest.fn(async function (this: unknown) {
+      return this;
+    }),
+  };
+}
+
+async function buildConEmpresas(rows: unknown[]) {
+  const model = {
+    find: jest.fn(() => ({ exec: async () => rows })),
+    findById: jest.fn(() => ({ exec: async () => rows[0] })),
+  };
+  const moduleRef = await Test.createTestingModule({
+    providers: [
+      TenantsService,
+      { provide: getModelToken(Tenant.name), useValue: model },
+      { provide: getModelToken(User.name), useValue: {} },
+      { provide: ContextsService, useValue: {} },
+      { provide: RolesService, useValue: {} },
+    ],
+  }).compile();
+  return { service: moduleRef.get(TenantsService) as TenantsService, model };
+}
+
+describe('TenantsService · topes del plan', () => {
+  it('sube al valor del plan los topes que se quedaron cortos', async () => {
+    // Los 10 GiB del esquema anterior, que toda empresa arrastraba.
+    const acme = tenantConLimites(TenantPlan.Business, {
+      maxUsers: 500,
+      maxCourses: 100,
+      maxStorageBytes: 10 * 1024 * 1024 * 1024,
+    });
+    const { service } = await buildConEmpresas([acme]);
+
+    expect(await service.reconcilePlanLimits()).toBe(1);
+    expect(acme.limits.maxStorageBytes).toBe(PLAN_LIMITS[TenantPlan.Business].maxStorageBytes);
+    expect(acme.limits.maxUsers).toBe(PLAN_LIMITS[TenantPlan.Business].maxUsers);
+    expect(acme.save).toHaveBeenCalled();
+  });
+
+  it('respeta un tope pactado por encima del de su plan', async () => {
+    const acuerdo = 4 * 1024 * 1024 * 1024 * 1024;
+    const acme = tenantConLimites(TenantPlan.Business, {
+      maxUsers: PLAN_LIMITS[TenantPlan.Business].maxUsers,
+      maxCourses: PLAN_LIMITS[TenantPlan.Business].maxCourses,
+      maxStorageBytes: acuerdo,
+    });
+    const { service } = await buildConEmpresas([acme]);
+
+    expect(await service.reconcilePlanLimits()).toBe(0);
+    expect(acme.limits.maxStorageBytes).toBe(acuerdo);
+    expect(acme.save).not.toHaveBeenCalled();
+  });
+
+  it('no escribe nada cuando los topes ya son los del plan', async () => {
+    const acme = tenantConLimites(TenantPlan.Starter, PLAN_LIMITS[TenantPlan.Starter]);
+    const { service } = await buildConEmpresas([acme]);
+
+    expect(await service.reconcilePlanLimits()).toBe(0);
+    expect(acme.save).not.toHaveBeenCalled();
+  });
+
+  it('dice cuánto espacio queda y si cabe lo que se quiere subir', async () => {
+    const acme = tenantConLimites(TenantPlan.Starter, {
+      ...PLAN_LIMITS[TenantPlan.Starter],
+      usedStorageBytes: PLAN_LIMITS[TenantPlan.Starter].maxStorageBytes - 100,
+    });
+    const { service } = await buildConEmpresas([acme]);
+
+    expect(await service.storageAllowance(ACME, 50)).toMatchObject({ free: 100, fits: true });
+    expect(await service.storageAllowance(ACME, 200)).toMatchObject({ free: 100, fits: false });
+  });
+
+  it('no deja el hueco justo en el límite fuera del tope', async () => {
+    const acme = tenantConLimites(TenantPlan.Starter, {
+      ...PLAN_LIMITS[TenantPlan.Starter],
+      usedStorageBytes: PLAN_LIMITS[TenantPlan.Starter].maxStorageBytes - 100,
+    });
+    const { service } = await buildConEmpresas([acme]);
+
+    // Exactamente lo que queda sí cabe: el tope es el último byte admitido,
+    // no el primero rechazado.
+    expect((await service.storageAllowance(ACME, 100)).fits).toBe(true);
   });
 });

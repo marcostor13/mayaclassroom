@@ -28,6 +28,8 @@
 /*  dos veces: va a cotización.                                               */
 /* -------------------------------------------------------------------------- */
 
+import { TenantPlan, planStorageGb } from '@maya/shared';
+
 /** Número al que va todo botón de contacto. */
 export const WHATSAPP = '51948780715';
 
@@ -71,6 +73,24 @@ export interface Plan {
  */
 export const IMPLEMENTACION_DESDE = 347;
 
+/**
+ * El almacenamiento de cada plan sale de `PLAN_LIMITS`, no se escribe aquí.
+ *
+ * Es el único número de esta página que la API también aplica: si se anuncian
+ * 700 GB y el servidor corta en 300, el cliente se entera subiendo un vídeo un
+ * martes por la tarde. Derivarlo hace imposible que se separen.
+ *
+ * Las horas de clase que caben salen de dividir por lo que ocupa una hora
+ * grabada hoy —868 MB a 1,93 Mbps, medido en `live-recorder.service.ts`—, así
+ * que si algún día baja el caudal de grabación, este número sube y hay que
+ * revisar el texto. El cálculo completo está en `docs/COSTES.md`.
+ */
+const MB_POR_HORA_GRABADA = 868;
+
+/** Redondeado hacia abajo: una promesa comercial nunca debe pasarse de lo que cabe. */
+const horasGrabadas = (plan: TenantPlan): number =>
+  Math.floor((planStorageGb(plan) * 1024) / MB_POR_HORA_GRABADA / 50) * 50;
+
 export const PLANES: Plan[] = [
   {
     id: 'inicia',
@@ -81,6 +101,7 @@ export const PLANES: Plan[] = [
     incluye: [
       'Hasta 300 alumnos activos',
       'Cursos, lecciones y materiales ilimitados',
+      `${planStorageGb(TenantPlan.Starter)} GB para tus vídeos y materiales`,
       'Tareas, cuestionarios y foros',
       'Avance y notas de cada alumno',
       'Certificados verificables con tu marca',
@@ -98,6 +119,8 @@ export const PLANES: Plan[] = [
     incluye: [
       'Hasta 2 000 alumnos activos',
       'Todo lo del plan Inicia, y además:',
+      `${planStorageGb(TenantPlan.Business)} GB de almacenamiento: unas ` +
+        `${horasGrabadas(TenantPlan.Business)} horas de clase grabada`,
       'Clases en vivo con pizarra, grabación y asistencia',
       'Grupos, cohortes y matrícula por lotes',
       'Venta y cobro: Mercado Pago, PayPal, transferencia y Yape',
@@ -115,6 +138,7 @@ export const PLANES: Plan[] = [
     incluye: [
       'Alumnado ilimitado',
       'Todo lo del plan Crece, y además:',
+      'Almacenamiento a la medida de tu volumen de clases',
       'Varias empresas o sedes en una sola instalación',
       'Integraciones a medida con tus sistemas',
       'Informes y exportaciones a tu medida',
@@ -471,6 +495,16 @@ export const PREGUNTAS: { pregunta: string; respuesta: string }[] = [
       'matriculado, junto al resto del material del curso; la asistencia se registra sola ' +
       'durante la clase, sin pasar lista. Las dos cosas son tuyas y las exportas cuando ' +
       'quieras.',
+  },
+  {
+    pregunta: '¿Cuánto espacio tengo para mis vídeos y mis grabaciones?',
+    respuesta:
+      `El plan Inicia trae ${planStorageGb(TenantPlan.Starter)} GB y el plan Crece, ` +
+      `${planStorageGb(TenantPlan.Business)} GB, que son unas ` +
+      `${horasGrabadas(TenantPlan.Business)} horas de clase grabada además de todo tu ` +
+      'material. Lo verás siempre en tu panel, así que no hay sorpresas: si te acercas al ' +
+      'tope, te avisamos y decides si borras grabaciones antiguas o subes de plan. Nada se ' +
+      'borra solo ni deja de funcionar sin avisar.',
   },
   {
     pregunta: '¿En qué se diferencia esto de Google Classroom, que es gratis?',

@@ -84,6 +84,12 @@ export class LiveRecordingsService {
       throw new BadRequestException(`No se admite el formato «${mimeType}».`);
     }
 
+    // El espacio se comprueba ANTES de empezar, y por el tamaño máximo que
+    // puede llegar a ocupar una grabación, no por lo que ocupa ahora mismo.
+    // Comprobarlo al guardar dejaría a la profesora dando la clase entera para
+    // enterarse al final de que no cabe, y la grabación no se puede rehacer.
+    await this.files.assertStorageAvailable(session.tenant, this.settings.recordingMaxSize);
+
     const recording = await this.model.create({
       tenant: session.tenant,
       session: session._id,

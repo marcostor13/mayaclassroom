@@ -3,12 +3,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  PayloadTooLargeException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import sharp from 'sharp';
-import { FileRef } from '@maya/shared';
+import { FileRef, formatBytes } from '@maya/shared';
 import { StoredFile, StoredFileDocument } from './schemas/stored-file.schema';
 import { StorageService } from './storage.service';
 import { TenantsService } from '../tenants/tenants.service';
@@ -67,6 +68,8 @@ export class FilesService {
       );
     }
 
+    await this.assertStorageAvailable(input.tenantId, file.size);
+
     const key = this.storage.buildKey(`${input.component}/${input.fileArea}`, file.originalname);
     const stored = await this.storage.put(key, file.buffer, file.mimetype);
 
@@ -93,6 +96,40 @@ export class FilesService {
 
     await this.tenants.adjustStorage(input.tenantId, stored.size);
     return document;
+  }
+
+  /**
+   * Comprueba el tope de almacenamiento de la empresa antes de escribir nada.
+   *
+   * Se mira aquí y no en el controlador porque este es el único sitio por el
+   * que pasan todas las subidas —material, imágenes públicas, entregas y las
+   * grabaciones de las clases en vivo—, y un tope que se pueda rodear por una
+   * ruta no es un tope.
+   *
+   * La comprobación se hace ANTES de subir a R2: al revés, el objeto quedaría
+   * en el bucket cobrándose mientras la petición devuelve un error, y sería un
+   * huérfano que ningún documento referencia.
+   *
+   * Es intencionadamente aproximada: dos subidas simultáneas pueden colarse
+   * juntas y dejar el contador unos megas por encima del tope. Cerrar esa
+   * rendija exige reservar el espacio antes de escribir y devolverlo si la
+   * subida falla, y no compensa: la siguiente subida ya encuentra el tope
+   * pasado y se rechaza.
+   *
+   * Es pública porque la grabación de una clase la llama antes de empezar:
+   * comprobarlo solo al guardar significaría perder la clase entera después
+   * de darla.
+   */
+  async assertStorageAvailable(
+    tenantId: string | Types.ObjectId,
+    bytes: number,
+  ): Promise<void> {
+    const { free, max, fits } = await this.tenants.storageAllowance(tenantId, bytes);
+    if (fits) return;
+    throw new PayloadTooLargeException(
+      `No hay espacio en el plan de la empresa: el fichero ocupa ${formatBytes(bytes)} y ` +
+        `quedan ${formatBytes(free)} de ${formatBytes(max)}. Libere espacio o amplíe el plan.`,
+    );
   }
 
   private async createThumbnail(key: string, buffer: Buffer): Promise<string | null> {

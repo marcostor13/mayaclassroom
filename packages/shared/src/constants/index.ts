@@ -2,6 +2,7 @@ export * from './capabilities';
 export * from './roles';
 export * from './branding';
 export * from './locale';
+export * from './plans';
 
 /** Prefijo global y versión de la API REST. */
 export const API_PREFIX = 'api';

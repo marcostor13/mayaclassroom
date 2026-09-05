@@ -1,8 +1,20 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { randomBytes } from 'node:crypto';
-import { ContextLevel, SYSTEM_TENANT_SLUG, TenantDomainStatus, TenantStatus } from '@maya/shared';
+import {
+  ContextLevel,
+  SYSTEM_TENANT_SLUG,
+  TenantDomainStatus,
+  TenantStatus,
+  limitsForPlan,
+} from '@maya/shared';
 import { Tenant, TenantDocument } from './schemas/tenant.schema';
 import { ContextsService } from '../contexts/contexts.service';
 import { RolesService } from '../rbac/roles.service';
@@ -15,7 +27,7 @@ import { CreateTenantDto, TenantQueryDto, UpdateTenantDto } from './dto/tenant.d
 export type TenantListItem = Record<string, unknown> & { userCount: number };
 
 @Injectable()
-export class TenantsService {
+export class TenantsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(TenantsService.name);
 
   constructor(
@@ -24,6 +36,48 @@ export class TenantsService {
     private readonly contexts: ContextsService,
     private readonly roles: RolesService,
   ) {}
+
+  /**
+   * Al arrancar se ponen al día los topes de las empresas ya existentes.
+   *
+   * Sigue el mismo criterio que la sincronización de capacidades: el desfase
+   * lo produce cada despliegue que cambia `PLAN_LIMITS`, y una migración que
+   * hay que acordarse de lanzar es una migración que no se lanza.
+   *
+   * Solo **sube** topes, nunca los baja. Es lo que hace la operación segura:
+   * las empresas creadas antes de que existiera esta tabla arrastran los
+   * valores por defecto del esquema —los mismos para todas, y más bajos que
+   * cualquier plan de pago— y hay que sacarlas de ahí; en cambio un tope por
+   * encima del plan es un acuerdo comercial y bajarlo sin avisar dejaría a un
+   * cliente sin poder subir de un día para otro.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    try {
+      const ajustadas = await this.reconcilePlanLimits();
+      if (ajustadas) this.logger.log(`Topes de plan actualizados en ${ajustadas} empresa(s).`);
+    } catch (error) {
+      // No debe impedir arrancar: la plataforma funciona igual, solo que con
+      // los topes anteriores hasta el siguiente intento.
+      this.logger.error(`No se pudieron actualizar los topes de plan: ${String(error)}`);
+    }
+  }
+
+  /** Sube al valor de su plan los topes que se hayan quedado por debajo. */
+  async reconcilePlanLimits(): Promise<number> {
+    const tenants = await this.model.find(notDeleted).exec();
+    let ajustadas = 0;
+    for (const tenant of tenants) {
+      const objetivo = limitsForPlan(tenant.plan);
+      const subidas = (['maxUsers', 'maxCourses', 'maxStorageBytes'] as const).filter(
+        (clave) => tenant.limits[clave] < objetivo[clave],
+      );
+      if (!subidas.length) continue;
+      for (const clave of subidas) tenant.limits[clave] = objetivo[clave];
+      await tenant.save();
+      ajustadas += 1;
+    }
+    return ajustadas;
+  }
 
   async paginate(query: TenantQueryDto): Promise<PaginatedResult<TenantListItem>> {
     const filter: Record<string, unknown> = { ...notDeleted };
@@ -133,11 +187,16 @@ export class TenantsService {
       ...tenantFields
     } = dto;
 
+    // Los límites salen del plan, no del esquema: un alta sin ellos heredaba
+    // los valores por defecto de Mongoose —los mismos para todos— y el plan
+    // quedaba en un rótulo sin consecuencias. Lo que venga en `limits` manda
+    // sobre el plan, que es como se cierra un acuerdo del plan Escala.
     const tenant = await this.model.create({
       ...tenantFields,
       slug,
       status: dto.status ?? TenantStatus.Trial,
       isSystem: slug === SYSTEM_TENANT_SLUG,
+      limits: { ...limitsForPlan(dto.plan), usedStorageBytes: 0, ...(dto.limits ?? {}) },
     });
 
     await this.provision(tenant);
@@ -183,6 +242,15 @@ export class TenantsService {
       }
     }
 
+    // Cambiar de plan mueve los límites con él, que es lo que se espera al
+    // subir o bajar de plan. Los que lleguen sueltos en `limits` se aplican
+    // después, para poder pactar un tope distinto del de su plan sin tener que
+    // inventar un plan nuevo.
+    if (dto.plan && dto.plan !== tenant.plan) {
+      Object.assign(tenant.limits, limitsForPlan(dto.plan));
+    }
+    if (dto.limits) Object.assign(tenant.limits, dto.limits);
+
     if (dto.branding) Object.assign(tenant.branding, dto.branding);
     if (dto.settings) {
       const { passwordPolicy, ...rest } = dto.settings;
@@ -194,6 +262,7 @@ export class TenantsService {
       settings: _settings,
       slug: _slug,
       domain: _domain,
+      limits: _limits,
       ...rest
     } = dto;
     Object.assign(tenant, rest);
@@ -247,5 +316,22 @@ export class TenantsService {
   async isWithinUserLimit(id: string | Types.ObjectId, currentUsers: number): Promise<boolean> {
     const tenant = await this.findById(id);
     return currentUsers < tenant.limits.maxUsers;
+  }
+
+  /**
+   * Espacio que le queda a una empresa antes de tocar el tope de su plan.
+   *
+   * Devuelve el detalle y no un booleano porque quien llama tiene que poder
+   * decir cuánto falta: «no caben 340 MB, quedan 12 GB de 300 GB» se entiende
+   * y se actúa, y «no se puede subir» obliga a escribir a soporte.
+   */
+  async storageAllowance(
+    id: string | Types.ObjectId,
+    extraBytes = 0,
+  ): Promise<{ used: number; max: number; free: number; fits: boolean }> {
+    const tenant = await this.findById(id);
+    const { usedStorageBytes: used, maxStorageBytes: max } = tenant.limits;
+    const free = Math.max(0, max - used);
+    return { used, max, free, fits: used + extraBytes <= max };
   }
 }
