@@ -344,7 +344,107 @@ comprueba, es lo que menos cuesta y es lo que más frena la venta.
 
 ---
 
-## 8 · Qué revisar cada cierto tiempo
+## 8 · El caso de un tope de 500 GB por usuario
+
+Vale la pena hacer el número entero, porque es la cifra que primero viene a la
+cabeza y se comporta de forma poco intuitiva. El supuesto es un tope **no
+reservado**: nadie paga 500 GB, simplemente puede llegar hasta ahí.
+
+### Qué caben en 500 GB
+
+| Caudal | Por hora | Horas de clase |
+|---|---:|---:|
+| Hoy · 1,93 Mbps (720p, 24 fps) | 868 MB | **590 h** |
+| Reducido · 1,0 Mbps | 448 MB | 1 142 h |
+| Solo audio · 128 kbps | 58 MB | 8 889 h |
+
+590 horas son unas **tres horas de clase al día durante un año lectivo
+entero**, guardadas para siempre. Como tope por persona es enorme.
+
+### Cuánto tarda cada quien en llegar
+
+Sin poda, y por tanto acumulando desde el primer día:
+
+| Perfil | Aporte mensual | Llega al tope en |
+|---|---:|---:|
+| Alumno típico | 0,05 GB | nunca (833 años) |
+| Alumno intenso | 0,30 GB | nunca (139 años) |
+| Docente · 6 h grabadas/mes | 5,62 GB | **7,4 años** |
+| Docente · 20 h grabadas/mes | 17,49 GB | 2,4 años |
+| Docente · 40 h grabadas/mes | 34,43 GB | 1,2 años |
+
+### Qué costaría
+
+Si alguien **llena** su tope, cuesta **S/ 28,12 al mes**, y lo sigue costando
+mientras conserve el material. Ese es el número que hay que mirar si el tope se
+publica como promesa, porque es lo que se ha prometido poder gastar.
+
+| Llenado | Almacén | Coste/usuario-mes |
+|---:|---:|---:|
+| 1 % | 5 GB | S/ 0,28 |
+| 5 % | 25 GB | S/ 1,41 |
+| 10 % | 50 GB | S/ 2,81 |
+| 25 % | 125 GB | S/ 7,03 |
+| 50 % | 250 GB | S/ 14,06 |
+| **100 %** | **500 GB** | **S/ 28,12** |
+
+Con la mezcla real de este documento (8 % de docentes, grabando 6 h al mes) el
+llenado medio y su coste evolucionan así:
+
+| | Almacén medio por usuario | Coste/usuario-mes |
+|---|---:|---:|
+| Año 1 | 6,0 GB | S/ 0,33 |
+| Año 2 | 11,9 GB | S/ 0,67 |
+| Año 3 | 17,9 GB | S/ 1,00 |
+| Año 5 | 29,8 GB | S/ 1,67 |
+| Año 7,4 (docentes en el tope) | 44,1 GB | S/ 2,48 |
+| Asíntota | 95 GB | **S/ 5,35** |
+
+### La conclusión, que es incómoda
+
+**El tope de 500 GB por usuario no limita nada donde está el dinero.** Un
+alumno no lo roza jamás y un docente normal tarda siete años en tocarlo: la
+factura crece exactamente igual que sin tope durante todo el periodo en el que
+hay que decidir precios. Lo único que hace el tope es fijar el techo del
+desastre, y ese techo es altísimo:
+
+| | Si todos llegaran al tope |
+|---|---:|
+| 100 usuarios | 49 TB → S/ 2 812/mes |
+| 1000 usuarios | 488 TB → **S/ 28 125/mes** |
+
+Contra lo que dan de sí los planes actuales, el desajuste es de dos órdenes de
+magnitud:
+
+| Plan | Presupuesto de infra | Almacén que permite | Lo que permitiría el tope de 500 GB |
+|---|---:|---:|---:|
+| Inicia · S/ 47 (~60 activos) | S/ 18,80 | 334 GB en toda la academia | 29 TB · **90× de más** |
+| Crece · S/ 99 (~250 activos) | S/ 39,60 | 704 GB en toda la academia | 122 TB · **178× de más** |
+
+### La misma cifra, bien puesta
+
+500 GB es un buen número; el error es la unidad. **Por empresa** en vez de por
+usuario, encaja casi exactamente en el presupuesto:
+
+| | Por usuario | Por empresa |
+|---|---:|---:|
+| Coste si se llena | S/ 28,12 por cada usuario | S/ 28,12 en total |
+| Sobre el plan Crece (S/ 99) | insostenible | 28 % del precio |
+| Horas de clase que caben | 590 h por persona | 590 h para toda la academia |
+
+Un tope de **300 GB en Inicia y 700 GB en Crece** —los números de §7— deja el
+almacenamiento entre el 40 % y el 20 % de la mensualidad, y una academia con
+seis profesores que graben 6 h al mes lo alcanza en unos dos años. Es entonces
+cuando la caducidad de §6.3 tiene que estar puesta: sin ella, el tope no es un
+límite de gasto sino una fecha en la que el producto deja de funcionar.
+
+Y si de todos modos se quiere anunciar «500 GB» en la página, la forma honesta
+de hacerlo es como bolsa compartida de la academia, que es además la que ya
+existe en el código (`limits.maxStorageBytes` es por empresa, no por usuario).
+
+---
+
+## 9 · Qué revisar cada cierto tiempo
 
 1. El caudal real de las grabaciones frente a los 868 MB/hora de este
    documento, midiéndolo sobre grabaciones de verdad.
@@ -354,3 +454,6 @@ comprueba, es lo que menos cuesta y es lo que más frena la venta.
 4. El almacén acumulado por empresa, que es el aviso temprano de que un
    cliente se ha vuelto caro. Conviene enseñarlo en el panel de administración
    de la plataforma antes de que aparezca en la factura.
+5. El llenado real del tope de almacenamiento por empresa frente a la
+   trayectoria de §8: es la comprobación de si el modelo de este documento se
+   parece a la realidad.
