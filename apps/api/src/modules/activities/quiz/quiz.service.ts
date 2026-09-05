@@ -37,6 +37,10 @@ export class QuizService implements ActivityHandler, OnModuleInit {
   readonly label = 'Cuestionario';
   readonly icon = 'help-circle';
   readonly gradable = true;
+  readonly description =
+    'Preguntas con corrección automática —opción múltiple, verdadero o falso, ' +
+    'respuesta corta— y varios intentos si se permiten.';
+  readonly tags = ['Se corrige sola', 'Varios intentos'];
 
   constructor(
     @InjectModel(Quiz.name) private readonly model: Model<QuizDocument>,

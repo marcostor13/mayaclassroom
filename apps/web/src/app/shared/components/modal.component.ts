@@ -24,6 +24,7 @@ import { IconComponent } from './icon.component';
     <div class="maya-backdrop" (click)="dismissed.emit()" aria-hidden="true"></div>
     <div
       class="maya-modal"
+      [class.maya-modal--lg]="size() === 'lg'"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="title()"
@@ -56,6 +57,8 @@ export class ModalComponent {
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
 
   readonly title = input.required<string>();
+  /** `lg` ensancha el panel para el contenido en rejilla. */
+  readonly size = input<'md' | 'lg'>('md');
   /** Cierre pedido por el usuario: aspa, fondo o Escape. */
   readonly dismissed = output<void>();
 

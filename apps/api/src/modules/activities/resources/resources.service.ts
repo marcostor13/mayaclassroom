@@ -26,25 +26,82 @@ interface ResourceSettings {
   forceDownload?: boolean;
 }
 
-const RESOURCE_META: Record<string, { label: string; icon: string }> = {
-  [ModuleType.Resource]: { label: 'Archivo', icon: 'file' },
-  [ModuleType.Folder]: { label: 'Carpeta', icon: 'folder' },
-  [ModuleType.Page]: { label: 'Página', icon: 'file-text' },
-  [ModuleType.Url]: { label: 'URL', icon: 'link' },
-  [ModuleType.Book]: { label: 'Libro', icon: 'book-open' },
-  [ModuleType.Label]: { label: 'Etiqueta', icon: 'tag' },
+interface ResourceMeta {
+  label: string;
+  icon: string;
+  description: string;
+  tags: string[];
+}
+
+const RESOURCE_META: Record<string, ResourceMeta> = {
+  [ModuleType.Resource]: {
+    label: 'Archivo',
+    icon: 'file',
+    description:
+      'Un documento para descargar o ver dentro del curso: PDF, presentación, ' +
+      'hoja de cálculo o imagen.',
+    tags: ['Descargable'],
+  },
+  [ModuleType.Folder]: {
+    label: 'Carpeta',
+    icon: 'folder',
+    description:
+      'Varios archivos agrupados en un solo bloque, para no llenar el tema con ' +
+      'una línea por documento.',
+    tags: ['Varios archivos'],
+  },
+  [ModuleType.Page]: {
+    label: 'Página',
+    icon: 'file-text',
+    description:
+      'Contenido escrito dentro del propio curso, con texto, imágenes y vídeo ' +
+      'incrustado. Lo más habitual para una lección.',
+    tags: ['Texto y vídeo', 'Sin descarga'],
+  },
+  [ModuleType.Url]: {
+    label: 'Enlace web',
+    icon: 'link',
+    description:
+      'Un enlace a una página externa, que se abre incrustada o en una pestaña ' +
+      'nueva según se configure.',
+    tags: ['Sitio externo'],
+  },
+  [ModuleType.Book]: {
+    label: 'Libro',
+    icon: 'book-open',
+    description:
+      'Material largo repartido en capítulos con su propio índice, para apuntes ' +
+      'o manuales de varias páginas.',
+    tags: ['Por capítulos', 'Con índice'],
+  },
+  [ModuleType.Label]: {
+    label: 'Etiqueta',
+    icon: 'tag',
+    description:
+      'Un texto o una imagen sueltos en medio del tema. Sirve para separar ' +
+      'bloques y dar contexto, no se abre.',
+    tags: ['Solo visual'],
+  },
 };
 
 /** Manejador reutilizable para cada tipo de recurso. */
 class ResourceHandler implements ActivityHandler {
   readonly gradable = false;
+  readonly label: string;
+  readonly icon: string;
+  readonly description: string;
+  readonly tags: string[];
 
   constructor(
     readonly type: ModuleType,
-    readonly label: string,
-    readonly icon: string,
+    meta: ResourceMeta,
     private readonly service: ResourcesService,
-  ) {}
+  ) {
+    this.label = meta.label;
+    this.icon = meta.icon;
+    this.description = meta.description;
+    this.tags = meta.tags;
+  }
 
   create(input: ActivityCreateInput): Promise<ActivityInstanceResult> {
     return this.service.createResource(this.type, input);
@@ -83,9 +140,7 @@ export class ResourcesService implements OnModuleInit {
 
   onModuleInit(): void {
     for (const [type, meta] of Object.entries(RESOURCE_META)) {
-      this.registry.register(
-        new ResourceHandler(type as ModuleType, meta.label, meta.icon, this),
-      );
+      this.registry.register(new ResourceHandler(type as ModuleType, meta, this));
     }
   }
 

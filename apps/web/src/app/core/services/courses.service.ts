@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  ActivityCatalogItem,
   CategoryNode,
   CourseDetail,
   CourseModuleDto,
@@ -22,13 +23,6 @@ export interface CourseQuery {
   includeSubcategories?: boolean;
   classification?: 'inprogress' | 'future' | 'past' | 'favourites' | 'all';
   tag?: string;
-}
-
-export interface ActivityType {
-  type: string;
-  label: string;
-  icon: string;
-  gradable: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -67,8 +61,8 @@ export class CoursesService {
     return this.api.post<{ favourite: boolean }>(`/courses/${id}/favourite`);
   }
 
-  activityTypes(): Observable<ActivityType[]> {
-    return this.api.get<ActivityType[]>('/courses/activity-types');
+  activityTypes(): Observable<ActivityCatalogItem[]> {
+    return this.api.get<ActivityCatalogItem[]>('/courses/activity-types');
   }
 
   /* ------------------------------ Secciones ------------------------------ */

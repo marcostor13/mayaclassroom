@@ -11,7 +11,11 @@
       {{ isNew() ? 'Crear un curso' : 'Editar el curso' }}
     </h1>
     <p class="maya-page-header__subtitle">
-      Configure los datos del curso y organice su contenido
+      @if (isNew()) {
+        Cuatro pasos y el curso está en pie. Puede volver atrás cuando quiera.
+      } @else {
+        Paso {{ stepIndex() + 1 }} de {{ steps.length }} · {{ current().label }}
+      }
     </p>
   </div>
   <div class="maya-page-header__actions">
@@ -20,228 +24,507 @@
         <maya-icon name="eye" [size]="16" /> Ver el curso
       </a>
     }
-    <button type="button" class="maya-btn maya-btn--primary" (click)="save()" [disabled]="saving()">
-      <maya-icon name="check" [size]="16" /> Guardar
-    </button>
+    <!-- Con el curso por crear, el botón del pie ya ofrece esta misma acción en
+         el último paso: aquí es sólo el atajo para no recorrerlos todos. -->
+    @if (!isNew() || hasNext()) {
+      <button
+        type="button"
+        class="maya-btn maya-btn--primary"
+        (click)="save()"
+        [disabled]="saving() || !basicsDone()"
+      >
+        <maya-icon name="check" [size]="16" />
+        {{ isNew() ? 'Crear el curso' : 'Guardar cambios' }}
+      </button>
+    }
   </div>
 </header>
 
-<form
-  [formGroup]="form"
-  class="maya-card"
-  data-guia="form-curso"
-  style="margin-bottom: var(--maya-space-6)"
->
-  <div class="maya-card__header">
-    <h2 class="maya-card__title" style="font-size: var(--maya-text-md)">Datos del curso</h2>
-  </div>
-  <div class="maya-card__body maya-stack">
-    <div class="maya-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
-      <div class="maya-field">
-        <label class="maya-label" for="e-short">
-          Nombre corto <span class="maya-required">*</span>
-        </label>
-        <input id="e-short" class="maya-input" formControlName="shortName" placeholder="MAT-101" />
-      </div>
-      <div class="maya-field">
-        <label class="maya-label" for="e-full">
-          Nombre completo <span class="maya-required">*</span>
-        </label>
-        <input id="e-full" class="maya-input" formControlName="fullName" />
-      </div>
-      <div class="maya-field">
-        <label class="maya-label" for="e-cat">Categoría</label>
-        <select id="e-cat" class="maya-select" formControlName="categoryId">
-          @for (item of flatten(categories()); track item.node.id) {
-            <option [value]="item.node.id">
-              {{ '— '.repeat(item.depth) }}{{ item.node.name }}
-            </option>
+<!-- ═════════════════════════ Pasos del asistente ═════════════════════════ -->
+<nav class="maya-card asistente__pasos" aria-label="Pasos para crear el curso">
+  <div class="maya-stepper">
+    @for (item of steps; track item.id; let i = $index) {
+      @if (i > 0) {
+        <span class="maya-stepper__link" [class.is-done]="stepState(i - 1) === 'done'"></span>
+      }
+      <button
+        type="button"
+        class="maya-stepper__step"
+        [class.is-active]="stepState(i) === 'active'"
+        [class.is-done]="stepState(i) === 'done'"
+        [disabled]="!stepEnabled(item.id)"
+        [attr.aria-current]="stepState(i) === 'active' ? 'step' : null"
+        [attr.aria-label]="'Paso ' + (i + 1) + ' de ' + steps.length + ': ' + item.title"
+        (click)="goTo(item.id)"
+      >
+        <span class="maya-stepper__bullet">
+          @if (stepState(i) === 'done') {
+            <maya-icon name="check" [size]="18" />
+          } @else {
+            <maya-icon [name]="item.icon" [size]="18" />
           }
-        </select>
-      </div>
-      <div class="maya-field">
-        <label class="maya-label" for="e-format">Formato</label>
-        <select id="e-format" class="maya-select" formControlName="format">
-          <option value="topics">Por temas</option>
-          <option value="weekly">Semanal</option>
-          <option value="singleactivity">Actividad única</option>
-          <option value="social">Social</option>
-        </select>
-      </div>
-      <div class="maya-field">
-        <label class="maya-label" for="e-sections">Número de secciones</label>
-        <input id="e-sections" type="number" class="maya-input" formControlName="numSections" min="1" max="52" />
-      </div>
-      <div class="maya-field">
-        <label class="maya-label" for="e-visibility">Visibilidad</label>
-        <select id="e-visibility" class="maya-select" formControlName="visibility">
-          <option value="visible">Visible</option>
-          <option value="hidden">Oculto</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="maya-field">
-      <label class="maya-label">Resumen del curso</label>
-      <maya-rich-editor
-        [value]="summary()"
-        (valueChange)="summary.set($event)"
-        placeholder="Describa los objetivos y contenidos del curso…"
-      />
-      <span class="maya-hint">Es lo primero que lee quien se plantea matricularse.</span>
-    </div>
-
-    <maya-image-upload
-      label="Portada del curso"
-      purpose="course"
-      hint="Se ve en la lista de cursos y, si el curso está a la venta, en la página pública."
-      [value]="imageUrl()"
-      (valueChange)="imageUrl.set($event)"
-    />
-
-    <label class="maya-switch">
-      <input type="checkbox" formControlName="enableCompletion" />
-      <span class="maya-small">Activar el seguimiento de finalización</span>
-    </label>
-  </div>
-</form>
-
-@if (!isNew()) {
-  <div class="maya-spread" style="margin-bottom: var(--maya-space-4)">
-    <h2 style="font-size: var(--maya-text-lg)">Contenido del curso</h2>
-    <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="addSection()">
-      <maya-icon name="plus" [size]="15" /> Añadir sección
-    </button>
-  </div>
-
-  <div class="maya-stack" style="gap: var(--maya-space-4)">
-    @for (section of sections(); track section.id) {
-      <section class="maya-card" data-guia="editor-curso">
-        <div class="maya-card__header">
-          <!-- El título de la sección se edita en el sitio: entrar en otra
-               pantalla para cambiar una palabra rompe el ritmo de montar el
-               curso. -->
-          <input
-            class="titulo-seccion"
-            [value]="sectionTitle(section)"
-            (change)="renameSection(section, $any($event.target).value)"
-            [attr.aria-label]="'Nombre de la sección ' + sectionTitle(section)"
-          />
-          <button
-            type="button"
-            class="maya-btn maya-btn--soft maya-btn--sm"
-            (click)="addingTo.set(addingTo() === section.id ? null : section.id)"
-          >
-            <maya-icon name="plus" [size]="15" /> Añadir actividad
-          </button>
-        </div>
-
-        @if (addingTo() === section.id) {
-          <div
-            class="maya-card__body maya-row"
-            style="flex-wrap: wrap; background: var(--maya-surface-2)"
-          >
-            <select
-              class="maya-select"
-              style="max-width: 220px"
-              [ngModel]="activityType()"
-              (ngModelChange)="activityType.set($event)"
-              aria-label="Tipo de actividad"
-            >
-              @for (type of activityTypes(); track type.type) {
-                <option [value]="type.type">{{ type.label }}</option>
-              }
-            </select>
-            <input
-              class="maya-input"
-              style="max-width: 280px"
-              placeholder="Nombre de la actividad"
-              [ngModel]="activityName()"
-              (ngModelChange)="activityName.set($event)"
-              aria-label="Nombre de la actividad"
-            />
-            <button
-              type="button"
-              class="maya-btn maya-btn--primary maya-btn--sm"
-              (click)="addActivity(section.id)"
-            >
-              Añadir
-            </button>
-          </div>
-        }
-
-        <ul style="list-style: none; margin: 0; padding: 0">
-          @for (module of section.modules; track module.id) {
-            <li
-              style="display: flex; align-items: center; gap: var(--maya-space-3); padding: var(--maya-space-3) var(--maya-space-5); border-top: 1px solid var(--maya-border)"
-            >
-              <maya-icon [name]="moduleIcon(module)" [size]="18" />
-              <!-- El nombre abre la actividad: es donde se escribe su
-                   contenido, y llegar ahí era el paso que faltaba. -->
-              <a [routerLink]="moduleLink(module)" class="enlace-actividad">
-                <span class="maya-bold maya-small">{{ module.name }}</span>
-                <span class="maya-tiny maya-subtle">{{ module.moduleType }}</span>
-              </a>
-              <button
-                type="button"
-                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="moveModule(section, module.id, -1)"
-                [disabled]="$first"
-                aria-label="Subir actividad"
-              >
-                <maya-icon name="chevron-up" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="moveModule(section, module.id, 1)"
-                [disabled]="$last"
-                aria-label="Bajar actividad"
-              >
-                <maya-icon name="chevron-down" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="duplicateModule(module.id)"
-                [attr.aria-label]="'Duplicar ' + module.name"
-              >
-                <maya-icon name="copy" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="toggleVisibility(module.id, !module.visible)"
-                [attr.aria-label]="module.visible ? 'Ocultar actividad' : 'Mostrar actividad'"
-              >
-                <maya-icon [name]="module.visible ? 'eye' : 'eye-off'" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="openSettings(module)"
-                [attr.aria-label]="'Ajustes de ' + module.name"
-              >
-                <maya-icon name="sliders" [size]="16" />
-              </button>
-              <button
-                type="button"
-                class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
-                (click)="removeModule(module.id, module.name)"
-                [attr.aria-label]="'Eliminar ' + module.name"
-              >
-                <maya-icon name="trash" [size]="16" />
-              </button>
-            </li>
-          } @empty {
-            <li class="maya-card__body">
-              <p class="maya-small maya-muted">Esta sección está vacía.</p>
-            </li>
-          }
-        </ul>
-      </section>
+        </span>
+        <span class="maya-stepper__label">{{ item.label }}</span>
+      </button>
     }
   </div>
+</nav>
+
+<section class="asistente__intro">
+  <h2 class="asistente__titulo">{{ current().title }}</h2>
+  <p class="maya-small maya-muted">{{ current().hint }}</p>
+</section>
+
+<!-- ═══════════════════════════ 1 · Lo esencial ═══════════════════════════ -->
+<form [formGroup]="form" data-guia="form-curso">
+  @if (step() === 'datos') {
+    <div class="maya-card">
+      <div class="maya-card__body maya-stack">
+        <div class="maya-field">
+          <label class="maya-label" for="e-full">
+            Nombre del curso <span class="maya-required">*</span>
+          </label>
+          <input
+            id="e-full"
+            class="maya-input"
+            formControlName="fullName"
+            placeholder="Introducción a la contabilidad"
+            (blur)="suggestShortName()"
+          />
+          <span class="maya-hint">El nombre completo, tal cual lo verá el alumnado.</span>
+        </div>
+
+        <div class="maya-field">
+          <label class="maya-label" for="e-short">
+            Código corto <span class="maya-required">*</span>
+          </label>
+          <input id="e-short" class="maya-input" formControlName="shortName" placeholder="CONTA-101" />
+          <span class="maya-hint">
+            Identifica el curso en listas y menús. Se propone uno al escribir el nombre.
+          </span>
+        </div>
+
+        <div class="maya-field">
+          <label class="maya-label" for="e-cat">Categoría</label>
+          <select id="e-cat" class="maya-select" formControlName="categoryId">
+            @for (item of flatten(categories()); track item.node.id) {
+              <option [value]="item.node.id">
+                {{ '— '.repeat(item.depth) }}{{ item.node.name }}
+              </option>
+            }
+          </select>
+          <span class="maya-hint">Dónde se guarda el curso y por dónde se encuentra.</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════ 2 · Presentación ═════════════════════════ -->
+  @if (step() === 'presentacion') {
+    <div class="maya-card">
+      <div class="maya-card__body maya-stack">
+        <div class="maya-field">
+          <label class="maya-label">Resumen del curso</label>
+          <maya-rich-editor
+            [value]="summary()"
+            (valueChange)="summary.set($event)"
+            placeholder="¿Qué se aprende aquí y para quién es? Dos o tres frases bastan…"
+          />
+          <span class="maya-hint">Es lo primero que lee quien se plantea matricularse.</span>
+        </div>
+
+        <maya-image-upload
+          label="Portada del curso"
+          purpose="course"
+          hint="Se ve en la lista de cursos y, si el curso está a la venta, en la página pública."
+          [value]="imageUrl()"
+          (valueChange)="imageUrl.set($event)"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════ 3 · Estructura ══════════════════════════ -->
+  @if (step() === 'estructura') {
+    <div class="maya-stack" style="gap: var(--maya-space-4)">
+      <div class="maya-card">
+        <div class="maya-card__header">
+          <h3 class="maya-card__title" style="font-size: var(--maya-text-md)">Formato del curso</h3>
+        </div>
+        <div class="maya-card__body">
+          <div class="maya-options" role="radiogroup" aria-label="Formato del curso">
+            @for (option of formats; track option.value) {
+              <button
+                type="button"
+                role="radio"
+                class="maya-option-card"
+                [class.is-selected]="form.controls.format.value === option.value"
+                [attr.aria-checked]="form.controls.format.value === option.value"
+                (click)="form.controls.format.setValue(option.value)"
+              >
+                <span
+                  class="maya-icon-tile"
+                  [class.maya-icon-tile--solid]="form.controls.format.value === option.value"
+                >
+                  <maya-icon [name]="option.icon" [size]="21" />
+                </span>
+                <span class="maya-option-card__body">
+                  <span class="maya-option-card__title">{{ option.label }}</span>
+                  <span class="maya-option-card__text">{{ option.text }}</span>
+                </span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="maya-card">
+        <div class="maya-card__body maya-stack">
+          <div class="maya-field">
+            <label class="maya-label" for="e-sections">Número de secciones iniciales</label>
+            <input
+              id="e-sections"
+              type="number"
+              class="maya-input"
+              formControlName="numSections"
+              min="1"
+              max="52"
+              style="max-width: 160px"
+            />
+            <span class="maya-hint">Se pueden añadir y quitar después, una a una.</span>
+          </div>
+
+          <div class="maya-field">
+            <label class="maya-label" for="e-visibility">Visibilidad</label>
+            <select
+              id="e-visibility"
+              class="maya-select"
+              formControlName="visibility"
+              style="max-width: 260px"
+            >
+              <option value="visible">Visible para el alumnado</option>
+              <option value="hidden">Oculto mientras se prepara</option>
+            </select>
+          </div>
+
+          <label class="maya-switch">
+            <input type="checkbox" formControlName="enableCompletion" />
+            <span class="maya-small">
+              Activar el seguimiento de finalización
+              <span class="maya-tiny maya-subtle" style="display: block">
+                Marca cada actividad como completada y calcula el progreso del curso.
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+  }
+</form>
+
+<!-- ════════════════════════════ 4 · Contenido ═══════════════════════════ -->
+@if (step() === 'contenido') {
+  @if (isNew()) {
+    <div class="maya-card">
+      <div class="maya-card__body">
+        <maya-empty-state
+          icon="lock"
+          title="Primero hay que crear el curso"
+          description="En cuanto tenga nombre y categoría podrá montar el temario."
+        />
+      </div>
+    </div>
+  } @else {
+    <div class="maya-spread" style="margin-bottom: var(--maya-space-4)">
+      <p class="maya-small maya-muted">
+        {{ sections().length }} {{ sections().length === 1 ? 'sección' : 'secciones' }}
+      </p>
+      <button type="button" class="maya-btn maya-btn--secondary maya-btn--sm" (click)="addSection()">
+        <maya-icon name="plus" [size]="15" /> Añadir sección
+      </button>
+    </div>
+
+    <div class="maya-stack" style="gap: var(--maya-space-4)">
+      @for (section of sections(); track section.id) {
+        <section class="maya-card seccion" data-guia="editor-curso">
+          <div class="maya-card__header seccion__cabecera">
+            <span class="seccion__numero" aria-hidden="true">
+              @if (section.sectionNumber) {
+                {{ section.sectionNumber }}
+              } @else {
+                <!-- La sección 0 no es un tema, es la cabecera del curso. -->
+                <maya-icon name="bookmark" [size]="15" />
+              }
+            </span>
+            <div class="seccion__identidad">
+              <!-- El título de la sección se edita en el sitio: entrar en otra
+                   pantalla para cambiar una palabra rompe el ritmo de montar el
+                   curso. -->
+              <input
+                class="seccion__titulo"
+                [value]="sectionTitle(section)"
+                (change)="renameSection(section, $any($event.target).value)"
+                [attr.aria-label]="'Nombre de la sección ' + sectionTitle(section)"
+              />
+              <span class="maya-tiny maya-subtle">{{ sectionCount(section) }}</span>
+            </div>
+            <button
+              type="button"
+              class="maya-btn maya-btn--soft maya-btn--sm"
+              (click)="openPicker(section)"
+            >
+              <maya-icon name="plus" [size]="15" /> Añadir actividad
+            </button>
+          </div>
+
+          <ul class="seccion__lista">
+            @for (module of section.modules; track module.id) {
+              <li class="actividad" [class.actividad--oculta]="!module.visible">
+                <span class="maya-icon-tile maya-icon-tile--sm">
+                  <maya-icon [name]="moduleIcon(module)" [size]="18" />
+                </span>
+                <!-- El nombre abre la actividad: es donde se escribe su
+                     contenido, y llegar ahí era el paso que faltaba. -->
+                <a [routerLink]="moduleLink(module)" class="actividad__enlace">
+                  <span class="actividad__nombre">{{ module.name }}</span>
+                  <span class="maya-tiny maya-subtle">
+                    {{ moduleTypeLabel(module) }}
+                    @if (!module.visible) { · Oculta para el alumnado }
+                  </span>
+                </a>
+                <div class="actividad__acciones">
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    (click)="moveModule(section, module.id, -1)"
+                    [disabled]="$first"
+                    aria-label="Subir actividad"
+                  >
+                    <maya-icon name="chevron-up" [size]="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    (click)="moveModule(section, module.id, 1)"
+                    [disabled]="$last"
+                    aria-label="Bajar actividad"
+                  >
+                    <maya-icon name="chevron-down" [size]="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    (click)="duplicateModule(module.id)"
+                    [attr.aria-label]="'Duplicar ' + module.name"
+                  >
+                    <maya-icon name="copy" [size]="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    (click)="toggleVisibility(module.id, !module.visible)"
+                    [attr.aria-label]="module.visible ? 'Ocultar actividad' : 'Mostrar actividad'"
+                  >
+                    <maya-icon [name]="module.visible ? 'eye' : 'eye-off'" [size]="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    (click)="openSettings(module)"
+                    [attr.aria-label]="'Ajustes de ' + module.name"
+                  >
+                    <maya-icon name="sliders" [size]="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="maya-btn maya-btn--ghost maya-btn--icon maya-btn--sm"
+                    (click)="removeModule(module.id, module.name)"
+                    [attr.aria-label]="'Eliminar ' + module.name"
+                  >
+                    <maya-icon name="trash" [size]="16" />
+                  </button>
+                </div>
+              </li>
+            } @empty {
+              <li class="seccion__vacia">
+                <p class="maya-small maya-muted">
+                  Esta sección está vacía. Empiece por una página de bienvenida o un vídeo.
+                </p>
+                <button
+                  type="button"
+                  class="maya-btn maya-btn--soft maya-btn--sm"
+                  (click)="openPicker(section)"
+                >
+                  <maya-icon name="plus" [size]="15" /> Añadir la primera actividad
+                </button>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  }
+}
+
+<!-- ══════════════════════ Navegación entre los pasos ════════════════════ -->
+<div class="asistente__pie">
+  <button
+    type="button"
+    class="maya-btn maya-btn--ghost"
+    (click)="back()"
+    [disabled]="stepIndex() === 0"
+  >
+    <maya-icon name="arrow-left" [size]="16" /> Atrás
+  </button>
+
+  @if (hasNext()) {
+    <button type="button" class="maya-btn maya-btn--primary" (click)="next()">
+      Siguiente <maya-icon name="arrow-right" [size]="16" />
+    </button>
+  } @else if (isNew()) {
+    <button
+      type="button"
+      class="maya-btn maya-btn--primary"
+      (click)="save()"
+      [disabled]="saving() || !basicsDone()"
+    >
+      <maya-icon name="check" [size]="16" />
+      {{ saving() ? 'Creando…' : 'Crear el curso' }}
+    </button>
+  } @else {
+    <!-- Ver y guardar ya están en la cabecera; aquí sólo hace falta explicar
+         por qué el temario no pide guardar. -->
+    <span class="maya-tiny maya-subtle" style="align-self: center; text-align: right">
+      Los cambios del temario se guardan solos
+    </span>
+  }
+</div>
+
+<!-- ═══════════════ Selector de actividades y recursos ═══════════════════ -->
+@if (pickerSection(); as section) {
+  <maya-modal
+    size="lg"
+    [title]="
+      pickerType()
+        ? 'Nueva ' + $any(pickerType()).label.toLowerCase()
+        : 'Añadir a «' + sectionTitle(section) + '»'
+    "
+    (dismissed)="closePicker()"
+  >
+    @if (pickerType(); as type) {
+      <!-- Segunda fase: el tipo ya está elegido y solo falta el nombre. -->
+      <div class="maya-stack">
+        <div class="maya-option-card is-selected" style="cursor: default">
+          <span class="maya-icon-tile maya-icon-tile--solid">
+            <maya-icon [name]="type.icon" [size]="21" />
+          </span>
+          <span class="maya-option-card__body">
+            <span class="maya-option-card__title">{{ type.label }}</span>
+            <span class="maya-option-card__text">{{ type.description }}</span>
+          </span>
+        </div>
+
+        <button type="button" class="maya-btn maya-btn--ghost maya-btn--sm" (click)="pickerType.set(null)">
+          <maya-icon name="arrow-left" [size]="15" /> Elegir otro tipo
+        </button>
+
+        <div class="maya-field">
+          <label class="maya-label" for="ac-nombre">
+            Nombre de la actividad <span class="maya-required">*</span>
+          </label>
+          <input
+            id="ac-nombre"
+            class="maya-input"
+            [placeholder]="type.label + ' del tema ' + section.sectionNumber"
+            [ngModel]="activityName()"
+            (ngModelChange)="activityName.set($event)"
+          />
+          <span class="maya-hint">Es lo que verá el alumnado en el temario.</span>
+        </div>
+      </div>
+    } @else {
+      <!-- Primera fase: el catálogo, con búsqueda y filtro por familia. -->
+      <div class="maya-stack">
+        <div class="buscador">
+          <maya-icon name="search" [size]="18" />
+          <input
+            type="search"
+            class="buscador__input"
+            placeholder="Buscar por nombre o por lo que hace…"
+            [ngModel]="pickerQuery()"
+            (ngModelChange)="pickerQuery.set($event)"
+            aria-label="Buscar un tipo de actividad"
+          />
+        </div>
+
+        <div class="maya-segmented" role="tablist" aria-label="Familia de actividad">
+          @for (item of groupFilters; track item.value) {
+            <button
+              type="button"
+              role="tab"
+              class="maya-segmented__item"
+              [class.is-active]="pickerGroup() === item.value"
+              [attr.aria-selected]="pickerGroup() === item.value"
+              (click)="pickerGroup.set(item.value)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
+
+        @if (pickerResults().length) {
+          <div class="maya-options">
+            @for (item of pickerResults(); track item.type) {
+              <button type="button" class="maya-option-card" (click)="chooseType(item)">
+                <span
+                  class="maya-icon-tile"
+                  [class.maya-icon-tile--info]="item.group === 'resource'"
+                >
+                  <maya-icon [name]="item.icon" [size]="21" />
+                </span>
+                <span class="maya-option-card__body">
+                  <span class="maya-option-card__title">{{ item.label }}</span>
+                  <span class="maya-option-card__text">{{ item.description }}</span>
+                  <span class="maya-option-card__tags">
+                    @if (item.gradable) {
+                      <span class="maya-option-card__tag maya-option-card__tag--grade">
+                        Pone nota
+                      </span>
+                    }
+                    @for (tag of item.tags; track tag) {
+                      <span class="maya-option-card__tag">{{ tag }}</span>
+                    }
+                  </span>
+                </span>
+              </button>
+            }
+          </div>
+        } @else {
+          <maya-empty-state
+            icon="search"
+            title="Nada coincide con esa búsqueda"
+            description="Pruebe con otra palabra o quite el filtro de familia."
+          />
+        }
+      </div>
+    }
+
+    <ng-container footer>
+      <button type="button" class="maya-btn maya-btn--ghost" (click)="closePicker()">
+        Cancelar
+      </button>
+      @if (pickerType()) {
+        <button
+          type="button"
+          class="maya-btn maya-btn--primary"
+          [disabled]="addingActivity() || !activityName().trim()"
+          (click)="addActivity()"
+        >
+          {{ addingActivity() ? 'Añadiendo…' : 'Añadir al temario' }}
+        </button>
+      }
+    </ng-container>
+  </maya-modal>
 }
 
 <!-- ══════════════ Finalización y restricciones de acceso ══════════════ -->

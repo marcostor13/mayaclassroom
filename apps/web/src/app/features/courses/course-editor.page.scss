@@ -1,0 +1,198 @@
+@use '../../../styles/tokens' as *;
+
+/* --- Armazón del asistente --------------------------------------------- */
+
+.asistente {
+  &__pasos {
+    padding: var(--maya-space-2) var(--maya-space-3);
+    margin-bottom: var(--maya-space-5);
+
+    @include from($maya-bp-md) { padding: var(--maya-space-3) var(--maya-space-6); }
+  }
+
+  &__intro {
+    margin-bottom: var(--maya-space-4);
+  }
+
+  &__titulo {
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-xl);
+    font-weight: 700;
+    line-height: var(--maya-leading-tight);
+  }
+
+  /* Barra de navegación del asistente. Pegada al fondo en móvil, donde el
+     contenido de un paso pasa de largo de la pantalla y «Siguiente» quedaba
+     fuera de la vista sin ninguna pista de que estuviera ahí. */
+  &__pie {
+    position: sticky;
+    bottom: calc(var(--maya-bottomnav-height) + var(--maya-safe-bottom));
+    z-index: var(--maya-z-sticky);
+    display: flex;
+    justify-content: space-between;
+    gap: var(--maya-space-3);
+    margin-top: var(--maya-space-6);
+    padding: var(--maya-space-3);
+    border: 1px solid var(--maya-border);
+    border-radius: var(--maya-radius-lg);
+    background: var(--maya-surface);
+    box-shadow: var(--maya-shadow-md);
+
+    @include desktop-only {
+      position: static;
+      box-shadow: none;
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+  }
+}
+
+/* --- Secciones del temario --------------------------------------------- */
+
+.seccion {
+  &__cabecera {
+    gap: var(--maya-space-3);
+    flex-wrap: wrap;
+  }
+
+  /* El número del tema, para orientarse en un temario largo de un vistazo. */
+  &__numero {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: var(--maya-radius-sm);
+    background: var(--maya-surface-3);
+    color: var(--maya-text-muted);
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-sm);
+    font-weight: 700;
+  }
+
+  &__identidad {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  /* Título editable en el sitio: parece texto hasta que se toca. */
+  &__titulo {
+    /* En bloque a propósito: como `inline-block` deja un resquicio al final de
+       su línea y el recuento de actividades se partía por ahí. */
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-family: var(--maya-font-heading);
+    font-size: var(--maya-text-md);
+    font-weight: 700;
+    color: inherit;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--maya-radius-sm);
+    padding: 2px 8px;
+    margin-left: -8px;
+
+    &:hover { border-color: var(--maya-border); }
+
+    &:focus {
+      outline: none;
+      border-color: var(--maya-primary);
+      background: var(--maya-surface);
+    }
+  }
+
+  &__lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__vacia {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--maya-space-3);
+    padding: var(--maya-space-5);
+    border-top: 1px solid var(--maya-border);
+  }
+}
+
+/* --- Fila de actividad --------------------------------------------------- */
+
+.actividad {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-3);
+  flex-wrap: wrap;
+  padding: var(--maya-space-3) var(--maya-space-5);
+  border-top: 1px solid var(--maya-border);
+  transition: background var(--maya-duration-fast) var(--maya-ease);
+
+  &:hover { background: var(--maya-surface-2); }
+
+  /* Lo oculto se ve apagado, pero legible: sigue habiendo que trabajar en ello. */
+  &--oculta .maya-icon-tile,
+  &--oculta .actividad__enlace { opacity: 0.6; }
+
+  &__enlace {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 160px;
+    color: inherit;
+    text-decoration: none;
+
+    &:hover .actividad__nombre { color: var(--maya-primary-ink); }
+  }
+
+  &__nombre {
+    font-size: var(--maya-text-sm);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* En móvil las seis acciones no caben junto al nombre: bajan a su propia
+     línea en lugar de encogerse por debajo del objetivo táctil. */
+  &__acciones {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+}
+
+/* --- Buscador del selector de actividades -------------------------------- */
+
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: var(--maya-space-2);
+  padding: 0 var(--maya-space-4);
+  height: 44px;
+  border-radius: var(--maya-radius-pill);
+  background: var(--maya-surface);
+  border: 1.5px solid var(--maya-border-strong);
+  color: var(--maya-text-subtle);
+
+  &:focus-within {
+    border-color: var(--maya-primary);
+    box-shadow: 0 0 0 4px var(--maya-focus);
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    outline: none;
+    /* 16 px en móvil: por debajo, Safari de iOS hace zoom al enfocar. */
+    font-size: var(--maya-text-md);
+    color: var(--maya-text);
+
+    @include from($maya-bp-md) { font-size: var(--maya-text-sm); }
+  }
+}

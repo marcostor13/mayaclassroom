@@ -24,32 +24,139 @@ interface AdvancedMeta {
   label: string;
   icon: string;
   gradable: boolean;
+  description: string;
+  tags: string[];
   defaultGrade?: number;
 }
 
 const ADVANCED_META: Record<string, AdvancedMeta> = {
-  [ModuleType.Lesson]: { label: 'Lección', icon: 'route', gradable: true, defaultGrade: 100 },
-  [ModuleType.Glossary]: { label: 'Glosario', icon: 'book-a', gradable: false },
-  [ModuleType.Wiki]: { label: 'Wiki', icon: 'network', gradable: false },
-  [ModuleType.Workshop]: { label: 'Taller', icon: 'users-round', gradable: true, defaultGrade: 100 },
-  [ModuleType.Database]: { label: 'Base de datos', icon: 'database', gradable: false },
-  [ModuleType.Chat]: { label: 'Chat', icon: 'messages-square', gradable: false },
-  [ModuleType.Scorm]: { label: 'Paquete SCORM', icon: 'package', gradable: true, defaultGrade: 100 },
-  [ModuleType.Lti]: { label: 'Herramienta externa (LTI)', icon: 'plug', gradable: true, defaultGrade: 100 },
-  [ModuleType.H5p]: { label: 'H5P', icon: 'puzzle', gradable: true, defaultGrade: 100 },
-  [ModuleType.Survey]: { label: 'Encuesta predefinida', icon: 'bar-chart-3', gradable: false },
-  [ModuleType.Attendance]: { label: 'Asistencia', icon: 'user-check', gradable: true, defaultGrade: 100 },
+  [ModuleType.Lesson]: {
+    label: 'Lección',
+    icon: 'route',
+    gradable: true,
+    defaultGrade: 100,
+    description:
+      'Contenido guiado por páginas con preguntas por el camino: según lo que ' +
+      'responda el alumnado avanza por una rama u otra.',
+    tags: ['Ruta guiada', 'Con preguntas'],
+  },
+  [ModuleType.Glossary]: {
+    label: 'Glosario',
+    icon: 'book-a',
+    gradable: false,
+    description:
+      'Diccionario de términos del curso, ordenado alfabéticamente y con ' +
+      'búsqueda. El alumnado también puede aportar entradas.',
+    tags: ['Colaborativo', 'Con búsqueda'],
+  },
+  [ModuleType.Wiki]: {
+    label: 'Wiki',
+    icon: 'network',
+    gradable: false,
+    description:
+      'Páginas que el grupo escribe y corrige entre todos, guardando el ' +
+      'historial de cambios.',
+    tags: ['Colaborativo', 'Con historial'],
+  },
+  [ModuleType.Workshop]: {
+    label: 'Taller',
+    icon: 'users-round',
+    gradable: true,
+    defaultGrade: 100,
+    description:
+      'Entrega con evaluación entre iguales: cada persona corrige los trabajos ' +
+      'de sus compañeros con una plantilla de criterios.',
+    tags: ['Entre iguales', 'Por criterios'],
+  },
+  [ModuleType.Database]: {
+    label: 'Base de datos',
+    icon: 'database',
+    gradable: false,
+    description:
+      'Fichas con campos definidos que rellena el grupo —bibliografía, casos, ' +
+      'recursos— y luego se buscan y filtran.',
+    tags: ['Colaborativo', 'Campos propios'],
+  },
+  [ModuleType.Chat]: {
+    label: 'Chat',
+    icon: 'messages-square',
+    gradable: false,
+    description:
+      'Conversación en tiempo real dentro del curso, para tutorías o dudas a una ' +
+      'hora acordada.',
+    tags: ['En directo'],
+  },
+  [ModuleType.Scorm]: {
+    label: 'Paquete SCORM',
+    icon: 'package',
+    gradable: true,
+    defaultGrade: 100,
+    description:
+      'Contenido interactivo creado con una herramienta externa y subido como ' +
+      'paquete; devuelve por su cuenta la nota y el progreso.',
+    tags: ['Contenido externo', 'Reporta nota'],
+  },
+  [ModuleType.Lti]: {
+    label: 'Herramienta externa (LTI)',
+    icon: 'plug',
+    gradable: true,
+    defaultGrade: 100,
+    description:
+      'Conecta una plataforma de fuera —un simulador, un laboratorio virtual— ' +
+      'que se abre con la sesión ya iniciada y devuelve la nota.',
+    tags: ['Servicio externo', 'Reporta nota'],
+  },
+  [ModuleType.H5p]: {
+    label: 'H5P',
+    icon: 'puzzle',
+    gradable: true,
+    defaultGrade: 100,
+    description:
+      'Contenido interactivo del estándar H5P: vídeo con preguntas, ' +
+      'presentaciones o juegos de emparejar.',
+    tags: ['Interactivo', 'Reporta nota'],
+  },
+  [ModuleType.Survey]: {
+    label: 'Encuesta predefinida',
+    icon: 'bar-chart-3',
+    gradable: false,
+    description:
+      'Cuestionarios estándar ya validados sobre el clima del aula. No se ' +
+      'redactan preguntas: se elige el modelo.',
+    tags: ['Preguntas fijas'],
+  },
+  [ModuleType.Attendance]: {
+    label: 'Asistencia',
+    icon: 'user-check',
+    gradable: true,
+    defaultGrade: 100,
+    description:
+      'Registro de presencia por sesión, con su parte de faltas y retrasos que ' +
+      'puede contar para la nota.',
+    tags: ['Por sesiones', 'Cuenta para la nota'],
+  },
 };
 
 class AdvancedHandler implements ActivityHandler {
+  readonly label: string;
+  readonly icon: string;
+  readonly gradable: boolean;
+  readonly description: string;
+  readonly tags: string[];
+  private readonly defaultGrade?: number;
+
   constructor(
     readonly type: ModuleType,
-    readonly label: string,
-    readonly icon: string,
-    readonly gradable: boolean,
+    meta: AdvancedMeta,
     private readonly service: AdvancedActivitiesService,
-    private readonly defaultGrade?: number,
-  ) {}
+  ) {
+    this.label = meta.label;
+    this.icon = meta.icon;
+    this.gradable = meta.gradable;
+    this.description = meta.description;
+    this.tags = meta.tags;
+    this.defaultGrade = meta.defaultGrade;
+  }
 
   create(input: ActivityCreateInput): Promise<ActivityInstanceResult> {
     return this.service.createActivity(this.type, input, this.defaultGrade ?? null);
@@ -91,16 +198,7 @@ export class AdvancedActivitiesService implements OnModuleInit {
 
   onModuleInit(): void {
     for (const [type, meta] of Object.entries(ADVANCED_META)) {
-      this.registry.register(
-        new AdvancedHandler(
-          type as ModuleType,
-          meta.label,
-          meta.icon,
-          meta.gradable,
-          this,
-          meta.defaultGrade,
-        ),
-      );
+      this.registry.register(new AdvancedHandler(type as ModuleType, meta, this));
     }
   }
 

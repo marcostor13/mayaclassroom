@@ -45,6 +45,10 @@ export class AssignService implements ActivityHandler, OnModuleInit {
   readonly label = 'Tarea';
   readonly icon = 'clipboard-check';
   readonly gradable = true;
+  readonly description =
+    'Entrega de trabajos con fecha límite: el alumnado sube archivos o escribe ' +
+    'en línea y el profesorado califica y comenta.';
+  readonly tags = ['Con entrega', 'Fecha límite'];
 
   constructor(
     @InjectModel(Assign.name) private readonly model: Model<AssignDocument>,
